@@ -259,8 +259,8 @@ namespace ReludualiConsole
                                                                : "not installed: the console talks to the game through it. Install it below.");
             string ff = null;
             try { string v; if (BatchRecorder.BatchSettings.Load().TryGetValue("ffmpeg", out v) && File.Exists(v)) ff = v; } catch { }
-            ff = ff ?? OnPath("ffmpeg.exe");
-            Check("ffmpeg", ff != null, ff ?? "not found: the Reluduali recorder writes video through it. Point BATCH's ffmpeg box at ffmpeg.exe.");
+            ff = ff ?? BatchRecorder.FfmpegFinder.Find();
+            Check("ffmpeg", ff != null, ff ?? "not found: the Reluduali recorder writes video through it. Install it (in PowerShell: winget install Gyan.FFmpeg), or point BATCH's ffmpeg box at ffmpeg.exe.");
 
             var row = new WrapPanel { Margin = new Thickness(0, 10, 0, 0) };
             var install = new Button { Content = "Install RipperBridge into the game", Margin = new Thickness(0, 0, 12, 0), IsEnabled = File.Exists(BridgeShipped) && plugins != null, Style = Ui.Style("PrimaryButton") };

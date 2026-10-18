@@ -8,7 +8,7 @@ RipperBridge as Microsoft's licence for it allows).
 
 The installer also carries the pieces below. Their notices travel with them.
 
-Last updated for version 0.7.1.
+Last updated for version 0.7.2.
 
 
 -------------------------------------------------------------------------------

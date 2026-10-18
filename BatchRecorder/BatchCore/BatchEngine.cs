@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -1228,8 +1228,14 @@ namespace BatchRecorder
                 r.Message = "dry run";
                 return true;
             }
+            // an empty or wrong ffmpeg box: one found on this PC is used (FfmpegFinder), and said
             if (string.IsNullOrEmpty(_opt.FfmpegPath) || !File.Exists(_opt.FfmpegPath))
-            { r.Message = "no ffmpeg at '" + _opt.FfmpegPath + "'"; Log("    " + r.Message); return false; }
+            {
+                string found = FfmpegFinder.Find();
+                if (found == null) { r.Message = FfmpegFinder.Missing + (string.IsNullOrEmpty(_opt.FfmpegPath) ? "" : " (the box says '" + _opt.FfmpegPath + "')"); Log("    " + r.Message); return false; }
+                Log("    ffmpeg: " + (string.IsNullOrEmpty(_opt.FfmpegPath) ? "the box is empty" : "'" + _opt.FfmpegPath + "' is not there") + "; using " + found);
+                _opt.FfmpegPath = found;
+            }
 
             // the Console's slider moves that play, written for every frame of this recording and applied by RipperBridge on
             // their own frames (dev40) instead of sent by the Console as the film passes them

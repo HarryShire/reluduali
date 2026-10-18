@@ -47,7 +47,7 @@ namespace ReludualiSetup
     /// </summary>
     public static class Installer
     {
-        public const string Version = "0.7.1";
+        public const string Version = "0.7.2";
         public const string RecordName = "install-record.txt";
         public const string UninstallerName = "Uninstall Reluduali.exe";
         public const string TheaterShortcut = "Reluduali Theater.lnk";

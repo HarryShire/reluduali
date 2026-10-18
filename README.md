@@ -5,9 +5,10 @@ Written with an External Cortex, courtesy of Anthropic.
 Moviemaking for Black Ops II on Redacted: your films, their look, your cameras and the recording, in one window,
 with the game sitting inside it.
 
-**Version 0.7.1.** New since 0.7.0: the Reluduali Theater launch no longer stops on an "[EXE_UI_ERROR]" box;
-a second Theater launch while the Designer is open works; a **Sign in** button in the header with an **Account** page;
-**Share to reluduali.com** for your looks, presets, CFGs and camos (as the site opens it); an update notifier.
+**Version 0.7.2.** New since 0.7.1: the Batch finds ffmpeg by itself (an empty ffmpeg box no longer fails every take).
+Since 0.7.0: the Reluduali Theater launch no longer stops on an "[EXE_UI_ERROR]" box; a second Theater launch while
+the Designer is open works; a **Sign in** button with an **Account** page; **Share to reluduali.com** for your looks,
+presets, CFGs and camos; an update notifier.
 
 - [What it does](#what-it-does)
 - [Download](#download)
@@ -51,7 +52,7 @@ The full guide, tool by tool, is in **[docs/GUIDE.md](docs/GUIDE.md)**.
 
 ## Download
 
-Get **ReludualiSetup-0.7.1.exe** from the
+Get **ReludualiSetup-0.7.2.exe** (or **ReludualiSetup-0.7.2-maps.exe**, with the 31 maps' 3D shapes included) from the
 [latest release](https://github.com/HarryShire/reluduali/releases/latest), or from
 [reluduali.com](https://reluduali.com). One file: the Designer, its game plugin and the Reluduali panel for Lumit.
 
@@ -63,13 +64,13 @@ Get **ReludualiSetup-0.7.1.exe** from the
 | .NET | .NET Framework 4.7.2 or later (part of Windows 10 1803 and later). |
 | Game | Black Ops II for PC, played through **Redacted** (`t6mpv43.exe`), offline. The Designer and its plugin work only with Redacted. They never touch retail Steam Black Ops II. |
 | Display mode | **Windowed** or **fullscreen windowed**. Exclusive fullscreen minimises the game when you click the Designer. |
-| Recording | **ffmpeg** ([ffmpeg.org](https://ffmpeg.org/download.html)): the Batch sends the frames to it. It is not included; tell the Batch where `ffmpeg.exe` is. |
+| Recording | **ffmpeg** ([ffmpeg.org](https://ffmpeg.org/download.html)): the Batch sends the frames to it. It is not included: install it (in PowerShell: `winget install Gyan.FFmpeg`) and the Batch finds it by itself, or point the Batch's ffmpeg box at `ffmpeg.exe`. |
 | Lumit (optional) | [Lumit](https://github.com/luminalmvm/Lumit) 0.8.0 or newer (or a nightly from v0.7.1-nightly.20261015.30 on), for the Reluduali panel. |
 
 ## Install
 
 1. **Close the game.**
-2. Run **ReludualiSetup-0.7.1.exe**. It installs for your Windows user only: nothing needs an administrator.
+2. Run **ReludualiSetup-0.7.2.exe** (or the -maps one). It installs for your Windows user only: nothing needs an administrator.
 3. Check the choices:
    - **Redacted's folder**: the one with `t6mpv43.exe`. It is filled in when Redacted is in Steam's usual folder;
      otherwise type it or press **Choose...**.
@@ -213,7 +214,7 @@ the Reluduali Timer) puts reluduali.com's contest clock inside Lumit.
 | The game has the mouse and a click cannot reach the Designer | Press **Ctrl+Alt+D**. |
 | The pills stay grey after the game restarted | Press **Re-attach**. |
 | The game minimises when you click the Designer | Use windowed or fullscreen windowed, not exclusive fullscreen. |
-| The Batch says it cannot find ffmpeg | Point it at your `ffmpeg.exe`. |
+| The Batch says it cannot find ffmpeg | Install it (`winget install Gyan.FFmpeg`), or point the Batch's ffmpeg box at your `ffmpeg.exe`. |
 | Something else | The Designer keeps running and writes **ReludualiConsole.log** beside itself: send that file. |
 
 ## What it changes on your PC

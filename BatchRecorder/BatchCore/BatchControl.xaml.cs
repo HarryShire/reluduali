@@ -157,7 +157,7 @@ namespace BatchRecorder
         {
             Dictionary<string, string> saved = BatchSettings.Load();
             if (BatchSettings.LastError.Length > 0) Log("could not read the saved settings: " + BatchSettings.LastError);
-            if (saved.Count == 0) { Log("no saved settings yet; they are kept from the first change on"); return; }
+            if (saved.Count == 0) { Log("no saved settings yet; they are kept from the first change on"); FillFfmpeg(); return; }
 
             _restoring = true;
             try
@@ -170,6 +170,18 @@ namespace BatchRecorder
             }
             finally { _restoring = false; }
             Log("settings restored from " + BatchSettings.PathOnDisk);
+            FillFfmpeg();
+        }
+
+        /// <summary>An empty ffmpeg box, or one naming a file that is gone, gets the ffmpeg found on this PC (2026-10-18).</summary>
+        private void FillFfmpeg()
+        {
+            string now = FfmpegBox.Text.Trim().Trim('"');
+            if (now.Length > 0 && File.Exists(now)) return;
+            string found = FfmpegFinder.Find();
+            if (found == null) { Log("ffmpeg: " + FfmpegFinder.Missing); return; }
+            FfmpegBox.Text = found;          // saved like any change
+            Log("ffmpeg: found " + found + (now.Length > 0 ? " (" + now + " is not there)" : ""));
         }
 
         private void WatchSettings()

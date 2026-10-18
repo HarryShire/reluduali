@@ -178,6 +178,8 @@ namespace ReludualiConsole
             if (r.Status == 403) return "Your sign-in may not share: sign out and in again, and allow \"shares\".";
             if (r.Status == 404) return "reluduali.com does not take shares yet (the site's side is on its way).";
             if (r.Status == 413) return "Too big: " + r.Message + ".";
+            if (r.Status == 429) return "reluduali.com says that is enough for now (" + r.Message + "): share again later, or remove some old ones.";
+            if (r.Status == 503) return "reluduali.com is busy taking other shares: try again in a minute.";
             return "Not shared: " + r.Message + ".";
         }
 

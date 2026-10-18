@@ -1,6 +1,6 @@
 # The Reluduali Designer: the guide
 
-Every tool, what it does, and how to use it. Version 0.7.1. The short version is the [README](../README.md); inside
+Every tool, what it does, and how to use it. Version 0.7.2. The short version is the [README](../README.md); inside
 the Designer, **F1** opens a quick version of this guide.
 
 - [Before you start](#before-you-start)

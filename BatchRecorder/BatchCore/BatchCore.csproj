@@ -47,6 +47,7 @@
       <DependentUpon>BatchControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="CardBorder.cs" />
+    <Compile Include="FfmpegFinder.cs" />
     <Compile Include="BatchEngine.cs" />
     <Compile Include="BatchPipe.cs" />
     <Compile Include="ProtectedDvars.cs" />

@@ -58,10 +58,12 @@ namespace ReludualiConsole
                     check("kept in the test's own file, scopes and all", back != null && back.Token == me.Token && back.May("shares") && File.Exists(AccountLink.FileOverride), null);
 
                     // 3. one share of every kind
+                    var made = new List<string>();      // every share this test makes is taken off again at the end (a live site keeps them)
                     var small = new List<KeyValuePair<string, byte[]>> { new KeyValuePair<string, byte[]>("Raid at dusk.cfg", Encoding.UTF8.GetBytes("// == FOG ==\nr_fog 1\n")) };
                     foreach (string kind in new[] { "global", "preset", "cfg", "look", "sliders" })
                     {
                         var r = link.Share(me, kind, "Test " + kind, "from --server-test", kind == "preset" ? "FOG" : null, small);
+                        made.Add(AccountLink.S(r, "id"));
                         check("share a " + kind, AccountLink.S(r, "id").Length > 0 && AccountLink.S(r, "url").Length > 0, AccountLink.S(r, "url"));
                     }
                     var camo = new List<KeyValuePair<string, byte[]>>
@@ -77,9 +79,12 @@ namespace ReludualiConsole
 
                     // 4. the person's own shares, and taking one off
                     var mine = link.MyShares(me);
-                    check("my shares: 6", mine.Count == 6, mine.Count.ToString());
+                    int before = mine.Count;
+                    check("my shares: the 6 just made are listed", made.Concat(new[] { AccountLink.S(rc, "id") }).All(id => mine.Any(x => AccountLink.S(x, "id") == id)), before.ToString());
                     link.Unshare(me, AccountLink.S(rc, "id"));
-                    check("removed: 5 left", link.MyShares(me).Count == 5, null);
+                    check("removed: one fewer", link.MyShares(me).Count == before - 1, null);
+                    foreach (string id in made) link.Unshare(me, id);
+                    check("every share this test made is gone again", link.MyShares(me).Count == before - 1 - made.Count, null);
 
                     // 5. the one door
                     try { link.Call("GET", "/api/admin/users", null, me.Token); check("a route not listed is never sent", false, "it was sent"); }
