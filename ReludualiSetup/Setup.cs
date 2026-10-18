@@ -11,8 +11,8 @@ using System.Windows.Media;
 [assembly: AssemblyTitle("The Reluduali Designer Setup")]
 [assembly: AssemblyProduct("The Reluduali Designer")]
 [assembly: AssemblyCopyright("Copyright (c) 2026 Mycelium")]
-[assembly: AssemblyVersion("0.7.0.0")]
-[assembly: AssemblyFileVersion("0.7.0.0")]
+[assembly: AssemblyVersion("0.7.1.0")]
+[assembly: AssemblyFileVersion("0.7.1.0")]
 
 namespace ReludualiSetup
 {

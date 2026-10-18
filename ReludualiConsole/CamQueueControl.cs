@@ -130,7 +130,7 @@ namespace ReludualiConsole
             _jumpN.Margin = new Thickness(0, 0, 6, 6);
             capture.Children.Add(_jumpN);
             capture.Children.Add(Btn("Jump", (s, e) => JumpToMarker(), "The film to that marker of yours (1 = the first), as F on it does, without its menu. The camera goes onto the marker; Shift+click keeps the camera where it is."));
-            var captureCard = new Border { Style = Ui.Style("Card"), Padding = new Thickness(12, 10, 12, 8), Margin = new Thickness(0, 0, 0, 8) };
+            var captureCard = new PrintCard { Padding = new Thickness(12, 10, 12, 8), Margin = new Thickness(0, 0, 0, 8) };
             var capturePanel = new StackPanel();
             capturePanel.Children.Add(capture);
             capturePanel.Children.Add(_live);
@@ -170,7 +170,7 @@ namespace ReludualiConsole
             runPanel.Children.Add(run);
             runPanel.Children.Add(names);
             runPanel.Children.Add(after);
-            var runCard = new Border { Style = Ui.Style("Card"), Padding = new Thickness(12, 10, 12, 8), Margin = new Thickness(0, 8, 0, 0), Child = runPanel };
+            var runCard = new PrintCard { Padding = new Thickness(12, 10, 12, 8), Margin = new Thickness(0, 8, 0, 0), Child = runPanel };
             DockPanel.SetDock(runCard, Dock.Bottom);
 
             // the picked row: its note, then what can be done to it, grouped

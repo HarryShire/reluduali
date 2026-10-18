@@ -79,6 +79,12 @@ namespace ReludualiConsole
             Children.Add(_signedIn);
             _contest.SelectionChanged += (s, e) => { if (_me != null && _contest.SelectedIndex >= 0) RefreshEntry(); };
             IsVisibleChanged += (s, e) => { if ((bool)e.NewValue && _me != null && !App.Tour) Refresh(); };
+            // signed in or out elsewhere in the Designer (the Account page, the Contest page): this card follows
+            if (!App.Tour) AccountLink.SignedInOrOut += () => Dispatcher.BeginInvoke(new Action(() =>
+            {
+                var now = AccountLink.Load();
+                if ((now == null) != (_me == null) || (now != null && _me != null && now.Token != _me.Token)) { _me = now; Paint(); if (_me != null && IsVisible) Refresh(); }
+            }));
             Paint();
         }
 

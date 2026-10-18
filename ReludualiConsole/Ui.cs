@@ -120,14 +120,23 @@ namespace ReludualiConsole
             return w;
         }
 
-        /// <summary>A card: a title, an optional line on what it does, then its content.</summary>
+        /// <summary>A card: a title, an optional line on what it does, then its content. By day it is printed like the
+        /// website's cards (PrintCard) and its title is set in their Georgia.</summary>
         public static Border Card(string title, string blurb, params UIElement[] content)
         {
             var p = new StackPanel();
-            if (title != null) p.Children.Add(new TextBlock { Text = title, FontSize = 14.5, FontWeight = FontWeights.SemiBold, Foreground = Brush("Chrome"), Margin = new Thickness(0, 0, 0, blurb == null ? 10 : 2) });
+            if (title != null) p.Children.Add(Title(new TextBlock { Text = title, FontSize = 14.5, FontWeight = FontWeights.SemiBold, Foreground = Brush("Chrome"), Margin = new Thickness(0, 0, 0, blurb == null ? 10 : 2) }));
             if (blurb != null) p.Children.Add(Note(blurb, 0, 10));
             foreach (UIElement e in content) if (e != null) p.Children.Add(e);
-            return new Border { Style = Style("Card"), Child = p, Margin = new Thickness(0, 0, 0, 12) };
+            return new PrintCard { Child = p, Margin = new Thickness(0, 0, 0, 12) };
+        }
+
+        /// <summary>A title's face follows the skin: Segoe UI by night, the website cards' bold Georgia by day.</summary>
+        public static TextBlock Title(TextBlock t, string weight = "TitleWeight")
+        {
+            PaintExtension.Bind(t, TextBlock.FontFamilyProperty, "TitleFont");
+            PaintExtension.Bind(t, TextBlock.FontWeightProperty, weight);
+            return t;
         }
 
         /// <summary>A page's body: cards stacked, scrolling when they are taller than the window.</summary>

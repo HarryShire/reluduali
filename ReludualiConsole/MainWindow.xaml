@@ -1,6 +1,7 @@
 <Window x:Class="ReludualiConsole.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:ReludualiConsole"
         Title="The Reluduali Designer" Width="1480" Height="940" MinWidth="1040" MinHeight="620"
         Background="{StaticResource VelvetDeep}" Foreground="{StaticResource Text}"
         FontFamily="Segoe UI" FontSize="13" UseLayoutRounding="True">
@@ -36,7 +37,7 @@
             <StackPanel VerticalAlignment="Center">
               <!-- Mycelium 2026-10-17: "Rename the Title name to ... - you can still use 'Console' in the scripts and things",
                    then: "Go Ahead with the Rename. "Designer" - apoligies for typo." -->
-              <TextBlock Text="The Reluduali Designer" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource Chrome}"/>
+              <TextBlock Text="The Reluduali Designer" FontSize="16" FontFamily="{local:Paint TitleFont}" FontWeight="{local:Paint TitleWeight}" Foreground="{StaticResource Chrome}"/>
               <TextBlock x:Name="TitleName" Text="" FontSize="11" Foreground="{StaticResource Dim}" Margin="0,-2,0,0"/>
             </StackPanel>
           </StackPanel>
@@ -94,6 +95,14 @@
               </ToggleButton>
             </StackPanel>
           </Border>
+          <!-- 2026-10-18: the Reluduali sign-in, always in reach: your name when signed in -->
+          <Button x:Name="AccountButton" Style="{StaticResource QuietButton}" Click="Account_Click" Margin="0,0,2,0"
+                  ToolTip="Your Reluduali account: sign in, share your camos, CFGs and presets on reluduali.com">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="&#xE77B;" FontFamily="{StaticResource IconFont}" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+              <TextBlock x:Name="AccountText" Text="Sign in" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
           <Button x:Name="ContestButton" Style="{StaticResource QuietButton}" Click="Contest_Click" Margin="0,0,2,0"
                   ToolTip="reluduali.com's contest timer and the Lumit folder">
             <StackPanel Orientation="Horizontal">
@@ -137,7 +146,20 @@
     <Border Grid.Row="0" Height="1" VerticalAlignment="Bottom" Background="{StaticResource RimLine}" x:Name="HeaderRim"/>
 
     <!-- ============================================================ a notice (a caught error, a result) -->
-    <Border Grid.Row="1" x:Name="NoticeBar" Visibility="Collapsed" Margin="12,8,12,0" CornerRadius="2" Padding="12,7,6,7"
+    <StackPanel Grid.Row="1">
+    <!-- the update notifier (2026-10-18): what the Reluduali Server says about this Designer - a newer version, a notice -->
+    <Border x:Name="UpdateBar" Visibility="Collapsed" Margin="12,8,12,0" CornerRadius="2" Padding="12,7,6,7"
+            Background="{StaticResource CardBack}" BorderBrush="{StaticResource Accent}" BorderThickness="1">
+      <DockPanel>
+        <Button DockPanel.Dock="Right" x:Name="UpdateLater" Style="{StaticResource QuietButton}" ToolTip="Not now (it stays quiet until there is something newer)" Padding="6,0">
+          <TextBlock Text="&#xE711;" FontFamily="{StaticResource IconFont}" FontSize="11"/>
+        </Button>
+        <Button DockPanel.Dock="Right" x:Name="UpdateGo" Style="{StaticResource PrimaryButton}" Margin="8,0,6,0" Padding="10,2" Visibility="Collapsed"/>
+        <TextBlock DockPanel.Dock="Left" Text="&#xE896;" FontFamily="{StaticResource IconFont}" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{StaticResource Accent}"/>
+        <TextBlock x:Name="UpdateText" TextWrapping="Wrap" VerticalAlignment="Center"/>
+      </DockPanel>
+    </Border>
+    <Border x:Name="NoticeBar" Visibility="Collapsed" Margin="12,8,12,0" CornerRadius="2" Padding="12,7,6,7"
             Background="#33FF6482" BorderBrush="#66FF6482" BorderThickness="1">
       <DockPanel>
         <Button DockPanel.Dock="Right" Style="{StaticResource QuietButton}" Click="NoticeClose_Click" ToolTip="Hide" Padding="6,0">
@@ -146,6 +168,7 @@
         <TextBlock x:Name="NoticeText" TextWrapping="Wrap" VerticalAlignment="Center"/>
       </DockPanel>
     </Border>
+    </StackPanel>
 
     <!-- ============================================================ the body: the start screen, or the rail and a page -->
     <Grid Grid.Row="2">
@@ -164,7 +187,7 @@
       <!-- the work area: the page, and in the Workspace layouts the game's slot beside it (MainWindow.ApplyLayout) -->
       <Grid x:Name="WorkArea" Grid.Column="1" Background="{StaticResource PageBack}">
       <Border x:Name="GameSlot" Visibility="Collapsed" Margin="12,12,6,12" CornerRadius="3" BorderThickness="1"
-              BorderBrush="{StaticResource RimSoft}" Background="{StaticResource ViewBack}"/>
+              BorderBrush="{StaticResource RimSoft}" Background="{StaticResource SlotBack}"/>
       <GridSplitter x:Name="WorkSplit" Visibility="Collapsed" Background="Transparent"/>
       <!-- a page: its title, a line on what it is for, the page itself -->
       <Grid x:Name="PageArea" Background="{StaticResource PageBack}">
@@ -172,7 +195,10 @@
           <RowDefinition Height="Auto"/>
           <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <Grid Margin="26,18,24,6">
+        <!-- by day a pane of glass under the title, as the site's chips sit on its sky (Skin.cs: Plate; by night nothing) -->
+        <Border Margin="{local:Paint PlateMargin}" Padding="{local:Paint PlatePad}" CornerRadius="3" Background="{StaticResource Plate}"
+                BorderBrush="{StaticResource PlateEdge}" BorderThickness="{local:Paint PlateLine}" HorizontalAlignment="Left">
+        <Grid>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
@@ -183,10 +209,11 @@
                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
           </Border>
           <StackPanel Grid.Column="1" VerticalAlignment="Center">
-            <TextBlock x:Name="PageTitle" FontSize="22" FontWeight="SemiBold" Foreground="{StaticResource Chrome}"/>
+            <TextBlock x:Name="PageTitle" FontSize="22" FontFamily="{local:Paint TitleFont}" FontWeight="{local:Paint TitleWeight}" Foreground="{StaticResource Chrome}"/>
             <TextBlock x:Name="PageBlurb" FontSize="13" Foreground="{StaticResource Dim}" TextWrapping="Wrap" Margin="0,1,0,0"/>
           </StackPanel>
         </Grid>
+        </Border>
         <ContentControl x:Name="PageHost" Grid.Row="1" Margin="14,4,14,10" Focusable="False"/>
       </Grid>
       </Grid>

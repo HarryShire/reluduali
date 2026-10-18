@@ -71,6 +71,10 @@
     </Compile>
     <Compile Include="AccountLink.cs" />
     <Compile Include="AccountControl.cs" />
+    <Compile Include="ServerTest.cs" />
+    <Compile Include="ShareControl.cs" />
+    <Compile Include="Unfinished.cs" />
+    <Compile Include="UpdateNotifier.cs" />
     <Compile Include="LookControl.cs" />
     <Compile Include="SkyControl.cs" />
     <Compile Include="GunsControl.cs" />
@@ -103,6 +107,8 @@
     <Compile Include="TheaterTimeline.cs" />
     <Compile Include="TheaterLaunch.cs" />
     <Compile Include="Velvet.cs" />
+    <Compile Include="Skin.cs" />
+    <Compile Include="PrintCard.cs" />
     <Compile Include="AppearanceCard.cs" />
     <Compile Include="MapShapes.cs" />
     <Compile Include="MainWindow.Workspace.cs">

@@ -5,12 +5,15 @@
   2026-10-17, his words: "Ableton Color Scheme, Reluduali Website Theme Edges and Texture Dithering, Make sure visibility
   is prioritized and doesn't interfere on the Overlay Setting. Velvet Dither Textures over the Ableton Color Scheme. Add
   a Contrast Feature for the UI Appearance in the Settings." and "Make the buttons more Sharp then Beveled/Round. They
-  should be just about to be pointy, not actually square." The colours are the Ableton theme "Eye-pleasing" by
+  should be just about to be pointy, not actually square." That is the night: the Ableton theme "Eye-pleasing" by
   dede.zak97 (plum #342836, panel #372938, device #161511, lilac #BF90C6, soft lilac #99869C, raspberry #BF245D,
-  orange #DB490E, teal #2E95BE); the surfaces are reluduali.com's velvet in those tones, fine and close so the letters
-  stay first, through the website's 8x8 ordered dither (Velvet.cs); the edges are the website's holographic foil,
-  moved by the pointer (FoilShift); corners are nearly sharp (2 px; cards 3). Letters, lines and the texture's strength
-  follow the Contrast setting (Setup > Appearance), read when the theme loads.
+  orange #DB490E, teal #2E95BE) under reluduali.com's velvet, through the website's 8x8 ordered dither (Velvet.cs), the
+  website's holographic foil on the edges, moved by the pointer (FoilShift); corners nearly sharp (2 px; cards 3).
+
+  Later the same day: "add a light mode to the Designer, use the exact scheme and design parameters, textures from the
+  front page of The Reluduali Website ... make it a dynamic theme. Light during the day, dark during the night." That is
+  the day: reluduali.com's card screen (Skin.cs, PrintCard.cs). Every colour and surface below comes from Skin.Now by a
+  binding ({local:Paint key}), so the whole look turns between day and night, and with the Contrast setting, at once.
 
   Every control the pages build in code picks these up (implicit styles), so the pages need no colours of their own.
   The keys the code asks for by name (Back, Panel, Text, Dim, Accent, Good, Bad) keep their names.
@@ -19,128 +22,192 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:local="clr-namespace:ReludualiConsole">
 
-  <!-- ===================================================================== colours -->
-  <x:Static x:Key="BackColor" Member="local:Velvet.BackColor"/>
-  <Color x:Key="PanelColor">#FF372938</Color>
-  <Color x:Key="RaisedColor">#FF443547</Color>
-  <x:Static x:Key="InsetColor" Member="local:Velvet.InsetColor"/>
-  <x:Static x:Key="BorderColor" Member="local:Velvet.BorderColor"/>
-  <x:Static x:Key="TextColor" Member="local:Velvet.TextColor"/>
-  <x:Static x:Key="DimColor" Member="local:Velvet.DimColor"/>
-  <x:Static x:Key="ChromeColor" Member="local:Velvet.ChromeColor"/>
-  <Color x:Key="AccentColor">#FFBF90C6</Color>
-  <Color x:Key="AccentPaleColor">#FFDCC3E0</Color>
-  <Color x:Key="AccentDeepColor">#FF99869C</Color>
+  <!-- ===================================================================== colours (day or night: Skin.cs) -->
+  <SolidColorBrush x:Key="Back" Color="{local:Paint Back}"/>
+  <SolidColorBrush x:Key="Panel" Color="{local:Paint Panel}"/>
+  <SolidColorBrush x:Key="Raised" Color="{local:Paint Raised}"/>
+  <SolidColorBrush x:Key="Inset" Color="{local:Paint Inset}"/>
+  <SolidColorBrush x:Key="Line" Color="{local:Paint Line}"/>
+  <SolidColorBrush x:Key="Text" Color="{local:Paint Text}"/>
+  <SolidColorBrush x:Key="Dim" Color="{local:Paint Dim}"/>
+  <SolidColorBrush x:Key="Chrome" Color="{local:Paint Chrome}"/>
+  <SolidColorBrush x:Key="Accent" Color="{local:Paint Accent}"/>
+  <SolidColorBrush x:Key="AccentPale" Color="{local:Paint AccentPale}"/>
+  <SolidColorBrush x:Key="AccentDeep" Color="{local:Paint AccentDeep}"/>
+  <SolidColorBrush x:Key="Good" Color="{local:Paint Good}"/>
+  <SolidColorBrush x:Key="Bad" Color="{local:Paint Bad}"/>
+  <SolidColorBrush x:Key="Warn" Color="{local:Paint Warn}"/>
+  <SolidColorBrush x:Key="Hover" Color="{local:Paint Hover}"/>
+  <SolidColorBrush x:Key="Selected" Color="{local:Paint Selected}"/>
+  <!-- letters on the selection, and on the main action (night: both the dark plum; day: ink, and pearl on the maroon) -->
+  <SolidColorBrush x:Key="OnLight" Color="{local:Paint OnSelected}"/>
+  <SolidColorBrush x:Key="OnPrimary" Color="{local:Paint OnPrimary}"/>
+  <SolidColorBrush x:Key="OnDanger" Color="{local:Paint OnDanger}"/>
+  <!-- the keyboard's focus and the selection's marker (night: the theme's orange; day: the site's maroon) -->
+  <SolidColorBrush x:Key="Focus" Color="{local:Paint Focus}"/>
+  <!-- the veils a control puts on under the pointer and when pressed, and a button's top hairline -->
+  <SolidColorBrush x:Key="Veil" Color="{local:Paint Veil}"/>
+  <SolidColorBrush x:Key="VeilOver" Color="{local:Paint VeilOver}"/>
+  <SolidColorBrush x:Key="VeilDown" Color="{local:Paint VeilDown}"/>
+  <SolidColorBrush x:Key="Sheen" Color="{local:Paint Sheen}"/>
+  <SolidColorBrush x:Key="SheenOver" Color="{local:Paint SheenOver}"/>
+  <SolidColorBrush x:Key="ComboOver" Color="{local:Paint ComboOver}"/>
+  <SolidColorBrush x:Key="RowOver" Color="{local:Paint RowOver}"/>
+  <SolidColorBrush x:Key="RailOver" Color="{local:Paint RailOver}"/>
+  <SolidColorBrush x:Key="CheckMark" Color="{local:Paint CheckMark}"/>
+  <SolidColorBrush x:Key="CheckMixed" Color="{local:Paint CheckMixed}"/>
+  <SolidColorBrush x:Key="RadioEdge" Color="{local:Paint RadioEdge}"/>
+  <SolidColorBrush x:Key="RadioDot" Color="{local:Paint RadioDot}"/>
+  <SolidColorBrush x:Key="FieldOver" Color="{local:Paint FieldOver}"/>
+  <SolidColorBrush x:Key="ThumbOver" Color="{local:Paint ThumbOver}"/>
+  <SolidColorBrush x:Key="QuietOn" Color="{local:Paint QuietOn}"/>
+  <SolidColorBrush x:Key="QuietOnEdge" Color="{local:Paint QuietOnEdge}"/>
+  <SolidColorBrush x:Key="SliderRestBack" Color="{local:Paint SliderRest}"/>
+  <SolidColorBrush x:Key="SliderRestEdge" Color="{local:Paint SliderRestEdge}"/>
+  <SolidColorBrush x:Key="KnobGlow" Color="{local:Paint KnobGlow}"/>
+  <SolidColorBrush x:Key="KnobEdge" Color="{local:Paint KnobEdge}"/>
+  <SolidColorBrush x:Key="TipBack" Color="{local:Paint TipBack}"/>
+  <SolidColorBrush x:Key="Gripper" Color="{local:Paint Gripper}"/>
+  <SolidColorBrush x:Key="SplitLine" Color="{local:Paint Splitter}"/>
+  <!-- under a page's title: night nothing, day a pane of glass -->
+  <SolidColorBrush x:Key="Plate" Color="{local:Paint Plate}"/>
+  <SolidColorBrush x:Key="PlateEdge" Color="{local:Paint PlateEdge}"/>
+  <!-- the lettering's seeds on the start screen (day) -->
+  <SolidColorBrush x:Key="Seed" Color="{local:Paint Seed}"/>
+  <!-- the theater's bar and the moves timeline -->
+  <SolidColorBrush x:Key="TlFill" Color="{local:Paint TlFill}"/>
+  <SolidColorBrush x:Key="TlHead" Color="{local:Paint TlHead}"/>
+  <SolidColorBrush x:Key="TlTarget" Color="{local:Paint TlTarget}"/>
+  <SolidColorBrush x:Key="TlMark" Color="{local:Paint TlMark}"/>
+  <SolidColorBrush x:Key="TlKey" Color="{local:Paint TlKey}"/>
+  <SolidColorBrush x:Key="MvText" Color="{local:Paint MvText}"/>
+  <SolidColorBrush x:Key="MvDot" Color="{local:Paint MvDot}"/>
+  <SolidColorBrush x:Key="MvNow" Color="{local:Paint MvNow}"/>
 
-  <SolidColorBrush x:Key="Back" Color="{StaticResource BackColor}"/>
-  <SolidColorBrush x:Key="Panel" Color="{StaticResource PanelColor}"/>
-  <SolidColorBrush x:Key="Raised" Color="{StaticResource RaisedColor}"/>
-  <SolidColorBrush x:Key="Inset" Color="{StaticResource InsetColor}"/>
-  <SolidColorBrush x:Key="Line" Color="{StaticResource BorderColor}"/>
-  <SolidColorBrush x:Key="Text" Color="{StaticResource TextColor}"/>
-  <SolidColorBrush x:Key="Dim" Color="{StaticResource DimColor}"/>
-  <SolidColorBrush x:Key="Chrome" Color="{StaticResource ChromeColor}"/>
-  <SolidColorBrush x:Key="Accent" Color="{StaticResource AccentColor}"/>
-  <SolidColorBrush x:Key="AccentPale" Color="{StaticResource AccentPaleColor}"/>
-  <SolidColorBrush x:Key="AccentDeep" Color="{StaticResource AccentDeepColor}"/>
-  <SolidColorBrush x:Key="Good" Color="#FF3FB39A"/>
-  <SolidColorBrush x:Key="Bad" Color="#FFE0336F"/>
-  <SolidColorBrush x:Key="Warn" Color="#FFE8862E"/>
-  <SolidColorBrush x:Key="Hover" Color="#14FFFFFF"/>
-  <SolidColorBrush x:Key="Selected" Color="#FF99869C"/>
-  <!-- letters on the lilac main action and on the selection -->
-  <SolidColorBrush x:Key="OnLight" Color="#FF221823"/>
-  <!-- the theme's orange: the keyboard's focus and the selection's marker -->
-  <SolidColorBrush x:Key="Focus" Color="#FFE07020"/>
+  <!-- ===================================================================== surfaces -->
+  <!-- night: reluduali.com's velvet, dithered (Velvet.cs: a card 256 x 256, a page or the frame 256 x 2160, a shade runs
+       down it). Day: the sky behind everything (VelvetDeep), glass for the header and the rail (VelvetRail), the page
+       clear so the sky shows (PageBack), the pearl face of a card (CardBack) and of a drop-down (PopBack). The 3D views
+       and the game's slot stay the device black (ViewBack). -->
+  <ImageBrush x:Key="VelvetDeep" ImageSource="{local:Paint Deep}" RenderOptions.BitmapScalingMode="NearestNeighbor" TileMode="Tile" Viewport="0,0,256,2160" ViewportUnits="Absolute" Stretch="Fill"/>
+  <ImageBrush x:Key="VelvetRail" ImageSource="{local:Paint Rail}" RenderOptions.BitmapScalingMode="NearestNeighbor" TileMode="Tile" Viewport="0,0,256,2160" ViewportUnits="Absolute" Stretch="Fill"/>
+  <ImageBrush x:Key="PageBack" ImageSource="{local:Paint Page}" RenderOptions.BitmapScalingMode="NearestNeighbor" TileMode="Tile" Viewport="0,0,256,2160" ViewportUnits="Absolute" Stretch="Fill"/>
+  <ImageBrush x:Key="CardBack" ImageSource="{local:Paint Card}" RenderOptions.BitmapScalingMode="NearestNeighbor" TileMode="Tile" Viewport="0,0,256,256" ViewportUnits="Absolute" Stretch="Fill"/>
+  <ImageBrush x:Key="PopBack" ImageSource="{local:Paint Pop}" RenderOptions.BitmapScalingMode="NearestNeighbor" TileMode="Tile" Viewport="0,0,256,256" ViewportUnits="Absolute" Stretch="Fill"/>
+  <ImageBrush x:Key="ViewBack" ImageSource="{local:Paint View}" RenderOptions.BitmapScalingMode="NearestNeighbor" TileMode="Tile" Viewport="0,0,256,256" ViewportUnits="Absolute" Stretch="Fill"/>
+  <!-- the game's slot round the game: night the device black; day glass, so its bar and the theater's timeline read as
+       the rest of the page does (the hole the game sits in stays the device black) -->
+  <ImageBrush x:Key="SlotBack" ImageSource="{local:Paint Slot}" RenderOptions.BitmapScalingMode="NearestNeighbor" TileMode="Tile" Viewport="0,0,256,256" ViewportUnits="Absolute" Stretch="Fill"/>
+  <!-- words on the device black (a 3D view's, the slot's hole): night the dim lilac, day a pale blue -->
+  <SolidColorBrush x:Key="ViewText" Color="{local:Paint ViewText}"/>
 
-  <!-- ===================================================================== surfaces: reluduali.com's velvet, dithered -->
-  <!-- pictures made when this file loads (Velvet.cs): a card 256 x 256, a page or the frame 256 x 2160 (a shade runs down it), tiled -->
-  <ImageBrush x:Key="VelvetDeep" ImageSource="{x:Static local:Velvet.RailImage}" RenderOptions.BitmapScalingMode="NearestNeighbor" TileMode="Tile" Viewport="0,0,256,2160" ViewportUnits="Absolute" Stretch="Fill"/>
-  <ImageBrush x:Key="VelvetRail" ImageSource="{x:Static local:Velvet.RailImage}" RenderOptions.BitmapScalingMode="NearestNeighbor" TileMode="Tile" Viewport="0,0,256,2160" ViewportUnits="Absolute" Stretch="Fill"/>
-  <ImageBrush x:Key="PageBack" ImageSource="{x:Static local:Velvet.DeepImage}" RenderOptions.BitmapScalingMode="NearestNeighbor" TileMode="Tile" Viewport="0,0,256,2160" ViewportUnits="Absolute" Stretch="Fill"/>
-  <ImageBrush x:Key="CardBack" ImageSource="{x:Static local:Velvet.CardImage}" RenderOptions.BitmapScalingMode="NearestNeighbor" TileMode="Tile" Viewport="0,0,256,256" ViewportUnits="Absolute" Stretch="Fill"/>
-  <ImageBrush x:Key="ViewBack" ImageSource="{x:Static local:Velvet.ViewImage}" RenderOptions.BitmapScalingMode="NearestNeighbor" TileMode="Tile" Viewport="0,0,256,256" ViewportUnits="Absolute" Stretch="Fill"/>
+  <!-- the site's dither as a mask: half the pixels, in the 8x8 ordered pattern (a button's foil shows through it) -->
+  <x:Static x:Key="Dither" Member="local:Print.Dither"/>
 
   <!-- ===================================================================== edges: reluduali.com's foil -->
   <!-- where the foil's light is: bound to the pointer (Velvet.FollowPointer); every edge shares it -->
   <TranslateTransform x:Key="FoilShift" X="{Binding X, Source={x:Static local:Velvet.Foil}}" Y="{Binding Y, Source={x:Static local:Velvet.Foil}}"/>
-  <!-- the website's holographic bands (#ff4fae #ffd24f #4fffc0 #4fb4ff #b44fff) at 115 degrees over pearl, repeated
-       along an edge. Rim: buttons and fields; RimSoft: cards and the rail, quieter; RimHi: the keyboard's focus and the
-       main action; RimLine: the header's lower edge -->
+  <!-- night: the website's holographic bands (#ff4fae #ffd24f #4fffc0 #4fb4ff #b44fff) at 115 degrees over pearl, repeated
+       along an edge. Day: the site's plain edge (#9fc2e0), the foil printed where something is lit. Rim: buttons and
+       fields; RimSoft: cards and the rail, quieter; RimHi: the keyboard's focus and a lit card; PrimaryRim: the main
+       action; RimLine: the header's lower edge -->
   <LinearGradientBrush x:Key="Rim" StartPoint="0,0" EndPoint="0.5,0.72" SpreadMethod="Reflect" RelativeTransform="{StaticResource FoilShift}">
-    <GradientStop Color="#A0D9CCDD" Offset="0"/>
-    <GradientStop Color="#90FF6FBE" Offset="0.2"/>
-    <GradientStop Color="#80FFD86A" Offset="0.36"/>
-    <GradientStop Color="#786FFFCB" Offset="0.52"/>
-    <GradientStop Color="#806FC0FF" Offset="0.68"/>
-    <GradientStop Color="#90BE6AFF" Offset="0.84"/>
-    <GradientStop Color="#A0D9CCDD" Offset="1"/>
+    <GradientStop Color="{local:Paint Rim0}" Offset="0"/>
+    <GradientStop Color="{local:Paint Rim1}" Offset="0.2"/>
+    <GradientStop Color="{local:Paint Rim2}" Offset="0.36"/>
+    <GradientStop Color="{local:Paint Rim3}" Offset="0.52"/>
+    <GradientStop Color="{local:Paint Rim4}" Offset="0.68"/>
+    <GradientStop Color="{local:Paint Rim5}" Offset="0.84"/>
+    <GradientStop Color="{local:Paint Rim6}" Offset="1"/>
   </LinearGradientBrush>
   <LinearGradientBrush x:Key="RimSoft" StartPoint="0,0" EndPoint="0.5,0.72" SpreadMethod="Reflect" RelativeTransform="{StaticResource FoilShift}">
-    <GradientStop Color="#70C9BBCC" Offset="0"/>
-    <GradientStop Color="#58FF4FAE" Offset="0.2"/>
-    <GradientStop Color="#48FFD24F" Offset="0.36"/>
-    <GradientStop Color="#404FFFC0" Offset="0.52"/>
-    <GradientStop Color="#484FB4FF" Offset="0.68"/>
-    <GradientStop Color="#58B44FFF" Offset="0.84"/>
-    <GradientStop Color="#70C9BBCC" Offset="1"/>
+    <GradientStop Color="{local:Paint RimSoft0}" Offset="0"/>
+    <GradientStop Color="{local:Paint RimSoft1}" Offset="0.2"/>
+    <GradientStop Color="{local:Paint RimSoft2}" Offset="0.36"/>
+    <GradientStop Color="{local:Paint RimSoft3}" Offset="0.52"/>
+    <GradientStop Color="{local:Paint RimSoft4}" Offset="0.68"/>
+    <GradientStop Color="{local:Paint RimSoft5}" Offset="0.84"/>
+    <GradientStop Color="{local:Paint RimSoft6}" Offset="1"/>
   </LinearGradientBrush>
   <LinearGradientBrush x:Key="RimHi" StartPoint="0,0" EndPoint="0.5,0.72" SpreadMethod="Reflect" RelativeTransform="{StaticResource FoilShift}">
-    <GradientStop Color="#FFF6F0F7" Offset="0"/>
-    <GradientStop Color="#FFFF4FAE" Offset="0.2"/>
-    <GradientStop Color="#FFFFD24F" Offset="0.36"/>
-    <GradientStop Color="#FF4FFFC0" Offset="0.52"/>
-    <GradientStop Color="#FF4FB4FF" Offset="0.68"/>
-    <GradientStop Color="#FFB44FFF" Offset="0.84"/>
-    <GradientStop Color="#FFF6F0F7" Offset="1"/>
+    <GradientStop Color="{local:Paint RimHi0}" Offset="0"/>
+    <GradientStop Color="{local:Paint RimHi1}" Offset="0.2"/>
+    <GradientStop Color="{local:Paint RimHi2}" Offset="0.36"/>
+    <GradientStop Color="{local:Paint RimHi3}" Offset="0.52"/>
+    <GradientStop Color="{local:Paint RimHi4}" Offset="0.68"/>
+    <GradientStop Color="{local:Paint RimHi5}" Offset="0.84"/>
+    <GradientStop Color="{local:Paint RimHi6}" Offset="1"/>
   </LinearGradientBrush>
   <LinearGradientBrush x:Key="PrimaryRim" StartPoint="0,0" EndPoint="0.5,0.72" SpreadMethod="Reflect" RelativeTransform="{StaticResource FoilShift}">
-    <GradientStop Color="#FFF6F0F7" Offset="0"/>
-    <GradientStop Color="#FFFF8CC9" Offset="0.2"/>
-    <GradientStop Color="#FFFFE39A" Offset="0.36"/>
-    <GradientStop Color="#FF9AFFDB" Offset="0.52"/>
-    <GradientStop Color="#FF9AD2FF" Offset="0.68"/>
-    <GradientStop Color="#FFD59AFF" Offset="0.84"/>
-    <GradientStop Color="#FFF6F0F7" Offset="1"/>
+    <GradientStop Color="{local:Paint PrimaryRim0}" Offset="0"/>
+    <GradientStop Color="{local:Paint PrimaryRim1}" Offset="0.2"/>
+    <GradientStop Color="{local:Paint PrimaryRim2}" Offset="0.36"/>
+    <GradientStop Color="{local:Paint PrimaryRim3}" Offset="0.52"/>
+    <GradientStop Color="{local:Paint PrimaryRim4}" Offset="0.68"/>
+    <GradientStop Color="{local:Paint PrimaryRim5}" Offset="0.84"/>
+    <GradientStop Color="{local:Paint PrimaryRim6}" Offset="1"/>
   </LinearGradientBrush>
   <LinearGradientBrush x:Key="RimLine" StartPoint="0,0" EndPoint="0.6,0" SpreadMethod="Reflect" RelativeTransform="{StaticResource FoilShift}">
-    <GradientStop Color="#40544457" Offset="0"/>
-    <GradientStop Color="#A0FF4FAE" Offset="0.2"/>
-    <GradientStop Color="#C0F6F0F7" Offset="0.34"/>
-    <GradientStop Color="#A0FFD24F" Offset="0.46"/>
-    <GradientStop Color="#904FFFC0" Offset="0.6"/>
-    <GradientStop Color="#904FB4FF" Offset="0.74"/>
-    <GradientStop Color="#A0B44FFF" Offset="0.88"/>
-    <GradientStop Color="#40544457" Offset="1"/>
+    <GradientStop Color="{local:Paint RimLine0}" Offset="0"/>
+    <GradientStop Color="{local:Paint RimLine1}" Offset="0.2"/>
+    <GradientStop Color="{local:Paint RimLine2}" Offset="0.34"/>
+    <GradientStop Color="{local:Paint RimLine3}" Offset="0.46"/>
+    <GradientStop Color="{local:Paint RimLine4}" Offset="0.6"/>
+    <GradientStop Color="{local:Paint RimLine5}" Offset="0.74"/>
+    <GradientStop Color="{local:Paint RimLine6}" Offset="0.88"/>
+    <GradientStop Color="{local:Paint RimLine7}" Offset="1"/>
+  </LinearGradientBrush>
+  <!-- day: the site's foil on a button under the pointer (linear-gradient 115deg, transparent 18%, the hues 30-70%,
+       transparent 82%), printed through the dither; night: nothing -->
+  <LinearGradientBrush x:Key="Glint" StartPoint="0,0" EndPoint="1,0.9" RelativeTransform="{StaticResource FoilShift}">
+    <GradientStop Color="{local:Paint Glint0}" Offset="0"/>
+    <GradientStop Color="{local:Paint Glint1}" Offset="0.18"/>
+    <GradientStop Color="{local:Paint Glint2}" Offset="0.30"/>
+    <GradientStop Color="{local:Paint Glint3}" Offset="0.40"/>
+    <GradientStop Color="{local:Paint Glint4}" Offset="0.50"/>
+    <GradientStop Color="{local:Paint Glint5}" Offset="0.60"/>
+    <GradientStop Color="{local:Paint Glint6}" Offset="0.70"/>
+    <GradientStop Color="{local:Paint Glint7}" Offset="0.82"/>
+    <GradientStop Color="{local:Paint Glint8}" Offset="1"/>
   </LinearGradientBrush>
 
-  <!-- a raised face: the theme's panel, a step lighter at the top -->
+  <!-- a raised face: night the theme's panel, a step lighter at the top; day the site's pearl chip -->
   <LinearGradientBrush x:Key="Face" StartPoint="0,0" EndPoint="0,1">
-    <GradientStop Color="#FF4A3B4D" Offset="0"/>
-    <GradientStop Color="#FF443547" Offset="0.5"/>
-    <GradientStop Color="#FF3E3041" Offset="1"/>
+    <GradientStop Color="{local:Paint Face0}" Offset="0"/>
+    <GradientStop Color="{local:Paint Face1}" Offset="0.5"/>
+    <GradientStop Color="{local:Paint Face2}" Offset="1"/>
   </LinearGradientBrush>
-  <!-- the main action: the theme's lilac, dark letters (OnLight) -->
+  <!-- the main action: night the theme's lilac, dark letters; day the site's maroon, pearl letters (OnPrimary) -->
   <LinearGradientBrush x:Key="PrimaryFace" StartPoint="0,0" EndPoint="0,1">
-    <GradientStop Color="#FFCDA3D3" Offset="0"/>
-    <GradientStop Color="#FFBF90C6" Offset="0.5"/>
-    <GradientStop Color="#FFB383BA" Offset="1"/>
+    <GradientStop Color="{local:Paint Primary0}" Offset="0"/>
+    <GradientStop Color="{local:Paint Primary1}" Offset="0.5"/>
+    <GradientStop Color="{local:Paint Primary2}" Offset="1"/>
   </LinearGradientBrush>
   <!-- the danger action (stop, record): the theme's raspberry -->
   <LinearGradientBrush x:Key="DangerFace" StartPoint="0,0" EndPoint="0,1">
-    <GradientStop Color="#FFCC3468" Offset="0"/>
-    <GradientStop Color="#FFBF245D" Offset="0.5"/>
-    <GradientStop Color="#FFAA1F52" Offset="1"/>
+    <GradientStop Color="{local:Paint Danger0}" Offset="0"/>
+    <GradientStop Color="{local:Paint Danger1}" Offset="0.5"/>
+    <GradientStop Color="{local:Paint Danger2}" Offset="1"/>
   </LinearGradientBrush>
-  <!-- the selection's marker: the theme's orange -->
+  <!-- the selection's marker: night the theme's orange; day the polymer note's window, the five hues -->
   <LinearGradientBrush x:Key="AccentBar" StartPoint="0,0" EndPoint="0,1">
-    <GradientStop Color="#FFF08A3C" Offset="0"/>
-    <GradientStop Color="#FFDB490E" Offset="1"/>
+    <GradientStop Color="{local:Paint Bar0}" Offset="0"/>
+    <GradientStop Color="{local:Paint Bar1}" Offset="0.25"/>
+    <GradientStop Color="{local:Paint Bar2}" Offset="0.5"/>
+    <GradientStop Color="{local:Paint Bar3}" Offset="0.75"/>
+    <GradientStop Color="{local:Paint Bar4}" Offset="1"/>
   </LinearGradientBrush>
-  <!-- a slider's filled part: soft lilac to lilac -->
+  <!-- a slider's filled part: night soft lilac to lilac; day maroon to pink -->
   <LinearGradientBrush x:Key="AccentFill" StartPoint="0,0" EndPoint="1,0">
-    <GradientStop Color="#FF99869C" Offset="0"/>
-    <GradientStop Color="#FFBF90C6" Offset="1"/>
+    <GradientStop Color="{local:Paint Fill0}" Offset="0"/>
+    <GradientStop Color="{local:Paint Fill1}" Offset="1"/>
+  </LinearGradientBrush>
+  <!-- a slider's knob -->
+  <LinearGradientBrush x:Key="KnobFace" StartPoint="0,0" EndPoint="0,1">
+    <GradientStop Color="{local:Paint Knob0}" Offset="0"/>
+    <GradientStop Color="{local:Paint Knob1}" Offset="0.48"/>
+    <GradientStop Color="{local:Paint Knob2}" Offset="0.52"/>
+    <GradientStop Color="{local:Paint Knob3}" Offset="1"/>
   </LinearGradientBrush>
 
   <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
@@ -153,8 +220,10 @@
     <Grid SnapsToDevicePixels="True">
       <Border x:Name="Face" CornerRadius="2" Background="{TemplateBinding Background}"
               BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"/>
-      <Border x:Name="Veil" CornerRadius="2" Margin="1" Background="#00FFFFFF"/>
-      <Border x:Name="Sheen" CornerRadius="2,2,0,0" Margin="2,1,2,0" Height="1" VerticalAlignment="Top" Background="#18FFFFFF"/>
+      <Border x:Name="Veil" CornerRadius="2" Margin="1" Background="{StaticResource Veil}"/>
+      <!-- day: the foil glints on the button under the pointer, through the dither (night: nothing) -->
+      <Border x:Name="Glint" CornerRadius="2" Margin="1" Background="{StaticResource Glint}" OpacityMask="{StaticResource Dither}" Opacity="0" Visibility="Collapsed"/>
+      <Border x:Name="Sheen" CornerRadius="2,2,0,0" Margin="2,1,2,0" Height="1" VerticalAlignment="Top" Background="{StaticResource Sheen}"/>
       <Border x:Name="Ring" CornerRadius="2" BorderBrush="{StaticResource Focus}" BorderThickness="1" Opacity="0"/>
       <ContentPresenter Margin="{TemplateBinding Padding}" RecognizesAccessKey="True"
                         HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
@@ -162,11 +231,13 @@
     </Grid>
     <ControlTemplate.Triggers>
       <Trigger Property="IsMouseOver" Value="True">
-        <Setter TargetName="Veil" Property="Background" Value="#1CFFFFFF"/>
-        <Setter TargetName="Sheen" Property="Background" Value="#30FFFFFF"/>
+        <Setter TargetName="Veil" Property="Background" Value="{StaticResource VeilOver}"/>
+        <Setter TargetName="Sheen" Property="Background" Value="{StaticResource SheenOver}"/>
+        <Setter TargetName="Glint" Property="Visibility" Value="Visible"/>
+        <Setter TargetName="Glint" Property="Opacity" Value="0.5"/>
       </Trigger>
       <Trigger Property="IsPressed" Value="True">
-        <Setter TargetName="Veil" Property="Background" Value="#38000000"/>
+        <Setter TargetName="Veil" Property="Background" Value="{StaticResource VeilDown}"/>
         <Setter TargetName="Sheen" Property="Opacity" Value="0"/>
       </Trigger>
       <Trigger Property="IsKeyboardFocused" Value="True">
@@ -197,7 +268,7 @@
   <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
     <Setter Property="Background" Value="{StaticResource PrimaryFace}"/>
     <Setter Property="BorderBrush" Value="{StaticResource PrimaryRim}"/>
-    <Setter Property="Foreground" Value="{StaticResource OnLight}"/>
+    <Setter Property="Foreground" Value="{StaticResource OnPrimary}"/>
     <Setter Property="FontWeight" Value="SemiBold"/>
     <Setter Property="Padding" Value="16,6"/>
   </Style>
@@ -205,7 +276,7 @@
   <!-- stop, remove for good: the same chrome in a dark red -->
   <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
     <Setter Property="Background" Value="{StaticResource DangerFace}"/>
-    <Setter Property="Foreground" Value="#FFFFFFFF"/>
+    <Setter Property="Foreground" Value="{StaticResource OnDanger}"/>
   </Style>
 
   <!-- a quiet button: no face until the mouse is over it (view headers, small tools) -->
@@ -237,7 +308,7 @@
       <Trigger Property="IsChecked" Value="True">
         <Setter Property="Background" Value="{StaticResource PrimaryFace}"/>
         <Setter Property="BorderBrush" Value="{StaticResource PrimaryRim}"/>
-        <Setter Property="Foreground" Value="{StaticResource OnLight}"/>
+        <Setter Property="Foreground" Value="{StaticResource OnPrimary}"/>
       </Trigger>
     </Style.Triggers>
   </Style>
@@ -250,8 +321,8 @@
     <Setter Property="MinHeight" Value="24"/>
     <Style.Triggers>
       <Trigger Property="IsChecked" Value="True">
-        <Setter Property="Background" Value="#40BF90C6"/>
-        <Setter Property="BorderBrush" Value="#99BF90C6"/>
+        <Setter Property="Background" Value="{StaticResource QuietOn}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource QuietOnEdge}"/>
         <Setter Property="Foreground" Value="{StaticResource Chrome}"/>
       </Trigger>
     </Style.Triggers>
@@ -273,7 +344,7 @@
             </Grid.ColumnDefinitions>
             <Grid Width="17" Height="17" VerticalAlignment="Center">
               <Border x:Name="Box" CornerRadius="2" Background="{StaticResource Inset}" BorderBrush="{StaticResource Rim}" BorderThickness="1"/>
-              <Path x:Name="Mark" Data="M 3.6,8.6 L 7,11.8 L 13.2,4.6" Stroke="#FFFFFFFF" StrokeThickness="2"
+              <Path x:Name="Mark" Data="M 3.6,8.6 L 7,11.8 L 13.2,4.6" Stroke="{StaticResource CheckMark}" StrokeThickness="2"
                     StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Visibility="Collapsed"/>
             </Grid>
             <ContentPresenter Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" RecognizesAccessKey="True"/>
@@ -288,7 +359,7 @@
               <Setter TargetName="Mark" Property="Visibility" Value="Visible"/>
             </Trigger>
             <Trigger Property="IsChecked" Value="{x:Null}">
-              <Setter TargetName="Box" Property="Background" Value="#66544457"/>
+              <Setter TargetName="Box" Property="Background" Value="{StaticResource CheckMixed}"/>
             </Trigger>
             <Trigger Property="IsKeyboardFocused" Value="True">
               <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource AccentPale}"/>
@@ -315,8 +386,8 @@
               <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <Grid Width="17" Height="17" VerticalAlignment="Center">
-              <Ellipse x:Name="Box" Fill="{StaticResource Inset}" Stroke="#FF6E5D71" StrokeThickness="1"/>
-              <Ellipse x:Name="Dot" Width="7" Height="7" Fill="{StaticResource Chrome}" Visibility="Collapsed"/>
+              <Ellipse x:Name="Box" Fill="{StaticResource Inset}" Stroke="{StaticResource RadioEdge}" StrokeThickness="1"/>
+              <Ellipse x:Name="Dot" Width="7" Height="7" Fill="{StaticResource RadioDot}" Visibility="Collapsed"/>
             </Grid>
             <ContentPresenter Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" RecognizesAccessKey="True"/>
           </Grid>
@@ -361,7 +432,7 @@
           </Border>
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-              <Setter TargetName="Bd" Property="BorderBrush" Value="#FF6E5D71"/>
+              <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource FieldOver}"/>
             </Trigger>
             <Trigger Property="IsKeyboardFocused" Value="True">
               <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Accent}"/>
@@ -397,7 +468,7 @@
           <Border x:Name="T" CornerRadius="2" Margin="2" Background="{StaticResource Line}"/>
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-              <Setter TargetName="T" Property="Background" Value="#FF7A687D"/>
+              <Setter TargetName="T" Property="Background" Value="{StaticResource ThumbOver}"/>
             </Trigger>
             <Trigger Property="IsDragging" Value="True">
               <Setter TargetName="T" Property="Background" Value="{StaticResource Accent}"/>
@@ -487,14 +558,14 @@
   <ControlTemplate x:Key="ComboToggle" TargetType="ToggleButton">
     <Grid SnapsToDevicePixels="True">
       <Border x:Name="Bd" CornerRadius="2" Background="{StaticResource Face}" BorderBrush="{StaticResource Rim}" BorderThickness="1"/>
-      <Border x:Name="Veil" CornerRadius="2" Margin="1" Background="#00FFFFFF"/>
+      <Border x:Name="Veil" CornerRadius="2" Margin="1" Background="{StaticResource Veil}"/>
       <Path x:Name="Arrow" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,1,10,0"
             Data="M 0,0 L 4.5,4.5 L 9,0" Stroke="{StaticResource Dim}" StrokeThickness="1.6"
             StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
     </Grid>
     <ControlTemplate.Triggers>
       <Trigger Property="IsMouseOver" Value="True">
-        <Setter TargetName="Veil" Property="Background" Value="#16FFFFFF"/>
+        <Setter TargetName="Veil" Property="Background" Value="{StaticResource ComboOver}"/>
         <Setter TargetName="Arrow" Property="Stroke" Value="{StaticResource AccentPale}"/>
       </Trigger>
       <Trigger Property="IsChecked" Value="True">
@@ -526,7 +597,7 @@
                               ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"/>
             <Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True"
                    Focusable="False" PopupAnimation="Fade">
-              <Border x:Name="Drop" Margin="0,3,0,8" CornerRadius="2" Background="{StaticResource CardBack}" BorderBrush="{StaticResource RimSoft}" BorderThickness="1"
+              <Border x:Name="Drop" Margin="0,3,0,8" CornerRadius="2" Background="{StaticResource PopBack}" BorderBrush="{StaticResource RimSoft}" BorderThickness="1"
                       MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}" SnapsToDevicePixels="True">
                 <ScrollViewer Margin="3">
                   <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
@@ -623,7 +694,7 @@
           </Grid>
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-              <Setter TargetName="Bd" Property="Background" Value="#14FFFFFF"/>
+              <Setter TargetName="Bd" Property="Background" Value="{StaticResource RowOver}"/>
             </Trigger>
             <Trigger Property="IsSelected" Value="True">
               <Setter TargetName="Bd" Property="Background" Value="{StaticResource Selected}"/>
@@ -660,7 +731,7 @@
           </Grid>
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-              <Setter TargetName="Bd" Property="Background" Value="#14FFFFFF"/>
+              <Setter TargetName="Bd" Property="Background" Value="{StaticResource RowOver}"/>
             </Trigger>
             <Trigger Property="IsSelected" Value="True">
               <Setter TargetName="Bd" Property="Background" Value="{StaticResource Selected}"/>
@@ -687,7 +758,7 @@
               <Thumb.Template>
                 <ControlTemplate TargetType="Thumb">
                   <Border Background="Transparent">
-                    <Rectangle Width="1" Margin="0,6" Fill="#55544457"/>
+                    <Rectangle Width="1" Margin="0,6" Fill="{StaticResource Gripper}"/>
                   </Border>
                 </ControlTemplate>
               </Thumb.Template>
@@ -719,7 +790,7 @@
       <Setter.Value>
         <ControlTemplate TargetType="RepeatButton">
           <Grid Background="Transparent">
-            <Border Height="4" CornerRadius="2" Background="#FF1E1620" BorderBrush="#44544457" BorderThickness="0,0,0,1"/>
+            <Border Height="4" CornerRadius="2" Background="{StaticResource SliderRestBack}" BorderBrush="{StaticResource SliderRestEdge}" BorderThickness="0,0,0,1"/>
           </Grid>
         </ControlTemplate>
       </Setter.Value>
@@ -730,17 +801,8 @@
       <Setter.Value>
         <ControlTemplate TargetType="Thumb">
           <Grid Width="16" Height="16">
-            <Ellipse x:Name="Glow" Fill="#55BF90C6" Margin="-4" Opacity="0"/>
-            <Ellipse Stroke="#FF6E5A72" StrokeThickness="1">
-              <Ellipse.Fill>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                  <GradientStop Color="#FFF7F2FF" Offset="0"/>
-                  <GradientStop Color="#FFE3CCF5" Offset="0.48"/>
-                  <GradientStop Color="#FFC9A6E6" Offset="0.52"/>
-                  <GradientStop Color="#FFB98AE0" Offset="1"/>
-                </LinearGradientBrush>
-              </Ellipse.Fill>
-            </Ellipse>
+            <Ellipse x:Name="Glow" Fill="{StaticResource KnobGlow}" Margin="-4" Opacity="0"/>
+            <Ellipse Stroke="{StaticResource KnobEdge}" StrokeThickness="1" Fill="{StaticResource KnobFace}"/>
           </Grid>
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
@@ -793,7 +855,7 @@
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="ToolTip">
-          <Border CornerRadius="2" Background="#F2312533" BorderBrush="{StaticResource RimSoft}" BorderThickness="1" Padding="10,7" Margin="0,0,6,6">
+          <Border CornerRadius="2" Background="{StaticResource TipBack}" BorderBrush="{StaticResource RimSoft}" BorderThickness="1" Padding="10,7" Margin="0,0,6,6">
             <ContentPresenter/>
           </Border>
         </ControlTemplate>
@@ -831,7 +893,7 @@
                   </Border>
                   <ControlTemplate.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                      <Setter TargetName="B" Property="Background" Value="#14FFFFFF"/>
+                      <Setter TargetName="B" Property="Background" Value="{StaticResource RowOver}"/>
                     </Trigger>
                     <Trigger Property="IsChecked" Value="True">
                       <Setter TargetName="Chev" Property="RenderTransform">
@@ -863,7 +925,7 @@
       <Setter.Value>
         <ControlTemplate TargetType="GridSplitter">
           <Grid Background="Transparent">
-            <Border x:Name="L" Width="2" CornerRadius="1" Background="#44544457" HorizontalAlignment="Center"/>
+            <Border x:Name="L" Width="2" CornerRadius="1" Background="{StaticResource SplitLine}" HorizontalAlignment="Center"/>
           </Grid>
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
@@ -912,7 +974,7 @@
           </Grid>
           <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-              <Setter TargetName="Bg" Property="Background" Value="#12FFFFFF"/>
+              <Setter TargetName="Bg" Property="Background" Value="{StaticResource RailOver}"/>
               <Setter Property="Foreground" Value="{StaticResource Text}"/>
             </Trigger>
             <Trigger Property="IsChecked" Value="True">

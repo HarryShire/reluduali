@@ -1,4 +1,4 @@
-The Reluduali Designer 0.7.0 - moviemaking for Black Ops II (Redacted)
+The Reluduali Designer 0.7.1 - moviemaking for Black Ops II (Redacted)
 =====================================================================
 
 Written with an External Cortex, courtesy of Anthropic.

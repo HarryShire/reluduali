@@ -89,7 +89,7 @@ namespace ReludualiConsole
         /// <summary>A Console is already running: this launch greets, starts the game, asks the running one, then ends.</summary>
         public static void ForRunningConsole(Application app)
         {
-            app.StartupUri = null;                                  // no second Console window
+            // no second Console window: App.OnStartup returns before it makes one
             app.ShutdownMode = ShutdownMode.OnExplicitShutdown;     // the sample rings out after the splash has gone
             var splash = new TheaterSplash(null);
             splash.Show();
@@ -877,7 +877,7 @@ namespace ReludualiConsole
         }
 
         /// <summary>RELUDUALI from theater\reluduali.svg: its paths are the letters, its circles the seeds (null without the file).</summary>
-        static void Lettering(out Geometry letters, out Geometry seeds)
+        internal static void Lettering(out Geometry letters, out Geometry seeds)
         {
             letters = seeds = null;
             try

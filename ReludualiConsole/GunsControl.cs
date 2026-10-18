@@ -41,10 +41,17 @@ namespace ReludualiConsole
         {
             Foreground = (System.Windows.Media.Brush)Application.Current.FindResource("Text");
             var row = new WrapPanel();
-            row.Children.Add(Ui.Primary(Btn("Install build", (s, e) => Install())));
-            row.Children.Add(Btn("Game's own camos", (s, e) => Run("-Remove", "taking ours out")));
+            // each greyed, saying why, when the script or converter it runs is not on this PC (an install carries neither yet)
+            var install = Ui.Primary(Btn("Install build", (s, e) => Install()));
+            var own = Btn("Game's own camos", (s, e) => Run("-Remove", "taking ours out"));
+            var live = Btn("Try live", (s, e) => TryLive());
+            Unfinished.Needs(install, Installer(), "Installing a build");
+            Unfinished.Needs(own, Installer(), "Taking ours out");
+            Unfinished.Needs(live, ImageConverter(), "Trying a build live");
+            row.Children.Add(install);
+            row.Children.Add(own);
             row.Children.Add(Ui.Gap());
-            row.Children.Add(Btn("Try live", (s, e) => TryLive()));
+            row.Children.Add(live);
             row.Children.Add(Btn("Back to the game's", (s, e) => Restore()));
             row.Children.Add(Ui.Gap());
             row.Children.Add(Btn("Refresh", (s, e) => Refresh()));

@@ -18,7 +18,10 @@ param(
     [string]$TheaterLayer = '',
     [string]$Out = '',
     [switch]$NoBuild,
-    [switch]$Draft
+    [switch]$Draft,
+    # the Test Build (2026-10-18): build.txt "test" beside the Designer - unfinished features greyed (Unfinished.cs), the
+    # update notifier asks for test builds; the installer's name says "TestBuild"
+    [switch]$TestBuild
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot                  # tools\ -> the repository
@@ -46,6 +49,7 @@ New-Item -ItemType Directory -Force (Join-Path $stage 'console\Presets'), (Join-
 
 # the Designer, its README, its licence and the notices of what it carries
 foreach ($f in 'ReludualiConsole.exe', 'ReludualiConsole.exe.config', 'BatchCore.dll') { Copy-Item (Join-Path $bin $f) (Join-Path $stage 'console') }
+if ($TestBuild) { Set-Content (Join-Path $stage 'console\build.txt') 'test' -Encoding ASCII -NoNewline; "the Test Build: build.txt beside the Designer" }
 $shipped = Join-Path $tools 'presets'                     # presets that ship (fog looks for editors)
 if (Test-Path $shipped) { Copy-Item (Join-Path $shipped '*') (Join-Path $stage 'console\Presets') -Recurse }
 Copy-Item (Join-Path $tools 'README-RELUDUALI.txt') (Join-Path $stage 'console\README.txt')
@@ -95,7 +99,7 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 [IO.Compression.ZipFile]::CreateFromDirectory($stage, $zip, [IO.Compression.CompressionLevel]::Optimal, $false)
 # the entries must use '/': .NET Framework 4.7.2's CreateFromDirectory already does
 Build (Join-Path $root 'ReludualiSetup\ReludualiSetup.csproj')
-$exe = Join-Path $out "ReludualiSetup-$ver-$stamp.exe"
+$exe = Join-Path $out ("ReludualiSetup-$ver-" + $(if ($TestBuild) { 'TestBuild-' } else { '' }) + "$stamp.exe")
 Copy-Item (Join-Path $root 'ReludualiSetup\bin\Release\ReludualiSetup.exe') $exe
 
 $manifest = @("ReludualiSetup $ver, $stamp") + (Get-ChildItem $stage -Recurse -File | ForEach-Object { '{0}  {1,10}  {2}' -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Length, $_.FullName.Substring($stage.Length + 1) }) +

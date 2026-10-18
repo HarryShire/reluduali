@@ -92,6 +92,10 @@ namespace ReludualiConsole
             });
             Add("aside", null, "help", "Help", Glyph.Help, "How each tool works, for everyone testing it", () => new HelpControl());
             Add("aside", null, "contest", "Contest", Glyph.Stopwatch, "reluduali.com's contest timer, and the Lumit folder", () => new ContestControl());
+            // 2026-10-18: the Reluduali sign-in, and sharing your camos, CFGs and presets on reluduali.com
+            Add("aside", null, "account", "Account", Glyph.Person, "Your Reluduali account: sign in, friends, contests, and sharing on reluduali.com", () => Ui.Page(
+                Ui.Card("Reluduali sign-in", "Your Reluduali account, the same one as on reluduali.com and in the Lumit panel.", new AccountControl()),
+                Ui.Card("Share to reluduali.com", "Your global looks, page presets, CFGs, map looks, custom sliders and camo designs, on your page on reluduali.com for others to use.", new ShareControl())));
 
             // each page on its own: one that fails to build says so in its place, and the others still build
             foreach (Tool t in _tools.Where(x => x.Key == "batch").Concat(_tools.Where(x => x.Key != "batch"))) Build(t);
@@ -114,6 +118,17 @@ namespace ReludualiConsole
                 RestorePlacement();
             }
             _noticeTimer.Tick += (s, e) => { _noticeTimer.Stop(); NoticeBar.Visibility = Visibility.Collapsed; };
+            // the header's sign-in, and the update notifier (both 2026-10-18)
+            PaintAccount();
+            if (!App.Tour)
+            {
+                AccountLink.SignedInOrOut += () => Dispatcher.BeginInvoke(new Action(PaintAccount));
+                UpdateNotifier.Shared = new UpdateNotifier(Dispatcher, ShowUpdate);
+                UpdateNotifier.Shared.Start();
+            }
+            UpdateLater.Click += (s, e) => { UpdateNotifier.Dismiss(UpdateBar.Tag as string); UpdateBar.Visibility = Visibility.Collapsed; };
+            UpdateGo.Click += (s, e) => { AccountLink.OpenBrowser(UpdateGo.Tag as string); UpdateNotifier.Dismiss(UpdateBar.Tag as string); UpdateBar.Visibility = Visibility.Collapsed; };
+            if (Unfinished.IsTest) TitleName.Text += "  -  Test Build";
             PreviewKeyDown += OnKeys;
             Loaded += (s, e) => { Glint(); if (_layout != WorkLayout.Classic) ApplyLayout(); else LayoutClassic.IsChecked = true; };   // one layout always shows as picked (B13)
             ShowHome();
@@ -154,8 +169,10 @@ namespace ReludualiConsole
                     if (t.Group != null && t.Group != group)
                     {
                         group = t.Group;
-                        items.Children.Add(new TextBlock { Text = group.ToUpperInvariant(), FontSize = 10.5, FontWeight = FontWeights.SemiBold, Foreground = Ui.Brush("Dim"), Opacity = 0.85,
-                                                           Margin = new Thickness(21, items.Children.Count == 0 ? 4 : 10, 0, 3) });
+                        var kicker = new TextBlock { Text = group.ToUpperInvariant(), FontSize = 10.5, FontWeight = FontWeights.SemiBold, Foreground = Ui.Brush("Dim"), Opacity = 0.85,
+                                                     Margin = new Thickness(21, items.Children.Count == 0 ? 4 : 10, 0, 3) };
+                        PaintExtension.Bind(kicker, TextBlock.FontFamilyProperty, "KickerFont");
+                        items.Children.Add(kicker);
                     }
                     var label = new StackPanel { Orientation = Orientation.Horizontal };
                     label.Children.Add(new TextBlock { Text = t.Icon, FontFamily = Ui.IconFont, FontSize = 15, Width = 28, VerticalAlignment = VerticalAlignment.Center });
@@ -164,6 +181,8 @@ namespace ReludualiConsole
                     System.Windows.Automation.AutomationProperties.SetAutomationId(rb, "Rail_" + t.Key);
                     Tool me = t;
                     rb.Checked += (s, e) => { if (_current != me) ShowTool(me.Key); };
+                    string cannot = Unfinished.ToolWhy(t.Key);          // a page whose tool this install does not carry: greyed, saying why
+                    if (cannot != null) Unfinished.Grey(rb, cannot);
                     t.Rail = rb;
                     items.Children.Add(rb);
                 }
@@ -183,12 +202,13 @@ namespace ReludualiConsole
                                      Child = new TextBlock { Text = n.ToString(CultureInfo.InvariantCulture), FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = Ui.Brush("Accent"),
                                                              HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center } };
             var text = new TextBlock { Text = name.ToUpperInvariant(), FontSize = 11.5, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center, Foreground = Ui.Brush("Dim") };
+            PaintExtension.Bind(text, TextBlock.FontFamilyProperty, "KickerFont");
             var row = new StackPanel { Orientation = Orientation.Horizontal };
             row.Children.Add(badge); row.Children.Add(text);
             var b = new Border { Child = row, Padding = new Thickness(14, 9, 10, 7), Margin = new Thickness(6, 4, 8, 0), CornerRadius = new CornerRadius(2), Background = Brushes.Transparent, Cursor = Cursors.Hand,
                                  ToolTip = StageNames.First(x => x[0] == stage)[2], Tag = text };
             if (StageIsLater(stage)) { b.Cursor = null; b.ToolTip = LaterCard; _stageHeads[stage] = b; return b; }    // nothing to open yet
-            b.MouseEnter += (s, e) => b.Background = new SolidColorBrush(Color.FromArgb(0x12, 255, 255, 255));
+            b.MouseEnter += (s, e) => b.Background = Ui.Brush("RailOver");
             b.MouseLeave += (s, e) => b.Background = Brushes.Transparent;
             b.MouseLeftButtonUp += (s, e) => OpenStage(stage);
             _stageHeads[stage] = b;
@@ -269,6 +289,25 @@ namespace ReludualiConsole
         private void Home_Click(object sender, RoutedEventArgs e) { ShowHome(); }
         private void Help_Click(object sender, RoutedEventArgs e) { ShowTool("help"); }
         private void Contest_Click(object sender, RoutedEventArgs e) { ShowTool("contest"); }
+        private void Account_Click(object sender, RoutedEventArgs e) { ShowTool("account"); }
+
+        /// <summary>The header's account button: your name when signed in, "Sign in" when not.</summary>
+        private void PaintAccount()
+        {
+            var me = App.Tour ? null : AccountLink.Load();
+            AccountText.Text = me == null ? "Sign in" : me.Username;
+        }
+
+        /// <summary>The update notifier's bar: a newer version (Download) or a notice from the Reluduali Server.</summary>
+        private void ShowUpdate(UpdateNotifier.Item item)
+        {
+            UpdateText.Text = item.Text;
+            UpdateBar.Tag = item.Key;
+            UpdateGo.Content = item.Button;
+            UpdateGo.Tag = item.Url;
+            UpdateGo.Visibility = item.Button != null && item.Url != null ? Visibility.Visible : Visibility.Collapsed;
+            UpdateBar.Visibility = Visibility.Visible;
+        }
         private void Site_Click(object sender, RoutedEventArgs e) { Ui.OpenWeb(TimerLink.DefaultServer); }
 
         private void OnKeys(object sender, KeyEventArgs e)
@@ -288,7 +327,13 @@ namespace ReludualiConsole
             var logo = Ui.Mark(128);
             logo.HorizontalAlignment = HorizontalAlignment.Center;
             HomePanel.Children.Add(logo);
-            HomePanel.Children.Add(new TextBlock { Text = "Reluduali", FontSize = 40, FontWeight = FontWeights.Light, Foreground = Ui.Brush("Chrome"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 0) });
+            var word = new TextBlock { Text = "Reluduali", FontSize = 40, FontWeight = FontWeights.Light, Foreground = Ui.Brush("Chrome"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 0) };
+            PaintExtension.Bind(word, VisibilityProperty, "Night");
+            HomePanel.Children.Add(word);
+            // by day the name as the site's mark has it: RELUDUALI in its grown lettering, ink, the seeds in the seed colour
+            var name = new Lettering { Height = 40, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 14, 0, 8) };
+            PaintExtension.Bind(name, VisibilityProperty, "Day");
+            HomePanel.Children.Add(name);
             HomePanel.Children.Add(new TextBlock { Text = "The Reluduali Designer: moviemaking for Black Ops II", FontSize = 14, Foreground = Ui.Brush("Dim"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 2, 0, 30) });
 
             var cards = new Grid();
@@ -320,14 +365,16 @@ namespace ReludualiConsole
         private FrameworkElement StageCard(int n, string stage, string name, string blurb)
         {
             var p = new StackPanel();
-            p.Children.Add(new TextBlock { Text = n.ToString(CultureInfo.InvariantCulture), FontSize = 13, FontWeight = FontWeights.SemiBold, Foreground = Ui.Brush("Accent"), Margin = new Thickness(0, 0, 0, 6) });
-            p.Children.Add(new TextBlock { Text = name, FontSize = 26, FontWeight = FontWeights.Light, Foreground = Ui.Brush("Chrome"), TextWrapping = TextWrapping.Wrap });
+            var number = new TextBlock { Text = n.ToString(CultureInfo.InvariantCulture), FontSize = 13, FontWeight = FontWeights.SemiBold, Foreground = Ui.Brush("Accent"), Margin = new Thickness(0, 0, 0, 6) };
+            PaintExtension.Bind(number, TextBlock.FontFamilyProperty, "KickerFont");
+            p.Children.Add(number);
+            p.Children.Add(Ui.Title(new TextBlock { Text = name, FontSize = 26, FontWeight = FontWeights.Light, Foreground = Ui.Brush("Chrome"), TextWrapping = TextWrapping.Wrap }, "BigWeight"));
             p.Children.Add(new TextBlock { Text = blurb, FontSize = 13.5, Foreground = Ui.Brush("Dim"), Margin = new Thickness(0, 6, 0, 18), TextWrapping = TextWrapping.Wrap });
             if (StageIsLater(stage))
             {
                 // a stage that comes in a later version: its card says so, quieter than the others, and opens nothing
                 p.Children.Add(new TextBlock { Text = LaterCard, FontSize = 13.5, FontStyle = FontStyles.Italic, Foreground = Ui.Brush("AccentPale"), TextWrapping = TextWrapping.Wrap });
-                return new Border { Style = Ui.Style("Card"), Child = p, Margin = new Thickness(10, 0, 10, 0), Padding = new Thickness(22, 20, 22, 22), CornerRadius = new CornerRadius(3), Opacity = 0.7 };
+                return new PrintCard { Child = p, Margin = new Thickness(10, 0, 10, 0), Padding = new Thickness(22, 20, 22, 22), CornerRadius = new CornerRadius(3), Opacity = 0.7 };
             }
             var chips = new WrapPanel();
             string group = null;
@@ -338,13 +385,15 @@ namespace ReludualiConsole
                 group = t.Group;
                 var chip = new Button { Content = Ui.IconText(t.Icon, t.Title), ToolTip = t.Blurb, Margin = new Thickness(0, 0, 6, 6), Padding = new Thickness(10, 4, 10, 4), FontSize = 12.5 };
                 chip.Click += (s, e) => { ShowTool(me.Key); e.Handled = true; };
+                string cannot = Unfinished.ToolWhy(t.Key);
+                if (cannot != null) Unfinished.Grey(chip, cannot);
                 chips.Children.Add(chip);
             }
             p.Children.Add(chips);
             var open = Ui.Primary(new Button { Content = "Open " + name, Margin = new Thickness(0, 14, 0, 0), HorizontalAlignment = HorizontalAlignment.Left });
             open.Click += (s, e) => OpenStage(stage);
             p.Children.Add(open);
-            var card = new Border { Style = Ui.Style("Card"), Child = p, Margin = new Thickness(10, 0, 10, 0), Padding = new Thickness(22, 20, 22, 22), CornerRadius = new CornerRadius(3) };
+            var card = new PrintCard { Child = p, Margin = new Thickness(10, 0, 10, 0), Padding = new Thickness(22, 20, 22, 22), CornerRadius = new CornerRadius(3) };
             card.MouseEnter += (s, e) => card.BorderBrush = Ui.Brush("RimHi");
             card.MouseLeave += (s, e) => card.BorderBrush = Ui.Brush("RimSoft");
             return card;
@@ -355,11 +404,14 @@ namespace ReludualiConsole
         {
             try
             {
-                var brush = ((LinearGradientBrush)Ui.Brush("RimLine")).Clone();
+                var brush = ((LinearGradientBrush)Ui.Brush("RimLine")).CloneCurrentValue();
                 HeaderRim.Background = brush;
                 var shift = new TranslateTransform();
                 brush.RelativeTransform = shift;
-                shift.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(-0.6, 0, TimeSpan.FromMilliseconds(1400)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+                var sweep = new DoubleAnimation(-0.6, 0, TimeSpan.FromMilliseconds(1400)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
+                // then the rim the skin keeps (it follows the pointer, and day and night)
+                sweep.Completed += (s, e) => HeaderRim.Background = Ui.Brush("RimLine");
+                shift.BeginAnimation(TranslateTransform.XProperty, sweep);
             }
             catch (Exception ex) { App.Note("the header's glint", ex); }
         }

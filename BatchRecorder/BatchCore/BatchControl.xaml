@@ -1,6 +1,7 @@
 <UserControl x:Class="BatchRecorder.BatchControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:BatchRecorder"
              Foreground="#FFE0E0E0">
   <!-- Layout (2026-10-14): where the takes come from and the CFG sent before each; how they record;
        run; the takes and the log; the tools for when something is stuck, folded away. -->
@@ -38,9 +39,9 @@
         <ColumnDefinition Width="12"/>
         <ColumnDefinition Width="9*"/>
       </Grid.ColumnDefinitions>
-      <Border Style="{DynamicResource Card}" Padding="14,10,14,6">
+      <local:CardBorder Style="{DynamicResource Card}" Padding="14,10,14,6">
         <StackPanel>
-          <TextBlock Text="Takes" FontWeight="SemiBold" FontSize="14.5" Margin="0,0,0,8"/>
+          <TextBlock Text="Takes" FontWeight="SemiBold" FontFamily="{DynamicResource TitleFont}" FontSize="14.5" Margin="0,0,0,8"/>
           <Grid Margin="0,0,0,6">
             <Grid.ColumnDefinitions>
               <ColumnDefinition Width="110"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
@@ -65,29 +66,29 @@
             <TextBox Grid.Column="1" x:Name="OutBox"/>
           </Grid>
         </StackPanel>
-      </Border>
+      </local:CardBorder>
 
       <!-- The CFG (Mycelium, 2026-10-01): sent right before every recording, as an editor sends
            their CFG before they hit record. Kept in BatchRecorder.cfg beside the DLL. -->
-      <Border Grid.Column="2" Style="{DynamicResource Card}" Padding="14,10,14,10">
+      <local:CardBorder Grid.Column="2" Style="{DynamicResource Card}" Padding="14,10,14,10">
         <DockPanel>
           <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
             <Button DockPanel.Dock="Right" Content="Send now" Click="CfgSend_Click" Padding="12,3"
                     ToolTip="Send the CFG to the game now, to see what it does."/>
-            <TextBlock Text="CFG before every recording" FontWeight="SemiBold" FontSize="14.5" VerticalAlignment="Center"
+            <TextBlock Text="CFG before every recording" FontWeight="SemiBold" FontFamily="{DynamicResource TitleFont}" FontSize="14.5" VerticalAlignment="Center"
                        ToolTip="Sent right before every recording. One command or 'dvar value' per line; // for comments. Dvars are written straight in, so protected ones take it too."/>
           </DockPanel>
           <TextBox x:Name="CfgBox" Height="100" AcceptsReturn="True" AcceptsTab="True" TextWrapping="NoWrap"
                    VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
                    FontFamily="Cascadia Mono, Consolas" FontSize="12"/>
         </DockPanel>
-      </Border>
+      </local:CardBorder>
     </Grid>
 
     <!-- ============================================ how they record -->
-    <Border Grid.Row="1" Style="{DynamicResource Card}" Padding="14,10,14,4" Margin="0,0,0,10">
+    <local:CardBorder Grid.Row="1" Style="{DynamicResource Card}" Padding="14,10,14,4" Margin="0,0,0,10">
       <StackPanel>
-        <TextBlock Text="Recording" FontWeight="SemiBold" FontSize="14.5" Margin="0,0,0,8"/>
+        <TextBlock Text="Recording" FontWeight="SemiBold" FontFamily="{DynamicResource TitleFont}" FontSize="14.5" Margin="0,0,0,8"/>
         <WrapPanel Orientation="Horizontal">
           <TextBlock Text="fps" VerticalAlignment="Center" Opacity="0.75" Margin="0,0,0,6"/>
           <TextBox x:Name="FpsBox" Text="1000" Width="64" Margin="8,0,18,6">
@@ -138,10 +139,10 @@
                    ToolTip="Full path to ffmpeg.exe"/>
         </WrapPanel>
       </StackPanel>
-    </Border>
+    </local:CardBorder>
 
     <!-- ============================================ run: the switches, then the buttons; the clock's zero beside them -->
-    <Border Grid.Row="2" Style="{DynamicResource Card}" Padding="14,10,14,4" Margin="0,0,0,10">
+    <local:CardBorder Grid.Row="2" Style="{DynamicResource Card}" Padding="14,10,14,4" Margin="0,0,0,10">
       <WrapPanel Orientation="Horizontal">
         <Button x:Name="AllButton" Content="Run all" Padding="18,5" Margin="0,0,8,6" Click="RunAll_Click" Style="{DynamicResource PrimaryButton}"
                 ToolTip="Record every take in the list, one after the other"/>
@@ -157,7 +158,7 @@
         <TextBlock x:Name="ZeroText" Text="zero: measure" VerticalAlignment="Center" Margin="0,0,10,6" Opacity="0.8"/>
         <Button Content="Calibrate" Padding="10,3" Margin="0,0,0,6" Click="Calibrate_Click"/>
       </WrapPanel>
-    </Border>
+    </local:CardBorder>
 
     <!-- ============================================ the takes and the log -->
     <Grid Grid.Row="3">

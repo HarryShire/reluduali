@@ -21,6 +21,8 @@ namespace ReludualiConsole
         /// <summary>COLORREF: 0x00BBGGRR.</summary>
         private static int Ref(byte r, byte g, byte b) { return r | (g << 8) | (b << 16); }
 
+        /// <summary>The frame in the skin's colours: by night as above; by day (Skin.cs) a light title bar the pearl of the
+        /// site's cards, ink letters and the site's edge blue round it. Called again for every window when the skin turns.</summary>
         public static void Frame(Window w)
         {
             try
@@ -28,6 +30,11 @@ namespace ReludualiConsole
                 IntPtr h = new WindowInteropHelper(w).Handle;
                 if (h == IntPtr.Zero) return;
                 int on = 1, caption = Ref(0x1F, 0x16, 0x22), text = Ref(0xDD, 0xD3, 0xEC), border = Ref(0xB1, 0x60, 0xF5);
+                if (Skin.Now.IsLight)
+                {
+                    System.Windows.Media.Color c = (System.Windows.Media.Color)Skin.Now["Back"], t = (System.Windows.Media.Color)Skin.Now["Text"], e = (System.Windows.Media.Color)Skin.Now["Line"];
+                    on = 0; caption = Ref(c.R, c.G, c.B); text = Ref(t.R, t.G, t.B); border = Ref(e.R, e.G, e.B);
+                }
                 DwmSetWindowAttribute(h, DarkMode, ref on, 4);
                 DwmSetWindowAttribute(h, CaptionColour, ref caption, 4);
                 DwmSetWindowAttribute(h, TextColour, ref text, 4);

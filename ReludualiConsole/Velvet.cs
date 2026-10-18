@@ -23,15 +23,18 @@ namespace ReludualiConsole
     /// - The edges are the website's holographic foil (#ff4fae #ffd24f #4fffc0 #4fb4ff #b44fff at 115 degrees over
     ///   pearl), moved by the pointer (FollowPointer): Theme.xaml binds its FoilShift to Foil.
     /// - Contrast (Setup > Appearance; "contrast" in the Designer's places.txt: soft, normal or high) sets the letters, the
-    ///   lines and how strong the texture is. It is read when the theme loads, so a change shows after a restart.
+    ///   lines and how strong the texture is. The Designer's Skin.cs asks for a contrast's colours and surfaces by name
+    ///   (TextFor, DeepFor ...), so a change shows at once; the properties without a name are the contrast saved when the
+    ///   program started (the installer's).
     ///
-    /// Theme.xaml builds its brushes with these pictures and colours ({x:Static}); WPF freezes those brushes as the theme
-    /// loads, so nothing here changes a brush afterwards. The installer links this file for the same surfaces.
+    /// The Designer's Theme.xaml takes these through Skin.cs (the dark half of its day and night). The installer links this
+    /// file for the same surfaces.
     /// </summary>
     public static class Velvet
     {
         // ------------------------------------------------------------------ the contrast setting
-        /// <summary>"soft", "normal" or "high", from %LOCALAPPDATA%\Reluduali\Console\places.txt (its "contrast" line).</summary>
+        /// <summary>"soft", "normal" or "high", from %LOCALAPPDATA%\Reluduali\Console\places.txt (its "contrast" line), as it
+        /// was when the program started.</summary>
         public static readonly string Contrast = ReadContrast();
         static string ReadContrast()
         {
@@ -49,17 +52,22 @@ namespace ReludualiConsole
             catch { }
             return "normal";
         }
-        static bool High { get { return Contrast == "high"; } }
-        static bool Soft { get { return Contrast == "soft"; } }
 
         // ------------------------------------------------------------------ colours that follow the contrast
-        public static Color TextColor { get { return High ? C(0xFFFFFFFF) : Soft ? C(0xFFD6CDD8) : C(0xFFE6DEE8); } }
-        public static Color DimColor { get { return High ? C(0xFFCBBECD) : Soft ? C(0xFF968799) : C(0xFFA797AA); } }
-        public static Color ChromeColor { get { return High ? C(0xFFFFFFFF) : C(0xFFF6F0F7); } }
-        public static Color BorderColor { get { return High ? C(0xFF7C6B7F) : Soft ? C(0xFF4B3C4E) : C(0xFF544457); } }
-        public static Color BackColor { get { return High ? C(0xFF221925) : C(0xFF2B2030); } }
-        public static Color InsetColor { get { return High ? C(0xFF19121B) : C(0xFF221924); } }
-        static Color C(uint argb) { return Color.FromArgb((byte)(argb >> 24), (byte)(argb >> 16), (byte)(argb >> 8), (byte)argb); }
+        public static Color TextColor { get { return TextFor(Contrast); } }
+        public static Color DimColor { get { return DimFor(Contrast); } }
+        public static Color ChromeColor { get { return ChromeFor(Contrast); } }
+        public static Color BorderColor { get { return BorderFor(Contrast); } }
+        public static Color BackColor { get { return BackFor(Contrast); } }
+        public static Color InsetColor { get { return InsetFor(Contrast); } }
+
+        public static Color TextFor(string c) { return c == "high" ? C(0xFFFFFFFF) : c == "soft" ? C(0xFFD6CDD8) : C(0xFFE6DEE8); }
+        public static Color DimFor(string c) { return c == "high" ? C(0xFFCBBECD) : c == "soft" ? C(0xFF968799) : C(0xFFA797AA); }
+        public static Color ChromeFor(string c) { return c == "high" ? C(0xFFFFFFFF) : C(0xFFF6F0F7); }
+        public static Color BorderFor(string c) { return c == "high" ? C(0xFF7C6B7F) : c == "soft" ? C(0xFF4B3C4E) : C(0xFF544457); }
+        public static Color BackFor(string c) { return c == "high" ? C(0xFF221925) : C(0xFF2B2030); }
+        public static Color InsetFor(string c) { return c == "high" ? C(0xFF19121B) : C(0xFF221924); }
+        internal static Color C(uint argb) { return Color.FromArgb((byte)(argb >> 24), (byte)(argb >> 16), (byte)(argb >> 8), (byte)argb); }
 
         // ------------------------------------------------------------------ the foil's light
         /// <summary>Where the foil's light is: the pointer, as a fraction of its window (bound by Theme.xaml's FoilShift;
@@ -98,7 +106,8 @@ namespace ReludualiConsole
         // a 3D view or the game's slot: the theme's device black
         static readonly uint[] View = { 0xFF141012, 0xFF181316, 0xFF1C161A };
 
-        static readonly int[] B = { 0, 32, 8, 40, 2, 34, 10, 42, 48, 16, 56, 24, 50, 18, 58, 26, 12, 44, 4, 36, 14, 46, 6, 38, 60, 28, 52, 20, 62, 30, 54, 22,
+        /// <summary>The 8x8 ordered (Bayer) pattern of reluduali.com's cards, world and velvet, row by row.</summary>
+        internal static readonly int[] B = { 0, 32, 8, 40, 2, 34, 10, 42, 48, 16, 56, 24, 50, 18, 58, 26, 12, 44, 4, 36, 14, 46, 6, 38, 60, 28, 52, 20, 62, 30, 54, 22,
                                     3, 35, 11, 43, 1, 33, 9, 41, 51, 19, 59, 27, 49, 17, 57, 25, 15, 47, 7, 39, 13, 45, 5, 37, 63, 31, 55, 23, 61, 29, 53, 21 };
 
         /// <summary>A tile's size: 256 x 256 pixels, a cell two of them; the pile's lattice repeats inside it, so the tile
@@ -106,28 +115,49 @@ namespace ReludualiConsole
         public const int Tile = 256;
 
         // how much of a surface's look is the pile (the rest is the shade): high contrast keeps the texture quiet
-        static double Nap { get { return High ? 0.35 : Soft ? 0.85 : 0.65; } }
+        static double NapFor(string c) { return c == "high" ? 0.35 : c == "soft" ? 0.85 : 0.65; }
 
-        static BitmapSource _deep, _card, _rail, _view;
         /// <summary>The page: velvet over a shade, lighter at the top.</summary>
-        public static BitmapSource DeepImage { get { return _deep ?? (_deep = Surface(Page, 3, 0.0, 1.0, 2160)); } }
+        public static BitmapSource DeepImage { get { return DeepFor(Contrast); } }
         /// <summary>A card: velvet, even from top to foot.</summary>
-        public static BitmapSource CardImage { get { return _card ?? (_card = Surface(Card, 11, 0.45, 0.45, Tile)); } }
+        public static BitmapSource CardImage { get { return CardFor(Contrast); } }
         /// <summary>The window's frame, the header and the rail.</summary>
-        public static BitmapSource RailImage { get { return _rail ?? (_rail = Surface(Frame, 7, 0.2, 0.8, 2160)); } }
+        public static BitmapSource RailImage { get { return RailFor(Contrast); } }
         /// <summary>A 3D view's ground and the game's slot: the device black, barely textured.</summary>
-        public static BitmapSource ViewImage { get { return _view ?? (_view = Surface(View, 5, 0.5, 0.5, Tile)); } }
+        public static BitmapSource ViewImage { get { return ViewFor(Contrast); } }
+
+        // each surface made once for each contrast asked for
+        static readonly System.Collections.Generic.Dictionary<string, BitmapSource> _made = new System.Collections.Generic.Dictionary<string, BitmapSource>();
+        static BitmapSource Made(string key, Func<BitmapSource> make)
+        {
+            lock (_made)
+            {
+                BitmapSource b;
+                if (!_made.TryGetValue(key, out b)) _made[key] = b = make();
+                return b;
+            }
+        }
+        public static BitmapSource DeepFor(string c) { return Made("deep " + c, () => Surface(Page, 3, 0.0, 1.0, 2160, NapFor(c))); }
+        public static BitmapSource CardFor(string c) { return Made("card " + c, () => Surface(Card, 11, 0.45, 0.45, Tile, NapFor(c))); }
+        public static BitmapSource RailFor(string c) { return Made("rail " + c, () => Surface(Frame, 7, 0.2, 0.8, 2160, NapFor(c))); }
+        public static BitmapSource ViewFor(string c) { return Made("view " + c, () => Surface(View, 5, 0.5, 0.5, Tile, NapFor(c))); }
+
+        /// <summary>A surface at the contrast the program started with.</summary>
+        public static BitmapSource Surface(uint[] tones, int seed, double from, double to, int height)
+        {
+            return Surface(tones, seed, from, to, height, NapFor(Contrast));
+        }
 
         /// <summary>A surface: Tile pixels wide, <paramref name="height"/> tall (Tile, or 2160 for a page's shade); each
-        /// two-pixel cell put on one of the tones by the pile (Nap of it) and the shade from <paramref name="from"/> at the top
-        /// to <paramref name="to"/> at the foot (0 = the lightest tone), through the 8x8 ordered pattern.</summary>
-        public static BitmapSource Surface(uint[] tones, int seed, double from, double to, int height)
+        /// two-pixel cell put on one of the tones by the pile (<paramref name="nap"/> of it) and the shade from
+        /// <paramref name="from"/> at the top to <paramref name="to"/> at the foot (0 = the lightest tone), through the 8x8
+        /// ordered pattern.</summary>
+        public static BitmapSource Surface(uint[] tones, int seed, double from, double to, int height, double nap)
         {
             int cw = Tile / 2, ch = height / 2, levels = tones.Length - 1;
             // the pile, on a lattice of 8 x 12 noise cells across the tile (longer across than down), repeating
             const int px = 8, py = 12;
             double su = cw / (double)px, sv = (Tile / 2) / (double)py;
-            double nap = Nap;
             var pixels = new uint[Tile * height];
             for (int y = 0; y < ch; y++)
             {
@@ -152,7 +182,7 @@ namespace ReludualiConsole
         }
 
         // value noise on a lattice that wraps every (px, py) cells at the base octave, doubling with each octave
-        static double Hash(int ix, int iy, int seed)
+        internal static double Hash(int ix, int iy, int seed)
         {
             unchecked
             {
@@ -172,7 +202,7 @@ namespace ReludualiConsole
             return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
         }
 
-        static double Fbm(double x, double y, int seed, int px, int py)
+        internal static double Fbm(double x, double y, int seed, int px, int py)
         {
             double v = 0, amp = 0.5;
             for (int o = 0, f = 1; o < 3; o++, f *= 2) { v += amp * Noise(x * f, y * f, seed + o, px * f, py * f); amp *= 0.5; }

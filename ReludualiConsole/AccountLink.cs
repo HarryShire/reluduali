@@ -29,7 +29,10 @@ namespace ReludualiConsole
     /// </summary>
     public sealed class AccountLink : IDisposable
     {
-        public static readonly string[] Scopes = { "friends", "contests", "hand-in" };
+        // "shares" (2026-10-18): putting the person's camos, CFGs, presets and looks on reluduali.com. A site that does not know
+        // it yet refuses the code; then the Designer asks again without it (Start), and sharing says to sign in again later
+        public static readonly string[] Scopes = { "friends", "contests", "hand-in", "shares" };
+        public static readonly string[] OlderScopes = { "friends", "contests", "hand-in" };
 
         static readonly Regex[] Allowed =
         {
@@ -41,10 +44,15 @@ namespace ReludualiConsole
             new Regex(@"^POST /api/friends/requests/[\w-]{1,64}/(accept|decline)$"),
             new Regex(@"^GET /api/contests/[\w-]{1,32}/(entry|submission)$"),
             new Regex(@"^POST /api/contests/[\w-]{1,32}/(enter|submission|join/[\w-]{1,32})$"),
+            // 2026-10-18: the update notifier (no sign-in) and sharing (the "shares" scope): docs\reluduali-server-contract.md
+            new Regex(@"^GET /api/designer/updates$"),
+            new Regex(@"^GET /api/shares$"),
+            new Regex(@"^POST /api/shares$"),
+            new Regex(@"^DELETE /api/shares/[\w-]{1,64}$"),
         };
 
         readonly HttpClient _http;
-        readonly JavaScriptSerializer _json = new JavaScriptSerializer();
+        readonly JavaScriptSerializer _json = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };    // a shared camo is megabytes
         public Uri Server { get; private set; }
         public Action<string> Log = s => { };
 
@@ -60,11 +68,12 @@ namespace ReludualiConsole
         public void Dispose() { _http.Dispose(); }
 
         /// <summary>The one door. Answers the JSON (a list comes back as "items"); a refusal throws Refused.</summary>
-        public Dictionary<string, object> Call(string method, string path, object body, string token)
+        public Dictionary<string, object> Call(string method, string path, object body, string token, IDictionary<string, string> query = null)
         {
             string what = method + " " + path;
             if (!Allowed.Any(r => r.IsMatch(what))) throw new InvalidOperationException("not one of the Console's messages: " + what);
-            var req = new HttpRequestMessage(new HttpMethod(method), path.TrimStart('/'));
+            string q = query == null || query.Count == 0 ? "" : "?" + string.Join("&", query.Select(kv => Uri.EscapeDataString(kv.Key) + "=" + Uri.EscapeDataString(kv.Value ?? "")));
+            var req = new HttpRequestMessage(new HttpMethod(method), path.TrimStart('/') + q);
             if (token != null) req.Headers.TryAddWithoutValidation("Authorization", "Bearer " + token);
             // a POST always carries a JSON object: the site answers a body of "null" with 400 (reluduali.com, 2026-10-17)
             if (body == null && method == "POST") body = new Dictionary<string, object>();
@@ -79,7 +88,7 @@ namespace ReludualiConsole
             try { parsed = _json.DeserializeObject(text); } catch { }
             var data = parsed as Dictionary<string, object>;
             if (data == null) { data = new Dictionary<string, object>(); if (parsed is IEnumerable && !(parsed is string)) data["items"] = parsed; }
-            if (status != 200)
+            if (status < 200 || status > 299)          // a 201 Created is a success too (the code review's C-26)
             {
                 object e; if (!data.TryGetValue("error", out e)) data.TryGetValue("message", out e);
                 throw new Refused(status, e as string ?? text);
@@ -88,9 +97,16 @@ namespace ReludualiConsole
         }
 
         // ---- the sign-in, kept for this Windows user ------------------------------------------------------------------
-        public sealed class SignIn { public string Token, Username, Server; }
+        public sealed class SignIn
+        {
+            public string Token, Username, Server;
+            public string[] Scopes = new string[0];          // what the person allowed (older sign-ins: unknown, so none of the new ones)
+            public bool May(string scope) { return Scopes.Contains(scope); }
+        }
 
-        static string File_ { get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Reluduali", "Console", "account.bin"); } }
+        /// <summary>--server-test keeps its sign-in apart from the person's own.</summary>
+        public static string FileOverride;
+        static string File_ { get { return FileOverride ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Reluduali", "Console", "account.bin"); } }
         static readonly byte[] Entropy = Encoding.UTF8.GetBytes("Reluduali Console account");
 
         public static SignIn Load()
@@ -99,7 +115,8 @@ namespace ReludualiConsole
             {
                 if (!File.Exists(File_)) return null;
                 string[] l = Encoding.UTF8.GetString(ProtectedData.Unprotect(File.ReadAllBytes(File_), Entropy, DataProtectionScope.CurrentUser)).Split('\n');
-                return l.Length >= 3 ? new SignIn { Token = l[0], Username = l[1], Server = l[2] } : null;
+                if (l.Length < 3) return null;
+                return new SignIn { Token = l[0], Username = l[1], Server = l[2], Scopes = l.Length >= 4 ? l[3].Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries) : new string[0] };
             }
             catch { return null; }
         }
@@ -107,12 +124,17 @@ namespace ReludualiConsole
         static void Save(SignIn s)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(File_));
-            File.WriteAllBytes(File_, ProtectedData.Protect(Encoding.UTF8.GetBytes(s.Token + "\n" + s.Username + "\n" + s.Server), Entropy, DataProtectionScope.CurrentUser));
+            File.WriteAllBytes(File_, ProtectedData.Protect(Encoding.UTF8.GetBytes(s.Token + "\n" + s.Username + "\n" + s.Server + "\n" + string.Join(" ", s.Scopes)), Entropy, DataProtectionScope.CurrentUser));
+            Changed();
         }
 
-        public static void Forget() { try { if (File.Exists(File_)) File.Delete(File_); } catch { } }
+        /// <summary>Signed in or out, anywhere in the Designer: the header's button and every Account card repaint.</summary>
+        public static event Action SignedInOrOut;
+        static void Changed() { var h = SignedInOrOut; if (h != null) try { h(); } catch { } }
 
-        public sealed class Device { public string DeviceCode, UserCode, VerifyUrl; public int IntervalS = 5; public DateTime Until; }
+        public static void Forget() { try { if (File.Exists(File_)) File.Delete(File_); } catch { } Changed(); }
+
+        public sealed class Device { public string DeviceCode, UserCode, VerifyUrl; public int IntervalS = 5; public DateTime Until; public string[] Scopes; }
 
         static string Str(Dictionary<string, object> d, params string[] keys)
         {
@@ -123,10 +145,20 @@ namespace ReludualiConsole
         /// <summary>Asks for a browser code (the Console's name and the rights it wants are shown to the person).</summary>
         public Device Start()
         {
-            // the name the site's Allow page shows the person (/device)
-            var d = Call("POST", "/api/device/start", new Dictionary<string, object> { { "client", "Reluduali Designer" }, { "scopes", Scopes } }, null);
+            // the name the site's Allow page shows the person (/device); a site that does not know "shares" yet refuses the
+            // whole list, so the Designer asks again for the rights it had before
+            string[] asked = Scopes;
+            Dictionary<string, object> d;
+            try { d = Call("POST", "/api/device/start", new Dictionary<string, object> { { "client", "Reluduali Designer" }, { "scopes", asked } }, null); }
+            catch (Refused r) when (r.Status == 400 || r.Status == 422)
+            {
+                Log("the site does not take every right asked for (" + r.Message + "): asking for the older ones");
+                asked = OlderScopes;
+                d = Call("POST", "/api/device/start", new Dictionary<string, object> { { "client", "Reluduali Designer" }, { "scopes", asked } }, null);
+            }
             var dev = new Device
             {
+                Scopes = asked,
                 DeviceCode = Str(d, "deviceCode", "device_code"),
                 UserCode = Str(d, "userCode", "user_code"),
                 VerifyUrl = Str(d, "verificationUriComplete", "verification_uri_complete", "verificationUri", "verification_uri") ?? new Uri(Server, "device").ToString(),
@@ -152,7 +184,9 @@ namespace ReludualiConsole
                     string tok = Str(d, "token", "access_token");
                     if (string.IsNullOrEmpty(tok)) continue;            // still waiting, as a 200 with no token
                     var user = d.ContainsKey("user") ? d["user"] as Dictionary<string, object> : null;
-                    var s = new SignIn { Token = tok, Username = Str(user, "username") ?? Str(d, "username") ?? "?", Server = Server.ToString() };
+                    var s = new SignIn { Token = tok, Username = Str(user, "username") ?? Str(d, "username") ?? "?", Server = Server.ToString(), Scopes = dev.Scopes ?? new string[0] };
+                    // the rights the site says it gave, when it says (else the ones asked for)
+                    object sc; if (d.TryGetValue("scopes", out sc) && sc is IEnumerable && !(sc is string)) s.Scopes = ((IEnumerable)sc).Cast<object>().Select(o => Convert.ToString(o)).ToArray();
                     Save(s);
                     return s;
                 }
@@ -216,6 +250,42 @@ namespace ReludualiConsole
         public Dictionary<string, object> HandIn(SignIn s, string contestId, string youtube, string hq)
         {
             return Call("POST", "/api/contests/" + contestId + "/submission", new Dictionary<string, object> { { "youtube", youtube.Trim() }, { "hq", hq.Trim() } }, s.Token);
+        }
+
+        // ---- sharing and updates (2026-10-18; the contract: docs\reluduali-server-contract.md) ------------------------
+        /// <summary>The most a share may carry, all its files together, before base64 (the contract's limit).</summary>
+        public const long ShareLimit = 25L * 1024 * 1024;
+
+        /// <summary>Puts one share on the site: its kind, a name, a line about it, and its files (name, bytes).</summary>
+        public Dictionary<string, object> Share(SignIn s, string kind, string name, string about, string page, IList<KeyValuePair<string, byte[]>> files)
+        {
+            long total = files.Sum(f => (long)f.Value.Length);
+            if (total > ShareLimit) throw new Refused(413, "it is " + (total / 1048576.0).ToString("0.0") + " MB; a share may be 25 MB");
+            var body = new Dictionary<string, object>
+            {
+                { "kind", kind }, { "name", name.Trim() }, { "about", (about ?? "").Trim() },
+                { "designer", new Dictionary<string, object> { { "version", Version }, { "edition", Unfinished.Edition } } },
+                { "files", files.Select(f => new Dictionary<string, object> { { "name", f.Key }, { "data", Convert.ToBase64String(f.Value) } }).ToArray() },
+            };
+            if (!string.IsNullOrEmpty(page)) body["page"] = page;
+            return Call("POST", "/api/shares", body, s.Token);
+        }
+
+        public List<Dictionary<string, object>> MyShares(SignIn s) { return Items(Call("GET", "/api/shares", null, s.Token, new Dictionary<string, string> { { "mine", "1" } })); }
+        public void Unshare(SignIn s, string id) { Call("DELETE", "/api/shares/" + id, null, s.Token); }
+
+        /// <summary>What the Reluduali Server says about this Designer: a newer version, notices. No sign-in.</summary>
+        public Dictionary<string, object> Updates()
+        {
+            return Call("GET", "/api/designer/updates", null, null, new Dictionary<string, string>
+            {
+                { "version", Version }, { "edition", Unfinished.Edition }, { "channel", Unfinished.Channel },
+            });
+        }
+
+        public static string Version
+        {
+            get { var v = typeof(AccountLink).Assembly.GetName().Version; return v.Major + "." + v.Minor + "." + v.Build; }
         }
     }
 }

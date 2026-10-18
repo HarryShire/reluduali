@@ -39,9 +39,9 @@ namespace ReludualiConsole
     {
         readonly Func<IntPtr> _gameWindow;
         readonly Canvas _bar = new Canvas { Height = 20, ClipToBounds = true, Cursor = Cursors.Hand, Background = Ui.Brush("Inset") };
-        readonly Rectangle _fill = new Rectangle { Height = 20, Fill = new SolidColorBrush(Color.FromArgb(150, 0xBF, 0x90, 0xC6)) };   // the lilac
-        readonly Rectangle _head = new Rectangle { Width = 2, Height = 20, Fill = Brushes.White };
-        readonly Rectangle _target = new Rectangle { Width = 2, Height = 20, Fill = new SolidColorBrush(Color.FromRgb(0xF0, 0x8A, 0x24)), Visibility = Visibility.Collapsed };
+        readonly Rectangle _fill = new Rectangle { Height = 20, Fill = Ui.Brush("TlFill") };   // night the lilac, day the edge's blue (Skin.cs)
+        readonly Rectangle _head = new Rectangle { Width = 2, Height = 20, Fill = Ui.Brush("TlHead") };
+        readonly Rectangle _target = new Rectangle { Width = 2, Height = 20, Fill = Ui.Brush("TlTarget"), Visibility = Visibility.Collapsed };
         readonly List<Rectangle> _marks = new List<Rectangle>();
         readonly List<Rectangle> _kfMarks = new List<Rectangle>();
         readonly TextBlock _time = new TextBlock { Foreground = Ui.Brush("Dim"), FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 4, 0), MinWidth = 150 };
@@ -258,14 +258,14 @@ namespace ReludualiConsole
             _fill.Width = Math.Max(0, x);
             _head.Visibility = Visibility.Visible;
             Canvas.SetLeft(_head, Math.Max(0, x - 1));
-            while (_marks.Count < _markTicks.Length) { var r = new Rectangle { Width = 3, Height = 9, Fill = new SolidColorBrush(Color.FromRgb(0x78, 0xDC, 0xFF)) }; _marks.Add(r); _bar.Children.Add(r); }
+            while (_marks.Count < _markTicks.Length) { var r = new Rectangle { Width = 3, Height = 9, Fill = Ui.Brush("TlMark") }; _marks.Add(r); _bar.Children.Add(r); }
             for (int i = 0; i < _marks.Count; i++)
             {
                 bool on = i < _markTicks.Length && _markTicks[i] >= _start && _markTicks[i] <= _end;
                 _marks[i].Visibility = on ? Visibility.Visible : Visibility.Collapsed;
                 if (on) { Canvas.SetLeft(_marks[i], w * (_markTicks[i] - _start) / (double)(_end - _start) - 1); Canvas.SetTop(_marks[i], 11); }
             }
-            while (_kfMarks.Count < _kfTicks.Length) { var r = new Rectangle { Width = 1, Height = 4, Fill = new SolidColorBrush(Color.FromArgb(200, 0xE9, 0xD5, 0xFF)) }; _kfMarks.Add(r); _bar.Children.Add(r); }
+            while (_kfMarks.Count < _kfTicks.Length) { var r = new Rectangle { Width = 1, Height = 4, Fill = Ui.Brush("TlKey") }; _kfMarks.Add(r); _bar.Children.Add(r); }
             for (int i = 0; i < _kfMarks.Count; i++)
             {
                 bool on = i < _kfTicks.Length && _kfTicks[i] >= _start && _kfTicks[i] <= _end;

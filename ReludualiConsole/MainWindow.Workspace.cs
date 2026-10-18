@@ -95,7 +95,7 @@ namespace ReludualiConsole
             bar.Children.Add(new TextBlock { Text = "\uE7F4", FontFamily = Ui.IconFont, FontSize = 13, Foreground = Ui.Brush("Accent"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) });
             bar.Children.Add(_slotText);
             _slotHole = new Border { Background = Ui.Brush("ViewBack"), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
-                                     Child = new TextBlock { Text = "Start Redacted: the game comes in here.", Foreground = Ui.Brush("Dim"), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center } };
+                                     Child = new TextBlock { Text = "Start Redacted: the game comes in here.", Foreground = Ui.Brush("ViewText"), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center } };
             _slotBody = new Grid { Margin = new Thickness(6, 0, 6, 6), ClipToBounds = true };
             _slotBody.Children.Add(_slotHole);
             _slotBody.SizeChanged += (s, e) => SizeHole();

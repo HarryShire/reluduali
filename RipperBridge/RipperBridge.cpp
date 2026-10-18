@@ -2474,6 +2474,455 @@ static const int kAssetWorld = 17;
 
 // The surfaces nobody sees: a material whose name has one of these as a word ("wpc/sky_raid", "mc/clip"; not
 // "skyscraper").
+// ---- dev46: the map's records, raw, for the Blender export without C2M (2026-10-17; testing\map-export-2026-10-17) ----
+// "map probe <dir>": with a map loaded, its records written to <dir>\records.bin (memory read only, nothing written in
+// the game) to be decoded offline: the world record and every array it points to (the vertex stream whole, the
+// surfaces, the static models' placements); every surface's material, what the material points to, and what that
+// points to; the static models' records likewise; the collision record and its entity text. Each record in the file:
+// "RREC", u32 kind, u32 address, u32 length, the bytes. strings.txt: every address found to hold a name.
+struct ProbeSet { DWORD *slot; DWORD cap; DWORD n; };
+static bool ProbeSeen(ProbeSet &s, DWORD v)                  // true if v was there already (else it is added)
+{
+    if (!s.slot) { s.cap = 1u << 20; s.slot = (DWORD *)calloc(s.cap, 4); s.n = 0; if (!s.slot) return true; }
+    if (s.n * 2 > s.cap) return true;                         // full: treat as seen (the probe only gets shorter)
+    DWORD i = (v * 2654435761u) & (s.cap - 1);
+    while (s.slot[i]) { if (s.slot[i] == v) return true; i = (i + 1) & (s.cap - 1); }
+    s.slot[i] = v; s.n++; return false;
+}
+static size_t ProbeLeft(const void *p)                        // readable bytes from p to the end of its region
+{
+    if ((size_t)p < 0x10000) return 0;
+    MEMORY_BASIC_INFORMATION mi;
+    if (!VirtualQuery(p, &mi, sizeof(mi)) || mi.State != MEM_COMMIT || (mi.Protect & (PAGE_NOACCESS | PAGE_GUARD)) || !mi.Protect) return 0;
+    return (size_t)((BYTE *)mi.BaseAddress + mi.RegionSize - (BYTE *)p);
+}
+struct ProbeOut { FILE *rec, *txt; ProbeSet seen, named; size_t total; DWORD records; };
+static void ProbeWrite(ProbeOut &o, DWORD kind, const void *p, size_t want)
+{
+    size_t n = ProbeLeft(p); if (n > want) n = want;
+    if (!n || o.total + n > (size_t)400 << 20) return;        // 400 MB at most in all
+    BYTE *buf = (BYTE *)malloc(n); if (!buf) return;
+    if (SafeCopy(buf, p, n)) {
+        DWORD h[4] = { 0x43455252u /* RREC */, kind, (DWORD)(size_t)p, (DWORD)n };
+        fwrite(h, 4, 4, o.rec); fwrite(buf, 1, n, o.rec); o.total += n; o.records++;
+    }
+    free(buf);
+}
+static void ProbeName(ProbeOut &o, const void *p)            // a name at p (or p points to one), once
+{
+    char s[300];
+    if (ProbeSeen(o.named, (DWORD)(size_t)p)) return;
+    if (SafeStr((const char *)p, s, sizeof(s)) && strlen(s) >= 2) fprintf(o.txt, "%08lX\t%s\n", (DWORD)(size_t)p, s);
+    const char *q = 0;
+    if (SafeCopy(&q, p, 4) && SafeStr(q, s, sizeof(s)) && strlen(s) >= 2) fprintf(o.txt, "%08lX\t->%08lX\t%s\n", (DWORD)(size_t)p, (DWORD)(size_t)q, s);
+}
+// a record and, for every word in it that points somewhere readable, that place too (depth levels down)
+static void ProbeTree(ProbeOut &o, DWORD kind, const void *p, size_t len, int depth, size_t childLen)
+{
+    if (ProbeSeen(o.seen, (DWORD)(size_t)p)) return;
+    ProbeWrite(o, kind, p, len);
+    ProbeName(o, p);
+    if (depth <= 0) return;
+    size_t n = ProbeLeft(p); if (n > len) n = len;
+    DWORD *w = (DWORD *)malloc(n + 4); if (!w) return;
+    if (SafeCopy(w, p, n & ~3u))
+        for (size_t i = 0; i < n / 4; i++)
+            if (w[i] >= 0x10000 && ProbeLeft((void *)(size_t)w[i]) >= 4) ProbeTree(o, kind + 1, (void *)(size_t)w[i], childLen, depth - 1, childLen);
+    free(w);
+}
+
+static bool MapProbe(const char *dir, char *out, size_t cap)
+{
+    char dv[256], map[64], want[96], got[160], path[600];
+    if (!DvarLookup("cl_ingame", dv, sizeof(dv)) || strcmp(dv, "cl_ingame bool 1") != 0) { _snprintf_s(out, cap, _TRUNCATE, "error no map is loaded: play a film first"); return false; }
+    if (!DvarLookup("mapname", dv, sizeof(dv))) { _snprintf_s(out, cap, _TRUNCATE, "error no mapname dvar"); return false; }
+    const char *q = strchr(dv, '"'), *q2 = q ? strchr(q + 1, '"') : NULL;
+    if (!q || !q2 || q2 - q - 1 <= 0 || q2 - q - 1 >= (int)sizeof(map)) { _snprintf_s(out, cap, _TRUNCATE, "error no map is loaded"); return false; }
+    memcpy(map, q + 1, q2 - q - 1); map[q2 - q - 1] = 0;
+    _snprintf_s(want, sizeof(want), _TRUNCATE, "maps/mp/%s.d3dbsp", map);
+    BYTE *w = FindAsset(kAssetWorld, want, 0);
+    AssetName(w, got, sizeof(got));
+    if (!w || _stricmp(got, want)) { _snprintf_s(out, cap, _TRUNCATE, "error %s is not loaded", map); return false; }
+    CreateDirectoryA(dir, NULL);
+    ProbeOut o = {};
+    _snprintf_s(path, sizeof(path), _TRUNCATE, "%s\\records.bin", dir);
+    if (fopen_s(&o.rec, path, "wb") || !o.rec) { _snprintf_s(out, cap, _TRUNCATE, "error cannot write %s", path); return false; }
+    _snprintf_s(path, sizeof(path), _TRUNCATE, "%s\\strings.txt", dir);
+    if (fopen_s(&o.txt, path, "w") || !o.txt) { fclose(o.rec); _snprintf_s(out, cap, _TRUNCATE, "error cannot write %s", path); return false; }
+    fprintf(o.txt, "# map %s, world record %08lX\n", map, (DWORD)(size_t)w);
+
+    // kind 1: the world record (0x400); kind 2: what each of its words points to (the measured arrays whole, others 64 KB)
+    DWORD rec[256] = {};
+    SafeCopy(rec, w, sizeof(rec));
+    ProbeWrite(o, 1, w, sizeof(rec)); ProbeSeen(o.seen, (DWORD)(size_t)w);
+    DWORD posSize = rec[0x1AC / 4], idxCount = rec[0x1C4 / 4], nAll = rec[0x10 / 4], nStatic = rec[0x310 / 4];
+    for (int i = 0; i < 256; i++) {
+        DWORD v = rec[i];
+        if (v < 0x10000 || !ProbeLeft((void *)(size_t)v) || ProbeSeen(o.seen, v)) continue;
+        size_t len = 0x10000;
+        if (i * 4 == 0x1B0) len = posSize;                                   // the vertex stream
+        else if (i * 4 == 0x1BC) len = (size_t)posSize;                      // the second stream (its size: to find)
+        else if (i * 4 == 0x1C8) len = (size_t)idxCount * 2;
+        else if (i * 4 == 0x368) len = (size_t)nAll * 80;
+        else if (i * 4 == 0x364 || i * 4 == 0x36C) len = (size_t)nStatic * 128;
+        else if (v > (DWORD)(size_t)w - 0x400000 && v < (DWORD)(size_t)w + 0x400000) len = 0x40000;
+        fprintf(o.txt, "# field +0x%03X -> %08lX (%u bytes asked)\n", i * 4, v, (unsigned)len);
+        ProbeWrite(o, 2, (void *)(size_t)v, len);
+        ProbeName(o, (void *)(size_t)v);
+    }
+    // kind 10-13: every surface's material, then two levels of what it points to (0x200, then 0x100 each)
+    DWORD *surf = (DWORD *)malloc((size_t)nAll * 80);
+    DWORD mats = 0;
+    if (surf && nAll && nAll < 400000 && SafeCopy(surf, (void *)(size_t)rec[0x368 / 4], (size_t)nAll * 80))
+        for (DWORD s = 0; s < nAll; s++) {
+            DWORD m = surf[s * 20 + 12];
+            if (m < 0x10000 || ProbeLeft((void *)(size_t)m) < 4) continue;
+            if (!ProbeSeen(o.seen, m)) { ProbeSeen(o.seen, m); ProbeWrite(o, 10, (void *)(size_t)m, 0x200); ProbeName(o, (void *)(size_t)m); mats++;
+                DWORD mw[128] = {};
+                SafeCopy(mw, (void *)(size_t)m, sizeof(mw));
+                for (int k = 0; k < 128; k++)
+                    if (mw[k] >= 0x10000 && ProbeLeft((void *)(size_t)mw[k]) >= 4) ProbeTree(o, 11, (void *)(size_t)mw[k], 0x100, 1, 0x80);
+            }
+        }
+    free(surf);
+    // kind 20-22: the static models: every distinct pointer in the placements that leads to a named record, and below it
+    DWORD models = 0;
+    size_t plen = (size_t)nStatic * 128;
+    DWORD *pl = nStatic && nStatic < 200000 ? (DWORD *)malloc(plen) : NULL;
+    if (pl && SafeCopy(pl, (void *)(size_t)rec[0x36C / 4], ProbeLeft((void *)(size_t)rec[0x36C / 4]) < plen ? ProbeLeft((void *)(size_t)rec[0x36C / 4]) & ~3u : plen)) {
+        for (size_t i = 0; i < plen / 4; i++) {
+            DWORD v = pl[i]; const char *nm = 0; char s[200];
+            if (v < 0x10000 || ProbeLeft((void *)(size_t)v) < 8 || !SafeCopy(&nm, (void *)(size_t)v, 4) || !SafeStr(nm, s, sizeof(s))) continue;
+            if (ProbeSeen(o.seen, v)) continue;
+            models++;
+            ProbeWrite(o, 20, (void *)(size_t)v, 0x200); ProbeName(o, (void *)(size_t)v);
+            DWORD mw[128] = {};
+            SafeCopy(mw, (void *)(size_t)v, sizeof(mw));
+            for (int k = 0; k < 128; k++)
+                if (mw[k] >= 0x10000 && ProbeLeft((void *)(size_t)mw[k]) >= 4) ProbeTree(o, 21, (void *)(size_t)mw[k], 0x200, 1, 0x100);
+        }
+    }
+    free(pl);
+    // kind 30-32: the collision record (type 12) and two levels below; any entity text found ("{" first) whole
+    BYTE *clip = FindAsset(12, want, 0);
+    AssetName(clip, got, sizeof(got));
+    DWORD entsLen = 0;
+    if (clip && !_stricmp(got, want)) {
+        fprintf(o.txt, "# collision record %08lX\n", (DWORD)(size_t)clip);
+        ProbeTree(o, 30, clip, 0x400, 2, 0x100);
+        DWORD cw[256] = {};
+        SafeCopy(cw, clip, sizeof(cw));
+        for (int k = 0; k < 256 && !entsLen; k++) {
+            DWORD v = cw[k], e[16] = {};
+            if (v < 0x10000 || !SafeCopy(e, (void *)(size_t)v, sizeof(e))) continue;
+            for (int j = 0; j < 16 && !entsLen; j++) {
+                char c[4] = {};
+                if (e[j] >= 0x10000 && SafeCopy(c, (void *)(size_t)e[j], 2) && c[0] == '{' && (c[1] == '\n' || c[1] == '\r' || c[1] == ' ')) {
+                    size_t n = ProbeLeft((void *)(size_t)e[j]); if (n > (8u << 20)) n = 8u << 20;
+                    char *t = (char *)malloc(n + 1);
+                    if (t && SafeCopy(t, (void *)(size_t)e[j], n)) {
+                        size_t len = strnlen(t, n);
+                        _snprintf_s(path, sizeof(path), _TRUNCATE, "%s\\entities.txt", dir);
+                        FILE *f = NULL;
+                        if (!fopen_s(&f, path, "wb") && f) { fwrite(t, 1, len, f); fclose(f); entsLen = (DWORD)len; }
+                        fprintf(o.txt, "# entity text at %08lX (collision +0x%03X -> %08lX word %d), %lu bytes\n", e[j], k * 4, v, j, entsLen);
+                    }
+                    free(t);
+                }
+            }
+        }
+    }
+    fclose(o.rec); fclose(o.txt);
+    free(o.seen.slot); free(o.named.slot);
+    _snprintf_s(out, cap, _TRUNCATE, "ok map probe %s: %lu records, %.1f MB, %lu materials, %lu model records, entity text %lu bytes -> %s",
+                map, o.records, o.total / 1048576.0, mats, models, entsLen, dir);
+    Log("%s", out);
+    return true;
+}
+
+// dev47: "model probe <dir> <name> [<name> ...]": loaded models (xmodel, type 5) written raw like the map probe, deeper -
+// each record 0x200 bytes, what it points to 0x800, one level more 0x400 - to find where a model's surfaces, vertices and
+// triangles are. Memory read only.
+static bool ModelProbe(const char *args, char *out, size_t cap)
+{
+    char dir[400] = "", rest[600] = "", path[600];
+    if (sscanf_s(args, "%399s %599[^\n]", dir, (unsigned)sizeof(dir), rest, (unsigned)sizeof(rest)) != 2) { _snprintf_s(out, cap, _TRUNCATE, "error usage: model probe <dir> <name> [<name> ...]"); return false; }
+    CreateDirectoryA(dir, NULL);
+    ProbeOut o = {};
+    _snprintf_s(path, sizeof(path), _TRUNCATE, "%s\\models.bin", dir);
+    if (fopen_s(&o.rec, path, "wb") || !o.rec) { _snprintf_s(out, cap, _TRUNCATE, "error cannot write %s", path); return false; }
+    _snprintf_s(path, sizeof(path), _TRUNCATE, "%s\\models.txt", dir);
+    if (fopen_s(&o.txt, path, "w") || !o.txt) { fclose(o.rec); _snprintf_s(out, cap, _TRUNCATE, "error cannot write %s", path); return false; }
+    int found = 0, asked = 0;
+    char *ctx = NULL;
+    for (char *nm = strtok_s(rest, " ", &ctx); nm; nm = strtok_s(NULL, " ", &ctx)) {
+        asked++;
+        BYTE *m = FindAsset(5, nm, 0); char got[160]; AssetName(m, got, sizeof(got));
+        fprintf(o.txt, "# model %s -> %08lX named '%s'\n", nm, (DWORD)(size_t)m, got);
+        if (!m || _stricmp(got, nm)) continue;
+        found++;
+        ProbeTree(o, 40 + found * 10, m, 0x200, 2, 0x800);
+    }
+    fclose(o.rec); fclose(o.txt); free(o.seen.slot); free(o.named.slot);
+    _snprintf_s(out, cap, _TRUNCATE, "ok model probe: %d of %d found, %lu records, %.1f MB -> %s", found, asked, o.records, o.total / 1048576.0, dir);
+    return found > 0;
+}
+
+// dev48: "map export <file>": the loaded map for the Blender import without C2M (testing\map-export-2026-10-17,
+// docs\map-export.md). Everything measured in 0706/0707, copied as it is with its counts; tools\mapimport\bo2map\rmx.py
+// decodes it. Chunks after "RMX1": a 4-character tag, a u32 length, the bytes.
+//   INFO  the map's name (NUL), then the world record (0x400)
+//   VTX0  the world's vertex stream (36 bytes a vertex, blocks per surface)    VTX1  its second stream (4 bytes a vertex)
+//   IDX0  the world's u16 indices      SURF  every surface record (80 bytes)   SMDL  the static props' placements (152 B)
+//   MATL  each material once: u32 its address, its record (0x70), its name (NUL), [RMX2: the technique set's name (NUL),
+//         u32 nc, nc x 32-byte constants,] u32 n, n x (the 16-byte entry,
+//         the image's record 0x50, the image's name NUL)
+//   XMDL  each prop model once: u32 its address, its record (0xF8), its name (NUL), then for every surface: its record
+//         (0x50), u32 its material's address, its vertices (32 bytes each), its u16 triangles
+//   DYNE  the dynamic props: for each list in the collision record, u32 its offset there, u32 n, n x 84 bytes (dev49)
+//   ENTS  the entity text
+// Memory read only; nothing in the game changes.
+struct RmxOut { FILE *f; long chunkAt; bool ok; DWORD bytes; };
+static void RmxBegin(RmxOut &o, const char *tag) { o.chunkAt = ftell(o.f); DWORD z = 0; o.ok &= fwrite(tag, 1, 4, o.f) == 4 && fwrite(&z, 4, 1, o.f) == 1; }
+static void RmxEnd(RmxOut &o)
+{
+    long end = ftell(o.f); DWORD len = (DWORD)(end - o.chunkAt - 8);
+    fseek(o.f, o.chunkAt + 4, SEEK_SET); o.ok &= fwrite(&len, 4, 1, o.f) == 1; fseek(o.f, end, SEEK_SET); o.bytes += len + 8;
+}
+static bool RmxCopy(RmxOut &o, const void *p, size_t n)           // n bytes of the game's memory, or zeros where unreadable
+{
+    if (!n) return true;
+    BYTE *b = (BYTE *)calloc(n, 1); if (!b) { o.ok = false; return false; }
+    bool got = p && SafeCopy(b, p, n);
+    o.ok &= fwrite(b, 1, n, o.f) == n; free(b); return got;
+}
+static void RmxStr(RmxOut &o, const void *p)
+{
+    char s[300] = "";
+    if (p) SafeStr((const char *)p, s, sizeof(s));
+    o.ok &= fwrite(s, 1, strlen(s) + 1, o.f) == strlen(s) + 1;
+}
+static void RmxU32(RmxOut &o, DWORD v) { o.ok &= fwrite(&v, 4, 1, o.f) == 1; }
+static DWORD RmxWord(const void *p) { DWORD v = 0; SafeCopy(&v, p, 4); return v; }
+
+static void RmxMaterial(RmxOut &o, DWORD m)
+{
+    RmxU32(o, m);
+    RmxCopy(o, (void *)(size_t)m, 0x70);
+    RmxStr(o, (void *)(size_t)RmxWord((void *)(size_t)m));
+    // dev50 (RMX2): the technique set's name (+0x5C: a record whose first word is its name), and the constants
+    // (+0x64: 32-byte entries - a name hash, the name's first 12 characters, f32x4; +0x55 their count)
+    DWORD ts = RmxWord((void *)(size_t)(m + 0x5C));
+    RmxStr(o, ts >= 0x10000 ? (void *)(size_t)RmxWord((void *)(size_t)ts) : NULL);
+    DWORD ctab = RmxWord((void *)(size_t)(m + 0x64));
+    BYTE ccnt = 0;
+    SafeCopy(&ccnt, (void *)(size_t)(m + 0x55), 1);
+    DWORD nc = ctab >= 0x10000 && ccnt <= 32 ? ccnt : 0;
+    RmxU32(o, nc);
+    RmxCopy(o, nc ? (void *)(size_t)ctab : NULL, (size_t)nc * 32);
+    DWORD table = RmxWord((void *)(size_t)(m + 0x60));
+    BYTE cnt = 0;
+    SafeCopy(&cnt, (void *)(size_t)(m + 0x54), 1);                  // +0x54: the texture count (dev49; all 772 of Raid's)
+    DWORD n = table >= 0x10000 && cnt <= 32 ? cnt : 0;
+    RmxU32(o, n);
+    for (DWORD i = 0; i < n; i++) {
+        DWORD e = table + i * 16, img = RmxWord((void *)(size_t)(e + 12));
+        RmxCopy(o, (void *)(size_t)e, 16);
+        RmxCopy(o, img >= 0x10000 ? (void *)(size_t)img : NULL, 0x50);
+        RmxStr(o, img >= 0x10000 ? (void *)(size_t)RmxWord((void *)(size_t)(img + 0x48)) : NULL);
+    }
+}
+
+// a model as measured (0707): 1-4 LODs whose surface counts add up to its own (dev50: a dynamic list's entry once
+// pointed at a record named "ms" with 234 "surfaces" and 22 "LODs")
+static bool RmxModelOk(DWORD x)
+{
+    BYTE mr[0xF8] = {};
+    if (x < 0x10000 || !SafeCopy(mr, (void *)(size_t)x, sizeof(mr))) return false;
+    BYTE ns = mr[6]; WORD lods = *(WORD *)(mr + 0xC4);
+    if (!ns || ns > 64 || lods < 1 || lods > 4) return false;
+    DWORD sum = 0;
+    for (int k = 0; k < lods; k++) sum += *(WORD *)(mr + 0x28 + k * 28 + 4);
+    return sum == ns;
+}
+
+// the entity text: the collision record's words, one level down, the first "{" text (its address, 0 if none)
+static DWORD MapEntityText(BYTE *clip)
+{
+    DWORD cw[256] = {};
+    if (!clip || !SafeCopy(cw, clip, sizeof(cw))) return 0;
+    for (int k = 0; k < 256; k++) {
+        DWORD e[16] = {};
+        if (cw[k] < 0x10000 || !SafeCopy(e, (void *)(size_t)cw[k], sizeof(e))) continue;
+        for (int j = 0; j < 16; j++) {
+            char c[2] = {};
+            if (e[j] >= 0x10000 && SafeCopy(c, (void *)(size_t)e[j], 2) && c[0] == '{' && (c[1] == '\n' || c[1] == '\r' || c[1] == ' ')) return e[j];
+        }
+    }
+    return 0;
+}
+
+// dev52: the sky - worldspawn's "skyboxmodel" (Raid: "skybox_mp_raid"), an ordinary model asset
+static DWORD MapSkyModel(DWORD ents)
+{
+    char t[4096] = {}, name[128] = {};
+    if (ents < 0x10000) return 0;
+    size_t n = ProbeLeft((void *)(size_t)ents); if (n > sizeof(t) - 1) n = sizeof(t) - 1;
+    if (!SafeCopy(t, (void *)(size_t)ents, n)) return 0;
+    const char *k = strstr(t, "\"skyboxmodel\"");
+    const char *a = k ? strchr(k + 13, '"') : NULL, *b = a ? strchr(a + 1, '"') : NULL;
+    if (!a || !b || b - a - 1 <= 0 || b - a - 1 >= (int)sizeof(name)) return 0;
+    memcpy(name, a + 1, b - a - 1);
+    BYTE *m = FindAsset(5, name, 0); char got[160];
+    AssetName(m, got, sizeof(got));
+    return m && !_stricmp(got, name) && RmxModelOk((DWORD)(size_t)m) ? (DWORD)(size_t)m : 0;
+}
+
+static bool MapExport(const char *path, char *out, size_t cap)
+{
+    char dv[256], map[64], want[96], got[160];
+    if (!DvarLookup("cl_ingame", dv, sizeof(dv)) || strcmp(dv, "cl_ingame bool 1") != 0) { _snprintf_s(out, cap, _TRUNCATE, "error no map is loaded: play a film first"); return false; }
+    if (!DvarLookup("mapname", dv, sizeof(dv))) { _snprintf_s(out, cap, _TRUNCATE, "error no mapname dvar"); return false; }
+    const char *q = strchr(dv, '"'), *q2 = q ? strchr(q + 1, '"') : NULL;
+    if (!q || !q2 || q2 - q - 1 <= 0 || q2 - q - 1 >= (int)sizeof(map)) { _snprintf_s(out, cap, _TRUNCATE, "error no map is loaded"); return false; }
+    memcpy(map, q + 1, q2 - q - 1); map[q2 - q - 1] = 0;
+    _snprintf_s(want, sizeof(want), _TRUNCATE, "maps/mp/%s.d3dbsp", map);
+    BYTE *w = FindAsset(kAssetWorld, want, 0);
+    AssetName(w, got, sizeof(got));
+    if (!w || _stricmp(got, want)) { _snprintf_s(out, cap, _TRUNCATE, "error %s is not loaded", map); return false; }
+    DWORD rec[256] = {};
+    if (!SafeCopy(rec, w, sizeof(rec))) { _snprintf_s(out, cap, _TRUNCATE, "error the world record cannot be read"); return false; }
+    DWORD posSize = rec[0x1AC / 4], idxCount = rec[0x1C4 / 4], nAll = rec[0x10 / 4], nStatic = rec[0x310 / 4];
+    DWORD gPos = rec[0x1B0 / 4], gPos2 = rec[0x1BC / 4], gIdx = rec[0x1C8 / 4], gSurf = rec[0x368 / 4], gStatic = rec[0x36C / 4];
+    if (posSize < 36 || posSize > 0x10000000 || idxCount > 0x4000000 || !nAll || nAll > 400000 || nStatic > 200000) {
+        _snprintf_s(out, cap, _TRUNCATE, "error %s's world record does not read as measured", map); return false;
+    }
+    DWORD *surf = (DWORD *)malloc((size_t)nAll * 80);
+    if (!surf || !SafeCopy(surf, (void *)(size_t)gSurf, (size_t)nAll * 80)) { free(surf); _snprintf_s(out, cap, _TRUNCATE, "error the surfaces cannot be read"); return false; }
+    // the second stream's length: past the last surface's vertices (word 7 = its first vertex x 4; vertices from its indices)
+    WORD *idx = (WORD *)malloc((size_t)idxCount * 2 + 2);
+    if (!idx || !SafeCopy(idx, (void *)(size_t)gIdx, (size_t)idxCount * 2)) { free(surf); free(idx); _snprintf_s(out, cap, _TRUNCATE, "error the indices cannot be read"); return false; }
+    size_t len2 = 0;
+    for (DWORD s = 0; s < nAll; s++) {
+        DWORD ntri = surf[s * 20 + 10] >> 16, first = surf[s * 20 + 11], top = 0;
+        if (first + (u64)ntri * 3 > idxCount) continue;
+        for (DWORD t = 0; t < ntri * 3; t++) if (idx[first + t] > top) top = idx[first + t];
+        size_t end = (size_t)surf[s * 20 + 7] + ((size_t)top + 1) * 4;
+        if (ntri && end > len2 && end < 0x10000000) len2 = end;
+    }
+    FILE *f = NULL;
+    if (fopen_s(&f, path, "wb") || !f) { free(surf); free(idx); _snprintf_s(out, cap, _TRUNCATE, "error cannot write %s", path); return false; }
+    RmxOut o = { f, 0, true, 0 };
+    o.ok &= fwrite("RMX2", 1, 4, f) == 4;                          // dev50: RMX2 (MATL carries the technique set and the constants)
+    RmxBegin(o, "INFO"); o.ok &= fwrite(map, 1, strlen(map) + 1, f) == strlen(map) + 1; RmxCopy(o, w, 0x400); RmxEnd(o);
+    RmxBegin(o, "VTX0"); bool vOk = RmxCopy(o, (void *)(size_t)gPos, posSize); RmxEnd(o);
+    RmxBegin(o, "VTX1"); RmxCopy(o, gPos2 >= 0x10000 ? (void *)(size_t)gPos2 : NULL, len2); RmxEnd(o);
+    RmxBegin(o, "IDX0"); o.ok &= fwrite(idx, 2, idxCount, f) == idxCount; RmxEnd(o);
+    RmxBegin(o, "SURF"); o.ok &= fwrite(surf, 80, nAll, f) == nAll; RmxEnd(o);
+    RmxBegin(o, "SMDL"); RmxCopy(o, (void *)(size_t)gStatic, (size_t)nStatic * 152); RmxEnd(o);
+    // the prop models (each once) and every material they or the world use (each once)
+    ProbeSet seenM = {}, seenX = {};
+    DWORD nMat = 0, nModel = 0;
+    const DWORD kDynMax = 8192;
+    DWORD *models = (DWORD *)calloc(nStatic + kDynMax * 3 + 1, 4); DWORD nm = 0;
+    for (DWORD i = 0; i < nStatic; i++) {
+        DWORD x = RmxWord((void *)(size_t)(gStatic + i * 152 + 56));
+        if (RmxModelOk(x) && !ProbeSeen(seenX, x)) models[nm++] = x;
+    }
+    // dev49: the dynamic props (C2M's "dynamic models"): the collision record's lists of 84-byte entries (+0x10 a
+    // quaternion, +0x20 the origin, +0x2C the model; 0706: Raid's at clip +0xAC). Each list is read entry by entry while
+    // its entries name a model (64 in a row that do not end it), and written whole; their models join the props'.
+    BYTE *clip = FindAsset(12, want, 0);
+    AssetName(clip, got, sizeof(got));
+    if (!clip || _stricmp(got, want)) clip = NULL;
+    RmxBegin(o, "DYNE");
+    if (clip)
+        for (int li = 0; li < 3; li++) {
+            static const DWORD at[3] = { 0xA0, 0xA8, 0xAC };
+            DWORD base = RmxWord(clip + at[li]), n = 0, miss = 0;
+            if (base < 0x10000) continue;
+            for (DWORD i = 0; i < kDynMax && miss < 64; i++) {
+                DWORD x = RmxWord((void *)(size_t)(base + i * 84 + 44)); char s[8];
+                bool named = x >= 0x10000 && SafeStr((const char *)(size_t)RmxWord((void *)(size_t)x), s, sizeof(s)) && RmxModelOk(x);
+                if (named) { miss = 0; n = i + 1; if (!ProbeSeen(seenX, x)) models[nm++] = x; } else miss++;
+            }
+            RmxU32(o, at[li]); RmxU32(o, n);
+            RmxCopy(o, (void *)(size_t)base, (size_t)n * 84);
+        }
+    RmxEnd(o);
+    DWORD ents = MapEntityText(clip), sky = MapSkyModel(ents);
+    if (sky && !ProbeSeen(seenX, sky)) models[nm++] = sky;
+    RmxBegin(o, "SKYB"); RmxU32(o, sky); RmxEnd(o);                  // dev52: which model is the sky (0: none)
+    RmxBegin(o, "XMDL");
+    for (DWORD i = 0; i < nm; i++) {
+        DWORD x = models[i]; BYTE mr[0xF8] = {};
+        if (!SafeCopy(mr, (void *)(size_t)x, sizeof(mr))) continue;
+        DWORD surfs = *(DWORD *)(mr + 0x20), mats = *(DWORD *)(mr + 0x24); BYTE ns = mr[6];
+        RmxU32(o, x); o.ok &= fwrite(mr, 1, sizeof(mr), f) == sizeof(mr); RmxStr(o, (void *)(size_t)*(DWORD *)mr);
+        for (BYTE k = 0; k < ns; k++) {
+            BYTE sr[0x50] = {};
+            SafeCopy(sr, (void *)(size_t)(surfs + k * 0x50), sizeof(sr));
+            WORD nv = *(WORD *)(sr + 4), nt = *(WORD *)(sr + 6);
+            DWORD verts = *(DWORD *)(sr + 0x20), tris = *(DWORD *)(sr + 0x0C), mat = RmxWord((void *)(size_t)(mats + k * 4));
+            o.ok &= fwrite(sr, 1, sizeof(sr), f) == sizeof(sr);
+            RmxU32(o, mat);
+            RmxCopy(o, verts >= 0x10000 ? (void *)(size_t)verts : NULL, (size_t)nv * 32);
+            RmxCopy(o, tris >= 0x10000 ? (void *)(size_t)tris : NULL, (size_t)nt * 6);
+        }
+        nModel++;
+    }
+    RmxEnd(o);
+    RmxBegin(o, "MATL");
+    for (DWORD s = 0; s < nAll; s++) {
+        DWORD m = surf[s * 20 + 12];
+        if (m >= 0x10000 && !ProbeSeen(seenM, m)) { RmxMaterial(o, m); nMat++; }
+    }
+    for (DWORD i = 0; i < nm; i++) {
+        BYTE mr[0xF8] = {};
+        if (!SafeCopy(mr, (void *)(size_t)models[i], sizeof(mr))) continue;
+        DWORD mats = *(DWORD *)(mr + 0x24);
+        for (BYTE k = 0; k < mr[6]; k++) {
+            DWORD m = RmxWord((void *)(size_t)(mats + k * 4));
+            if (m >= 0x10000 && !ProbeSeen(seenM, m)) { RmxMaterial(o, m); nMat++; }
+        }
+    }
+    RmxEnd(o);
+    // the entity text
+    DWORD entsLen = 0;
+    RmxBegin(o, "ENTS");
+    if (ents) {
+        size_t n = ProbeLeft((void *)(size_t)ents); if (n > (8u << 20)) n = 8u << 20;
+        char *t = (char *)malloc(n + 1);
+        if (t && SafeCopy(t, (void *)(size_t)ents, n)) { size_t len = strnlen(t, n); o.ok &= fwrite(t, 1, len, f) == len; entsLen = (DWORD)len; }
+        free(t);
+    }
+    RmxEnd(o);
+    // dev52, to measure: what some of the world record's words point at - +0x21C (+0x218 = 142 on Raid: the 141 "*N"
+    // brush models + the world), +0x3D8..+0x3E8 (+0x3DC = 5 = C2M's lights on Raid). Each: u32 offset, u32 address,
+    // u32 length, the bytes
+    RmxBegin(o, "PEEK");
+    {
+        static const DWORD at[] = { 0x21C, 0x3D8, 0x3E0, 0x3E4, 0x3E8 };
+        for (int k = 0; k < (int)(sizeof(at) / sizeof(at[0])); k++) {
+            DWORD a = rec[at[k] / 4];
+            size_t len = a >= 0x10000 ? ProbeLeft((void *)(size_t)a) : 0;
+            size_t want = at[k] == 0x21C ? (size_t)(rec[0x218 / 4] < 8192 ? rec[0x218 / 4] : 8192) * 0x80 : 0x2000;
+            if (len > want) len = want;
+            RmxU32(o, at[k]); RmxU32(o, a); RmxU32(o, (DWORD)len);
+            RmxCopy(o, len ? (void *)(size_t)a : NULL, len);
+        }
+    }
+    RmxEnd(o);
+    bool ok = o.ok && vOk;
+    if (fclose(f) != 0) ok = false;
+    free(surf); free(idx); free(models); free(seenM.slot); free(seenX.slot);
+    if (!ok) _snprintf_s(out, cap, _TRUNCATE, "error %s: the export could not be written whole (disk full, or the map was unloaded)", map);
+    else _snprintf_s(out, cap, _TRUNCATE, "ok map export %s: %lu surfaces, %lu props of %lu models, %lu materials, entity text %lu bytes, %.1f MB -> %s",
+                     map, nAll, nStatic, nModel, nMat, entsLen, o.bytes / 1048576.0, path);
+    Log("%s", out);
+    return ok;
+}
+
 static bool MapShapeHidden(const char *name)
 {
     static const char *words[] = { "sky", "caulk", "clip", "nodraw", "portal", "hint", "shadowcaster", "mantle", "trigger",
@@ -4510,9 +4959,128 @@ static void GfxDepthNow(char *r, size_t cap)
         ok ? "ok" : "error writing", w, hgt, (UINT)f, (UINT)sf, best + 1, g_gfx.dsvN, g_gfx.dsv[best].draws, lo, hi, far0, far1, g_gfx.path);
 }
 
+// ---- dev51: the map's textures out of the game (the Blender import without C2M, step 3) ---------------------------
+// "map textures <dir>": every image the loaded map's materials use (the world's surfaces, the static and dynamic props'
+// models), each read from its Direct3D texture on the render thread (8 a frame: a staging copy, every mip and slice
+// mapped) and written as <dir>\<image name>.dds (the DX10 header; BC1-3 also as the old DXT1/3/5). Read only.
+static bool ImgIsD3d(void *p, char *desc, size_t cap);   // below, with the camo swap
+struct TexJob { DWORD *imgs; int n, next, written, skipped; double bytes; char dir[400]; char why[200]; volatile LONG want; HANDLE done; };
+static TexJob g_tex;
+
+static bool TexFormat(DXGI_FORMAT f, UINT *block, UINT *bytes)   // block: 4 for BC formats (bytes a block), 1 else (bytes a pixel)
+{
+    switch (f) {
+    case DXGI_FORMAT_BC1_TYPELESS: case DXGI_FORMAT_BC1_UNORM: case DXGI_FORMAT_BC1_UNORM_SRGB:
+    case DXGI_FORMAT_BC4_TYPELESS: case DXGI_FORMAT_BC4_UNORM: case DXGI_FORMAT_BC4_SNORM: *block = 4; *bytes = 8; return true;
+    case DXGI_FORMAT_BC2_TYPELESS: case DXGI_FORMAT_BC2_UNORM: case DXGI_FORMAT_BC2_UNORM_SRGB:
+    case DXGI_FORMAT_BC3_TYPELESS: case DXGI_FORMAT_BC3_UNORM: case DXGI_FORMAT_BC3_UNORM_SRGB:
+    case DXGI_FORMAT_BC5_TYPELESS: case DXGI_FORMAT_BC5_UNORM: case DXGI_FORMAT_BC5_SNORM:
+    case DXGI_FORMAT_BC6H_TYPELESS: case DXGI_FORMAT_BC6H_UF16: case DXGI_FORMAT_BC6H_SF16:
+    case DXGI_FORMAT_BC7_TYPELESS: case DXGI_FORMAT_BC7_UNORM: case DXGI_FORMAT_BC7_UNORM_SRGB: *block = 4; *bytes = 16; return true;
+    case DXGI_FORMAT_R8G8B8A8_UNORM: case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: case DXGI_FORMAT_R8G8B8A8_TYPELESS:
+    case DXGI_FORMAT_B8G8R8A8_UNORM: case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB: case DXGI_FORMAT_B8G8R8X8_UNORM:
+    case DXGI_FORMAT_R10G10B10A2_UNORM: case DXGI_FORMAT_R11G11B10_FLOAT: case DXGI_FORMAT_R32_FLOAT:
+    case DXGI_FORMAT_R16G16_UNORM: case DXGI_FORMAT_R16G16_FLOAT: *block = 1; *bytes = 4; return true;
+    case DXGI_FORMAT_R8G8_UNORM: case DXGI_FORMAT_R16_UNORM: case DXGI_FORMAT_R16_FLOAT: case DXGI_FORMAT_B5G6R5_UNORM: *block = 1; *bytes = 2; return true;
+    case DXGI_FORMAT_R8_UNORM: case DXGI_FORMAT_A8_UNORM: *block = 1; *bytes = 1; return true;
+    case DXGI_FORMAT_R16G16B16A16_FLOAT: case DXGI_FORMAT_R16G16B16A16_UNORM: *block = 1; *bytes = 8; return true;
+    case DXGI_FORMAT_R32G32B32A32_FLOAT: *block = 1; *bytes = 16; return true;
+    default: return false;
+    }
+}
+
+static void TexName(const char *name, char *out, size_t cap)          // a file name: the image's own, Windows-safe
+{
+    size_t i = 0;
+    for (; name[i] && i + 1 < cap; i++) { char c = name[i]; out[i] = strchr("<>:\"/\\|?*", c) || (unsigned char)c < 32 ? '_' : c; }
+    out[i] = 0;
+}
+
+// render thread: one image to <dir>\<name>.dds; false when it has no readable 2D texture
+static bool TexOne(ID3D11DeviceContext *ctx, DWORD img, double *bytes, char *why, size_t cap)
+{
+    char name[300] = "", file[300], path[800];
+    if (!SafeStr((const char *)(size_t)RmxWord((void *)(size_t)(img + 0x48)), name, sizeof(name))) { _snprintf_s(why, cap, _TRUNCATE, "no name"); return false; }
+    void *view = (void *)(size_t)RmxWord((void *)(size_t)img);
+    char desc[160];
+    if (!ImgIsD3d(view, desc, sizeof(desc))) { _snprintf_s(why, cap, _TRUNCATE, "%s: no Direct3D view", name); return false; }
+    ID3D11ShaderResourceView *srv = NULL; ID3D11Resource *res = NULL; ID3D11Texture2D *tex = NULL, *st = NULL; ID3D11Device *dev = NULL;
+    bool ok = false;
+    __try {
+        if (FAILED(((IUnknown *)view)->QueryInterface(__uuidof(ID3D11ShaderResourceView), (void **)&srv)) || !srv) { _snprintf_s(why, cap, _TRUNCATE, "%s: not a view", name); return false; }
+        srv->GetResource(&res); srv->Release(); srv = NULL;
+        if (!res || FAILED(res->QueryInterface(__uuidof(ID3D11Texture2D), (void **)&tex)) || !tex) { if (res) res->Release(); _snprintf_s(why, cap, _TRUNCATE, "%s: not a 2D texture", name); return false; }
+        res->Release(); res = NULL;
+        D3D11_TEXTURE2D_DESC d; tex->GetDesc(&d);
+        UINT block = 1, bpb = 4;
+        if (!TexFormat(d.Format, &block, &bpb) || d.SampleDesc.Count > 1) { _snprintf_s(why, cap, _TRUNCATE, "%s: format %u not read", name, (UINT)d.Format); tex->Release(); return false; }
+        D3D11_TEXTURE2D_DESC sd = d; sd.Usage = D3D11_USAGE_STAGING; sd.BindFlags = 0; sd.CPUAccessFlags = D3D11_CPU_ACCESS_READ; sd.MiscFlags = d.MiscFlags & D3D11_RESOURCE_MISC_TEXTURECUBE;
+        tex->GetDevice(&dev);
+        if (!dev || FAILED(dev->CreateTexture2D(&sd, NULL, &st)) || !st) { _snprintf_s(why, cap, _TRUNCATE, "%s: no staging copy", name); tex->Release(); if (dev) dev->Release(); return false; }
+        ctx->CopyResource(st, tex);
+        TexName(name, file, sizeof(file));
+        _snprintf_s(path, sizeof(path), _TRUNCATE, "%s\\%s.dds", g_tex.dir, file);
+        FILE *f = NULL;
+        if (!fopen_s(&f, path, "wb") && f) {
+            // DDS: "DDS ", the 124-byte header, the DX10 header, then every slice's mips
+            DWORD h[31] = {}; h[0] = 124; h[1] = 0x1 | 0x2 | 0x4 | 0x1000 | 0x20000 | (block == 4 ? 0x80000 : 0x8);
+            h[2] = d.Height; h[3] = d.Width;
+            h[4] = block == 4 ? ((d.Width + 3) / 4) * ((d.Height + 3) / 4) * bpb : d.Width * bpb;
+            h[6] = d.MipLevels; h[18] = 32; h[19] = 0x4;                                  // pixel format: FourCC
+            const char *cc = "DX10";
+            if (d.Format == DXGI_FORMAT_BC1_UNORM || d.Format == DXGI_FORMAT_BC1_UNORM_SRGB) cc = "DXT1";
+            else if (d.Format == DXGI_FORMAT_BC2_UNORM || d.Format == DXGI_FORMAT_BC2_UNORM_SRGB) cc = "DXT3";
+            else if (d.Format == DXGI_FORMAT_BC3_UNORM || d.Format == DXGI_FORMAT_BC3_UNORM_SRGB) cc = "DXT5";
+            memcpy(&h[20], cc, 4);
+            h[26] = 0x1000 | (d.MipLevels > 1 ? 0x400008 : 0) | ((sd.MiscFlags & D3D11_RESOURCE_MISC_TEXTURECUBE) ? 0x8 : 0);
+            if (sd.MiscFlags & D3D11_RESOURCE_MISC_TEXTURECUBE) h[27] = 0xFE00;
+            ok = fwrite("DDS ", 1, 4, f) == 4 && fwrite(h, 4, 31, f) == 31;
+            if (!strcmp(cc, "DX10")) {
+                DWORD dx10[5] = { (DWORD)d.Format, 3, (sd.MiscFlags & D3D11_RESOURCE_MISC_TEXTURECUBE) ? 0x4u : 0u,
+                                  (sd.MiscFlags & D3D11_RESOURCE_MISC_TEXTURECUBE) ? d.ArraySize / 6 : d.ArraySize, 0 };
+                ok = ok && fwrite(dx10, 4, 5, f) == 5;
+            }
+            for (UINT a = 0; ok && a < d.ArraySize; a++)
+                for (UINT m = 0; ok && m < d.MipLevels; m++) {
+                    UINT w = d.Width >> m, hh = d.Height >> m; if (!w) w = 1; if (!hh) hh = 1;
+                    UINT rowBytes = block == 4 ? ((w + 3) / 4) * bpb : w * bpb, rows = block == 4 ? (hh + 3) / 4 : hh;
+                    D3D11_MAPPED_SUBRESOURCE mp;
+                    UINT sub = D3D11CalcSubresource(m, a, d.MipLevels);
+                    if (FAILED(ctx->Map(st, sub, D3D11_MAP_READ, 0, &mp))) { ok = false; break; }
+                    for (UINT r = 0; ok && r < rows; r++) ok = fwrite((BYTE *)mp.pData + (size_t)r * mp.RowPitch, 1, rowBytes, f) == rowBytes;
+                    ctx->Unmap(st, sub);
+                    *bytes += (double)rowBytes * rows;
+                }
+            if (fclose(f) != 0) ok = false;
+            if (!ok) DeleteFileA(path);
+        }
+        if (!ok) _snprintf_s(why, cap, _TRUNCATE, "%s: could not be written", name);
+    } __except (EXCEPTION_EXECUTE_HANDLER) { ok = false; _snprintf_s(why, cap, _TRUNCATE, "%s: a fault (caught)", name); }
+    if (st) st->Release(); if (tex) tex->Release(); if (dev) dev->Release();
+    return ok;
+}
+
+static void TexPresent(IDXGISwapChain *sc)
+{
+    if (!g_tex.want) return;
+    ID3D11Device *dev = NULL; ID3D11DeviceContext *ctx = NULL;
+    if (FAILED(sc->GetDevice(__uuidof(ID3D11Device), (void **)&dev)) || !dev) return;
+    dev->GetImmediateContext(&ctx);
+    if (ctx)
+        for (int k = 0; k < 8 && g_tex.next < g_tex.n; k++, g_tex.next++) {
+            double b = 0; char why[200];
+            if (TexOne(ctx, g_tex.imgs[g_tex.next], &b, why, sizeof(why))) { g_tex.written++; g_tex.bytes += b; }
+            else { g_tex.skipped++; if (!g_tex.why[0]) strcpy_s(g_tex.why, sizeof(g_tex.why), why); }
+        }
+    if (ctx) ctx->Release();
+    dev->Release();
+    if (g_tex.next >= g_tex.n) { InterlockedExchange(&g_tex.want, 0); SetEvent(g_tex.done); }
+}
+
 // render thread, every Present while something is asked for: a frame is looked at from one Present to the next
 static void GfxPresent(IDXGISwapChain *sc)
 {
+    __try { TexPresent(sc); } __except (EXCEPTION_EXECUTE_HANDLER) { InterlockedExchange(&g_tex.want, 0); if (g_tex.done) SetEvent(g_tex.done); }   // dev51
     DepPresentStart(sc);                             // dev23d: the depth pass needs the binds and the picture's size
     FogPresent(sc);                                  // dev34: the fog into the finished frame ("fog where present"), before the recorder takes it
     if (!g_gfx.hooked && g_gfxInstallWant) GfxInstall(sc);   // dev25: "gfx hide" needs the hooks
@@ -4552,6 +5120,82 @@ static void GfxPresent(IDXGISwapChain *sc)
     if (op == 1 && (fopen_s(&g_gfx.f, g_gfx.path, "w") || !g_gfx.f)) { g_gfx.f = NULL; _snprintf_s(g_gfx.result, sizeof(g_gfx.result), _TRUNCATE, "error cannot write %s", g_gfx.path); SetEvent(g_gfx.done); return; }
     if (g_gfx.f) { fprintf(g_gfx.f, "# RipperBridge gfx probe: one frame of the game's immediate context %p, tick %d\n", g_gfx.ctx, ReadInt(kRvaTick)); StProbeStart(); PlayersDump(g_gfx.f); memset(g_viewCbN, 0, sizeof(g_viewCbN)); }
     g_gfx.phase = 1;
+}
+
+// dev51: "map textures <dir>" - the images of the loaded map's materials (as "map export" finds them), handed to the
+// render thread (TexPresent, from the Present hook) and written as DDS; waits for it (5 minutes at most)
+static void MapTextures(const char *dir, char *out, size_t cap)
+{
+    char dv[256], map[64], want[96], got[160];
+    if (!DvarLookup("cl_ingame", dv, sizeof(dv)) || strcmp(dv, "cl_ingame bool 1") != 0) { _snprintf_s(out, cap, _TRUNCATE, "error no map is loaded: play a film first"); return; }
+    if (!DvarLookup("mapname", dv, sizeof(dv))) { _snprintf_s(out, cap, _TRUNCATE, "error no mapname dvar"); return; }
+    const char *q = strchr(dv, '"'), *q2 = q ? strchr(q + 1, '"') : NULL;
+    if (!q || !q2 || q2 - q - 1 <= 0 || q2 - q - 1 >= (int)sizeof(map)) { _snprintf_s(out, cap, _TRUNCATE, "error no map is loaded"); return; }
+    memcpy(map, q + 1, q2 - q - 1); map[q2 - q - 1] = 0;
+    _snprintf_s(want, sizeof(want), _TRUNCATE, "maps/mp/%s.d3dbsp", map);
+    BYTE *w = FindAsset(kAssetWorld, want, 0);
+    AssetName(w, got, sizeof(got));
+    if (!w || _stricmp(got, want)) { _snprintf_s(out, cap, _TRUNCATE, "error %s is not loaded", map); return; }
+    if (g_tex.want) { _snprintf_s(out, cap, _TRUNCATE, "error textures are already on their way"); return; }
+    DWORD rec[256] = {};
+    SafeCopy(rec, w, sizeof(rec));
+    DWORD nAll = rec[0x10 / 4], nStatic = rec[0x310 / 4], gSurf = rec[0x368 / 4], gStatic = rec[0x36C / 4];
+    if (!nAll || nAll > 400000 || nStatic > 200000) { _snprintf_s(out, cap, _TRUNCATE, "error the world record does not read as measured"); return; }
+    // the materials: the world's surfaces', then the props' models' (static and dynamic, models as measured)
+    ProbeSet seenM = {}, seenI = {}, seenX = {};
+    DWORD *mats = (DWORD *)calloc(nAll + 65536, 4); int nm = 0;
+    DWORD *imgs = (DWORD *)calloc(65536, 4); int ni = 0;
+    if (!mats || !imgs) { free(mats); free(imgs); _snprintf_s(out, cap, _TRUNCATE, "error out of memory"); return; }
+    for (DWORD s = 0; s < nAll; s++) {
+        DWORD m = RmxWord((void *)(size_t)(gSurf + s * 80 + 48));
+        if (m >= 0x10000 && !ProbeSeen(seenM, m)) mats[nm++] = m;
+    }
+    auto addModel = [&](DWORD x) {
+        if (!RmxModelOk(x) || ProbeSeen(seenX, x)) return;
+        BYTE mr[0xF8] = {}; SafeCopy(mr, (void *)(size_t)x, sizeof(mr));
+        DWORD ms = *(DWORD *)(mr + 0x24);
+        for (BYTE k = 0; k < mr[6] && nm < (int)nAll + 65536; k++) {
+            DWORD m = RmxWord((void *)(size_t)(ms + k * 4));
+            if (m >= 0x10000 && !ProbeSeen(seenM, m)) mats[nm++] = m;
+        }
+    };
+    for (DWORD i = 0; i < nStatic; i++) addModel(RmxWord((void *)(size_t)(gStatic + i * 152 + 56)));
+    BYTE *clip = FindAsset(12, want, 0);
+    AssetName(clip, got, sizeof(got));
+    if (clip && !_stricmp(got, want)) addModel(MapSkyModel(MapEntityText(clip)));      // dev52: the sky's
+    if (clip && !_stricmp(got, want))
+        for (int li = 0; li < 3; li++) {
+            static const DWORD at[3] = { 0xA0, 0xA8, 0xAC };
+            DWORD base = RmxWord(clip + at[li]);
+            if (base < 0x10000) continue;
+            for (DWORD i = 0, miss = 0; i < 8192 && miss < 64; i++) {
+                DWORD x = RmxWord((void *)(size_t)(base + i * 84 + 44));
+                if (RmxModelOk(x)) { miss = 0; addModel(x); } else miss++;
+            }
+        }
+    for (int i = 0; i < nm; i++) {
+        DWORD table = RmxWord((void *)(size_t)(mats[i] + 0x60)); BYTE cnt = 0;
+        SafeCopy(&cnt, (void *)(size_t)(mats[i] + 0x54), 1);
+        for (BYTE k = 0; table >= 0x10000 && k < cnt && k < 32 && ni < 65536; k++) {
+            DWORD img = RmxWord((void *)(size_t)(table + k * 16 + 12));
+            if (img >= 0x10000 && !ProbeSeen(seenI, img)) imgs[ni++] = img;
+        }
+    }
+    free(mats); free(seenM.slot); free(seenX.slot); free(seenI.slot);
+    // frames: as "gfx" sees them
+    if (!InstallPresentHook()) { free(imgs); _snprintf_s(out, cap, _TRUNCATE, "error no way to see the frames: Present is not hooked"); return; }
+    CreateDirectoryA(dir, NULL);
+    if (!g_tex.done) g_tex.done = CreateEventA(NULL, FALSE, FALSE, NULL);
+    free(g_tex.imgs);
+    g_tex.imgs = imgs; g_tex.n = ni; g_tex.next = 0; g_tex.written = g_tex.skipped = 0; g_tex.bytes = 0; g_tex.why[0] = 0;
+    strcpy_s(g_tex.dir, sizeof(g_tex.dir), dir);
+    ResetEvent(g_tex.done);
+    InterlockedExchange(&g_tex.want, 1);
+    DWORD t0 = GetTickCount();
+    if (WaitForSingleObject(g_tex.done, 300000) != WAIT_OBJECT_0) { InterlockedExchange(&g_tex.want, 0); _snprintf_s(out, cap, _TRUNCATE, "error the textures were not all read within 5 minutes (%d of %d; is the game drawing?)", g_tex.next, g_tex.n); return; }
+    _snprintf_s(out, cap, _TRUNCATE, "ok map textures %s: %d images, %d written (%.1f MB), %d skipped%s%s, %.1f s -> %s", map, g_tex.n, g_tex.written,
+                g_tex.bytes / 1048576.0, g_tex.skipped, g_tex.why[0] ? ", the first: " : "", g_tex.why, (GetTickCount() - t0) / 1000.0, dir);
+    Log("%s", out);
 }
 
 // which code each hooked context slot runs now: ours, or someone's who wrote it after us (a module name)
@@ -5288,6 +5932,7 @@ static void Handle(HANDLE h, char *line)
     else if (!strcmp(line, "dvar")) {
         if (DvarLookup(arg, out, sizeof(out))) WriteLine(h, out); else WriteLine(h, "error no such dvar");
     }
+    else if (!strcmp(line, "model") && !strncmp(arg, "probe ", 6)) { ModelProbe(arg + 6, out, sizeof(out)); WriteLine(h, out); }   // dev47
     else if (!strcmp(line, "asset")) {
         int type = 0; char name[128] = "";
         if (sscanf_s(arg, "%d %127s", &type, name, (unsigned)sizeof(name)) != 2) { WriteLine(h, "error usage: asset <type> <name>  (5 = xmodel)"); return; }
@@ -5296,7 +5941,10 @@ static void Handle(HANDLE h, char *line)
         WriteLine(h, out);
     }
     else if (!strcmp(line, "map")) {                    // "map shape <file>": the loaded map's shape for the 3D views (RVM2)
-        if (strncmp(arg, "shape ", 6) || !arg[6]) { WriteLine(h, "error usage: map shape <file>"); return; }
+        if (!strncmp(arg, "probe ", 6) && arg[6]) { MapProbe(arg + 6, out, sizeof(out)); WriteLine(h, out); return; }   // dev46
+        if (!strncmp(arg, "export ", 7) && arg[7]) { MapExport(arg + 7, out, sizeof(out)); WriteLine(h, out); return; } // dev48
+        if (!strncmp(arg, "textures ", 9) && arg[9]) { MapTextures(arg + 9, out, sizeof(out)); WriteLine(h, out); return; } // dev51
+        if (strncmp(arg, "shape ", 6) || !arg[6]) { WriteLine(h, "error usage: map shape <file> | map probe <dir>"); return; }
         MapShape(arg + 6, out, sizeof(out));
         WriteLine(h, out);
     }

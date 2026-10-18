@@ -5,7 +5,9 @@ Written with an External Cortex, courtesy of Anthropic.
 Moviemaking for Black Ops II on Redacted: your films, their look, your cameras and the recording, in one window,
 with the game sitting inside it.
 
-**Version 0.7.0**, the first public release.
+**Version 0.7.1.** New since 0.7.0: the Reluduali Theater launch no longer stops on an "[EXE_UI_ERROR]" box;
+a second Theater launch while the Designer is open works; a **Sign in** button in the header with an **Account** page;
+**Share to reluduali.com** for your looks, presets, CFGs and camos (as the site opens it); an update notifier.
 
 - [What it does](#what-it-does)
 - [Download](#download)
@@ -49,7 +51,7 @@ The full guide, tool by tool, is in **[docs/GUIDE.md](docs/GUIDE.md)**.
 
 ## Download
 
-Get **ReludualiSetup-0.7.0.exe** from the
+Get **ReludualiSetup-0.7.1.exe** from the
 [latest release](https://github.com/HarryShire/reluduali/releases/latest), or from
 [reluduali.com](https://reluduali.com). One file: the Designer, its game plugin and the Reluduali panel for Lumit.
 
@@ -67,7 +69,7 @@ Get **ReludualiSetup-0.7.0.exe** from the
 ## Install
 
 1. **Close the game.**
-2. Run **ReludualiSetup-0.7.0.exe**. It installs for your Windows user only: nothing needs an administrator.
+2. Run **ReludualiSetup-0.7.1.exe**. It installs for your Windows user only: nothing needs an administrator.
 3. Check the choices:
    - **Redacted's folder**: the one with `t6mpv43.exe`. It is filled in when Redacted is in Steam's usual folder;
      otherwise type it or press **Choose...**.
@@ -175,9 +177,16 @@ game stays open and the PC stays on.
 The **Reluduali panel for Lumit** (made by Reluduali, included in the installer; its source is to be published with
 the Reluduali Timer) puts reluduali.com's contest clock inside Lumit.
 
-- **Sign in to Reluduali:** **Contest > Account > Sign in with the browser...** opens reluduali.com's sign-in page in
-  your browser with a short code; sign in there and press **Allow**. Your friends, contests and hand-ins then show in
-  the Designer.
+- **Sign in to Reluduali:** **Sign in** at the top right (or **Contest > Account**), then **Sign in with the
+  browser...** opens reluduali.com's sign-in page in your browser with a short code; sign in there and press **Allow**.
+  Your friends, contests and hand-ins then show in the Designer.
+- **Share to reluduali.com:** on the **Account** page, pick a global look, a page preset, a CFG, a map look, your
+  custom sliders or a Camo Editor package, name it and press **Share**. It goes on your page on reluduali.com; **Your
+  shares** lists them, each with **Remove**. Sharing needs a sign-in that allowed it: if the card says yours does not,
+  sign out and in again.
+- **Updates:** the Designer asks reluduali.com about new versions and notices when it starts and every few hours, and
+  shows them under the header (**Download**, or close it). Only its version and edition are sent. **SETUP > Updates >
+  Check now** asks at once.
 - **Install the panel:** if you chose *beside the Designer*, open Lumit, go to Settings > Addons > Extensions >
   Install from a folder, and pick the **Lumit panel** folder in the Designer's folder.
 - **Link the Designer:** in the panel, press **Record > Link the Console**, then type the code into the Designer's
@@ -218,6 +227,8 @@ the Reluduali Timer) puts reluduali.com's contest clock inside Lumit.
 - **Sky** never deletes anything: the files it replaces are moved into the sky store's `removed` folder, from where you
   can copy them back.
 - **The theater file** is in the game only while a Reluduali Theater launch runs (above).
+- **Your sign-in** is kept, encrypted for your Windows user, in `%LOCALAPPDATA%\Reluduali\Console\account.bin`; the
+  notices you closed in `updates-seen.txt` beside it.
 - **Lumit can open the Designer** adds a `reluduali-console:` link for your Windows user. Setup turns it off and on;
   the uninstall takes it out.
 - **`C:\ProgramData\Reluduali`** is used only when your Windows temp folder's name has letters the game plugin cannot

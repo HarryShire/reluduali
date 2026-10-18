@@ -1,6 +1,6 @@
 # The Reluduali Designer: the guide
 
-Every tool, what it does, and how to use it. Version 0.7.0. The short version is the [README](../README.md); inside
+Every tool, what it does, and how to use it. Version 0.7.1. The short version is the [README](../README.md); inside
 the Designer, **F1** opens a quick version of this guide.
 
 - [Before you start](#before-you-start)
@@ -37,7 +37,7 @@ the Designer, **F1** opens a quick version of this guide.
   **Re-attach** makes the tether again after the game restarts.
 - **Help** is **F1** from anywhere. **The logo** (or **Ctrl+Home**) goes back to the start screen. **Ctrl+Alt+D**
   brings the Designer to the front from anywhere, also while the game holds the mouse.
-- **The lilac button** on a page is its main action; **raspberry** is stop.
+- **The coloured button** on a page is its main action (maroon by day, lilac by night); **raspberry** is stop.
 
 ---
 
@@ -58,8 +58,11 @@ Where the game and your folders are on this PC, and what this PC is missing.
   Designer: it makes each one from your own game. Play a film on the map, then press **Make this map's shape**. With
   **Each map by itself** on (it is, to start with), the Designer makes a map's shape by itself when a 3D view needs it
   and the game has that map loaded. The shapes are kept in `Documents\Reluduali\maps`.
-- **Appearance**: **Contrast** (Soft, Normal, High) for the letters, the lines and the texture. It shows after a
-  restart: **Restart now** closes the Designer the clean way and opens it again.
+- **Appearance**: **Dark**, **Light** or **Dynamic**. Dark and Light stay as they are: Dark is the velvet, Light is
+  reluduali.com's card screen by day (the sky, glass and printed cards). **Dynamic** (the start) changes with the day:
+  light while the Sun is up, its colours turning to the site's evening beige and orange as the Sun goes down, and dark
+  once the Sun is 6 degrees below the horizon. The sky is your PC's: its time zone gives the place, nothing is asked or
+  sent. **Contrast** (Soft, Normal, High) for the letters, the lines and the texture. Both show at once.
 
 ---
 

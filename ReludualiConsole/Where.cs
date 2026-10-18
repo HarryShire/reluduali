@@ -187,8 +187,29 @@ namespace ReludualiConsole
         {
             Foreground = (Brush)Application.Current.FindResource("Text");
             Content = Ui.Page(Ui.Card("This PC", "Where things are, and what this PC has. The game folder is found by itself while the game runs; choose it here if it is not.", _rows),
-                              MapShapes.Card(), AppearanceCard.Make());
+                              MapShapes.Card(), AppearanceCard.Make(), UpdatesCard());
             IsVisibleChanged += (s, e) => { if ((bool)e.NewValue) Fill(); };
+        }
+
+        /// <summary>The update notifier's card (2026-10-18): which Designer this is, what the Reluduali Server last said, Check now.</summary>
+        static UIElement UpdatesCard()
+        {
+            var said = new TextBlock { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 6) };
+            Action paint = () => said.Text = "This is the Reluduali Designer " + AccountLink.Version + ", " + Unfinished.Edition + " edition" + (Unfinished.IsTest ? ", Test Build" : "") +
+                                             ". Last asked: " + UpdateNotifier.LastResult + ".";
+            paint();
+            var check = new Button { Content = "Check now", Margin = new Thickness(0, 0, 8, 6), HorizontalAlignment = HorizontalAlignment.Left, ToolTip = "Ask " + TimerLink.ConfiguredServer() + " now" };
+            check.Click += (s, e) =>
+            {
+                if (UpdateNotifier.Shared == null) return;
+                said.Text = "Asking...";
+                UpdateNotifier.Shared.Check(true, r => paint());
+            };
+            var panel = new StackPanel();
+            panel.Children.Add(said);
+            panel.Children.Add(check);
+            panel.IsVisibleChanged += (s, e) => { if ((bool)e.NewValue) paint(); };
+            return Ui.Card("Updates", "The Designer asks reluduali.com about new versions and notices when it starts and every few hours, and shows them under the header. Nothing about you is sent.", panel);
         }
 
         void Fill()

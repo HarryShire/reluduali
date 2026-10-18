@@ -23,7 +23,9 @@ namespace ReludualiConsole
                 "cameras, recording) and Post-Production (3D in Blender, in a later version). Click a stage to open it. The rail on the left lists " +
                 "the open stage's tools in working order: Film, Look, Control, Shoot. The pills at the top show the tether to the game: " +
                 "Redacted and RipperBridge; green is connected. Re-attach makes the tether again after the game restarts. Help is F1 from anywhere; " +
-                "the logo (or Ctrl+Home) goes back to the start screen. The lilac button on a page is its main action." },
+                "the logo (or Ctrl+Home) goes back to the start screen. The coloured button on a page is its main action (maroon by day, lilac " +
+                "by night). By day the Designer is light, as reluduali.com's card screen is; by night it is dark (Dynamic); Setup > Appearance picks Dark, " +
+                "Light or Dynamic." },
             new[] { "Cam Queue: tonight's cameras",
                 "Place markers in the theater's Edit Camera (F inserts one), then SAVE MY MARKERS: they become a CINE row - the same path the game's " +
                 "own dolly flies - and the game's markers are never changed. POV in / POV out mark a player's own view; Add POV take adds it. Each row " +

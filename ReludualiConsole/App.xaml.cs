@@ -27,6 +27,10 @@ namespace ReludualiConsole
             AppDomain.CurrentDomain.UnhandledException += (s, a) => Note("worker thread", a.ExceptionObject as Exception);
             TaskScheduler.UnobservedTaskException += (s, a) => { Note("task", a.Exception); a.SetObserved(); };
             Note("started, version " + typeof(App).Assembly.GetName().Version + ", contrast " + Velvet.Contrast, null);
+            // every card, the BATCH page's too, is printed by day like reluduali.com's (PrintCard.cs); the titles' face for
+            // the pages that ask for it by name (BatchCore's)
+            BatchRecorder.CardBorder.NewPainter = c => new Printer(c);
+            try { Skin.Fonts(); } catch (Exception ex) { Note("the titles' face", ex); }
             // every window shows the Reluduali mark (Ui.WindowIcon): the windows made in code get it as they load
             try
             {
@@ -56,6 +60,15 @@ namespace ReludualiConsole
                 Shutdown(code);
                 return;
             }
+            // ReludualiConsole.exe --skin-test OUTDIR: day and night's checks and the dissolve's frames, nothing on the screen
+            if (e.Args.Length >= 2 && e.Args[0] == "--skin-test")
+            {
+                int code = 1;
+                try { code = SkinTest.Run(e.Args[1]); }
+                catch (Exception ex) { Note("the skin test", ex); Console.Error.WriteLine(ex); }
+                Shutdown(code);
+                return;
+            }
             // ReludualiConsole.exe --theater-test OUTDIR: the theater launch's checks with no game, no window shown and no sound
             if (e.Args.Length >= 2 && e.Args[0] == "--theater-test")
             {
@@ -65,8 +78,24 @@ namespace ReludualiConsole
                 Shutdown(code);
                 return;
             }
-            // every window in the console's colours: a dark title bar and a purple rim (Windows 11)
+            // ReludualiConsole.exe --server-test URL OLDURL OUTDIR: the update feed and sharing against the stand-in server
+            if (e.Args.Length >= 4 && e.Args[0] == "--server-test")
+            {
+                int code = 1;
+                try { code = ServerTest.Run(e.Args[1], e.Args[2], e.Args[3]); }
+                catch (Exception ex) { Note("the server test", ex); }
+                Shutdown(code);
+                return;
+            }
+            // every window in the console's colours: the title bar and the rim of the day or the night (Windows 11)
             EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent, new RoutedEventHandler((s, a) => Native.Frame((Window)s)));
+            // day and night: the sky looked at every minute (Skin.cs)
+            try
+            {
+                Note("the skin: " + Skin.Now.Mode + ", " + (Skin.Now.IsLight ? "light" : "dark") + " (night " + Skin.Now.Night.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) + ")", null);
+                Skin.Start();
+            }
+            catch (Exception ex) { Note("the skin's clock", ex); }
             // ReludualiConsole.exe --lumit-test TAKEDIR WATCHDIR: hands a take's videos to a Lumit folder, as after a batch take
             if (e.Args.Length >= 3 && e.Args[0] == "--lumit-test")
             {
@@ -119,6 +148,9 @@ namespace ReludualiConsole
             try { string names = Where.Saved("names"); if (names != null) BatchRecorder.Naming.Style = names == "old" ? "" : names; } catch { }
             EventManager.RegisterClassHandler(typeof(MainWindow), FrameworkElement.LoadedEvent, new RoutedEventHandler((s, a) => OneConsole.Listen((Window)s)));
             base.OnStartup(e);
+            // the Designer's window, made here rather than by App.xaml's StartupUri: a theater launch beside a running Console
+            // must have none, and WPF refuses a null StartupUri (2026-10-18 on Mycelium's PC: three windowless processes left)
+            new MainWindow().Show();
         }
 
         private void OnUiException(object sender, DispatcherUnhandledExceptionEventArgs e)

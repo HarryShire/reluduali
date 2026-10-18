@@ -25,7 +25,7 @@ namespace ReludualiConsole
         const double LaneHeight = 90, Left = 170, Gap = 10;
         readonly KnobPanel _panel;
         readonly Canvas _canvas = new Canvas { Background = Ui.Brush("Inset"), ClipToBounds = true };
-        readonly TextBlock _info = new TextBlock { Margin = new Thickness(8, 4, 8, 4), Foreground = Brushes.Gainsboro };
+        readonly TextBlock _info = new TextBlock { Margin = new Thickness(8, 4, 8, 4), Foreground = Ui.Brush("MvText") };
         readonly DispatcherTimer _clock = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
         double _from, _to;          // the ticks across the view
         int _gameTick = -1;
@@ -89,7 +89,7 @@ namespace ReludualiConsole
                     _canvas.Children.Add(new Rectangle { Width = Math.Max(0, _canvas.ActualWidth - Gap), Height = LaneHeight - 4, Fill = Ui.Brush("Inset") });
                     Canvas.SetLeft(_canvas.Children[_canvas.Children.Count - 1], 0); Canvas.SetTop(_canvas.Children[_canvas.Children.Count - 1], top);
                     string name = kv.Key.Label + (kv.Key.Values.Length > 1 ? " " + (kv.Key.Parts[part].Length > 0 ? kv.Key.Parts[part] : part.ToString()) : "");
-                    var label = new TextBlock { Text = name + "\n" + Fmt(lane.Lo) + " .. " + Fmt(lane.Hi), Foreground = Brushes.Gainsboro, Width = Left - 10, TextWrapping = TextWrapping.Wrap };
+                    var label = new TextBlock { Text = name + "\n" + Fmt(lane.Lo) + " .. " + Fmt(lane.Hi), Foreground = Ui.Brush("MvText"), Width = Left - 10, TextWrapping = TextWrapping.Wrap };
                     Canvas.SetLeft(label, 6); Canvas.SetTop(label, top + 6); _canvas.Children.Add(label);
                     // the curve: sampled across the view, as Play would set it
                     var line = new Polyline { Stroke = (Brush)Application.Current.FindResource("Accent"), StrokeThickness = 2 };
@@ -103,7 +103,7 @@ namespace ReludualiConsole
                     {
                         double x = X(k.Tick);
                         if (x < Left - 4 || x > _canvas.ActualWidth) continue;
-                        var dot = new Ellipse { Width = 8, Height = 8, Fill = Brushes.White };
+                        var dot = new Ellipse { Width = 8, Height = 8, Fill = Ui.Brush("MvDot") };
                         Canvas.SetLeft(dot, x - 4); Canvas.SetTop(dot, Y(lane, k.V[part]) - 4);
                         _canvas.Children.Add(dot);
                     }
@@ -111,13 +111,13 @@ namespace ReludualiConsole
                 }
             if (_lanes.Count == 0)
             {
-                var t = new TextBlock { Text = "No moves yet: Record moves, play the film and move a slider.", Foreground = Brushes.Gainsboro };
+                var t = new TextBlock { Text = "No moves yet: Record moves, play the film and move a slider.", Foreground = Ui.Brush("MvText") };
                 Canvas.SetLeft(t, 12); Canvas.SetTop(t, 12); _canvas.Children.Add(t);
             }
             if (_gameTick >= 0 && _gameTick >= _from && _gameTick <= _to)
             {
                 double x = X(_gameTick);
-                _canvas.Children.Add(new Line { X1 = x, X2 = x, Y1 = 0, Y2 = Math.Max(top, 40), Stroke = Brushes.OrangeRed, StrokeThickness = 1.5 });
+                _canvas.Children.Add(new Line { X1 = x, X2 = x, Y1 = 0, Y2 = Math.Max(top, 40), Stroke = Ui.Brush("MvNow"), StrokeThickness = 1.5 });
             }
             _info.Text = "ticks " + (int)_from + " - " + (int)_to + "   (" + ((_to - _from) / 1000).ToString("0.#", CultureInfo.InvariantCulture) + " s)" +
                          (_gameTick >= 0 ? "   game at " + _gameTick : "   (no film)") + "   click: a key; drag: move it; right-click: remove; wheel: zoom; Shift+wheel: scroll; double-click: go there";

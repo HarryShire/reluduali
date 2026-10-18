@@ -151,11 +151,40 @@ local function askMainLobby(self, controller, why)
 	say("reluduali_theater_step", "main lobby (" .. why .. ")")
 	self:processEvent({ name = "open_main_lobby_requested", controller = controller or 0 })
 end
+-- V6 (2026-10-18, the main test PC: "[EXE_UI_ERROR] 23292", 2 of 7 starts): the game opens its own "Connecting to Online
+-- Service" popup at the start. Asked for the main lobby while it is up, the ONLINE action opens a second one; when the
+-- online service is ready both close themselves, and the second finds itself gone ("LUI Error: Element has no parent!" in
+-- is_demonware_fetching_done, caught by the trace below). So the ask waits until the online service is ready - the popup's
+-- own test - and then a little longer, so the game's popup has closed (it looks every 400 ms); at most 20 s, then it asks
+-- as before.
+local function onlineReady(controller)
+	local ok, v = pcall(UIExpression.IsDemonwareFetchingDone, controller or 0)
+	if ok and v ~= nil then return v == 1 or v == true end
+	ok, v = pcall(Engine.IsDemonwareFetchingDone, controller or 0)
+	if ok and v ~= nil then return v == 1 or v == true end
+	return true          -- neither can be asked: as before V6
+end
+local function whenOnline(menu, controller, label, f, least)
+	local ticks, readyAt, done = 0, nil, false
+	local event = "reluduali_online_" .. label
+	menu:registerEventHandler(event, function(self, e)
+		if done then return end
+		ticks = ticks + 1
+		if readyAt == nil and onlineReady(controller) then readyAt = ticks end
+		-- 1.5 s after the main menu at the least (V3's wait was 3 s), 1 s after the online service is ready, 20 s at most
+		if (readyAt ~= nil and ticks >= (least or 15) and ticks - readyAt >= 10) or ticks >= 200 then
+			done = true
+			say("reluduali_theater_online", readyAt ~= nil and ("ready at " .. readyAt / 10 .. " s") or "not ready after 20 s")
+			guard(label, f, self)
+		end
+	end)
+	menu:addElement(LUI.UITimer.new(100, event, false, menu))
+end
 local function onMainMenu(menu, controller)
 	state.mainMenuSeen = true
 	if not theater then return end
 	cover(menu)
-	later(menu, 30, "main_lobby", function(self) askMainLobby(self, controller, "the main menu") end)
+	whenOnline(menu, controller, "main_lobby", function(self) askMainLobby(self, controller, "the main menu") end)
 end
 
 -- the main lobby: on to the theater lobby, as its Theater button does, ONCE, about 2.5 s after it is up
@@ -293,13 +322,45 @@ end
 -- If the main menu was open before this ran (its wrapper then never fires), the root asks for the main lobby itself,
 -- once, about 4 s in: the event reaches the open main menu's own handler, as a click would.
 guard("the dev loop", devLoop)
+-- The trace (2026-10-18, on the main test PC: "[EXE_UI_ERROR] 23292" came 1-2 s after the main lobby opened, before our ask for the
+-- theater lobby, in one start of three): any Lua error inside an event, ours or the game's, has its words and the event's
+-- name kept in reluduali_theater_error (the first one only), then goes on exactly as before. The bridge can read it while
+-- the error box is up.
+local function traced(f, where)
+	return function(self, event, ...)
+		local r = { pcall(f, self, event, ...) }
+		if not r[1] then
+			local name = tostring(type(event) == "table" and event.name or event)
+			-- the game's own connecting popup, looking again after it has been closed (V6 above): nothing is left for it to
+			-- do, so its error is kept and not passed on - passed on, it ends the game with "[EXE_UI_ERROR]"
+			if name == "is_demonware_fetching_done" and tostring(r[2]):find("no parent", 1, true) then
+				say("reluduali_theater_caught", name .. ": " .. tostring(r[2]):sub(1, 120))
+				return
+			end
+			if dvarString("reluduali_theater_error") == "" then
+				say("reluduali_theater_error", where .. " " .. name .. ": " .. tostring(r[2]))
+			end
+			error(r[2], 0)
+		end
+		return unpack(r, 2)
+	end
+end
+if theater then
+	guard("the trace", function()
+		LUI.UIElement.processEvent = traced(LUI.UIElement.processEvent, "element")
+		for _, name in ipairs({ "UIRootFull", "UIRoot0", "UIRoot1" }) do
+			local root = LUI.roots and LUI.roots[name]
+			if root and root.processEvent then root.processEvent = traced(root.processEvent, name) end
+		end
+	end)
+end
 if theater then
 	guard("the start", function()
-		later(LUI.roots.UIRootFull, 40, "start", function(self)
+		whenOnline(LUI.roots.UIRootFull, 0, "start", function(self)
 			-- only when no menu of ours has come up since this file ran (after a film the game comes back to the theater
 			-- lobby itself, and nothing must be asked for then)
 			if not state.mainMenuSeen and not state.lobbyOpened and not state.theaterOpened then askMainLobby(self, 0, "the root") end
-		end)
+		end, 40)
 	end)
 	say("reluduali_theater_step", "loaded")
 end
