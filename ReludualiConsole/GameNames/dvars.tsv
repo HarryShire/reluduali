@@ -1,0 +1,2823 @@
+name	type	flags	current	default	domain	description
+actionSlotsHide	bool	1100	0	0		
+activeFriendsMaxBackoffLevel	int	20000	3	3	0 .. 2147483647	
+activeFriendsNumDayBuckets	int	20000	7	7	0 .. 2147483647	
+activeFriendsNumPlayBuckets	int	20000	7	7	0 .. 2147483647	
+activeFriendsRefreshDelay	int	20000	15000	15000	0 .. 2147483647	
+activeFriendsSecondsPerBucket	int	20000	86400	86400	0 .. 2147483647	
+adsZeroSpread	bool	20000	1	1		
+airburstAdjustDistance	float	2080	40	40	0 .. 120	
+ai_angularYawAccelRate	float	4080	1200	1200	0 .. 5000	
+ai_angularYawDecelFactor	float	4080	1	1	0 .. 5	
+ai_angularYawEnabled	bool	4080	0	0		
+ai_corpseCount	int	2001	5	8	0 .. 8	
+ai_debugAnimDeltas	int	80	0	0	0 .. 1023	
+ai_debugClaimedNodes	int	80	0	0	0 .. 64	
+ai_debugCoverEntityNum	int	80	-1	-1	-1 .. 1023	
+ai_debugEntIndex	int	0	-1	-1	-1 .. 1023	
+ai_debugFindPath	int	80	0	0	0 .. 5	
+ai_debugFindPathDirect	bool	80	0	0		
+ai_debugFindPathLock	bool	80	0	0		
+ai_debugFindPathWidth	float	80	0	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+ai_debugMayMove	bool	80	0	0		
+ai_debugMeleeAttackSpots	bool	80	0	0		
+ai_debugThreatSelection	bool	80	0	0		
+ai_disableSpawn	bool	2080	0	0		
+ai_eventDistBadPlace	float	3080	256	256	0 .. 30000	
+ai_eventDistBullet	float	3080	96	96	0 .. 30000	
+ai_eventDistBulletRunning	float	3080	200	200	0 .. 340282300000000000000000000000000000000	
+ai_eventDistDeath	float	3080	1024	1024	0 .. 30000	
+ai_eventDistExplosion	float	3080	1024	1024	0 .. 30000	
+ai_eventDistFootstep	float	3080	512	512	0 .. 30000	
+ai_eventDistFootstepLite	float	3080	256	256	0 .. 30000	
+ai_eventDistGrenadePing	float	3080	512	512	0 .. 30000	
+ai_eventDistGunShot	float	3080	2048	2048	0 .. 30000	
+ai_eventDistNewEnemy	float	3080	1024	1024	0 .. 30000	
+ai_eventDistPain	float	3080	512	512	0 .. 30000	
+ai_eventDistProjImpact	float	3080	512	512	0 .. 30000	
+ai_eventDistProjPing	float	3080	128	128	0 .. 30000	
+ai_eventDistReact	float	3080	512	512	0 .. 340282300000000000000000000000000000000	
+ai_eventDistSilencedShot	float	3080	128	128	0 .. 30000	
+ai_foliageSeeThroughDist	float	3080	128	128	0 .. 340282300000000000000000000000000000000	
+ai_friendlySuppression	bool	3080	1	1		
+ai_friendlySuppressionDist	float	3080	128	128	0 .. 2048	
+ai_maxAttackerCount	int	80	2	2	0 .. 1000	
+ai_meleeDamage	int	80	100	100	0 .. 1000	
+ai_meleeHeight	float	80	10	10	0 .. 1000	
+ai_meleeRange	float	80	64	64	0 .. 1000	
+ai_meleeWidth	float	80	20	20	0 .. 1000	
+ai_moveOrientMode	enum	80	invalid	invalid	invalid | dont_change | motion | enemy | enemy_or_motion | enemy_or_motion_sidestep | goal | Regular | Double Wide | Quadrotor	
+ai_noDodge	bool	2080	0	0		
+ai_pathChokePointCost	float	2080	1024	1024	0 .. 340282300000000000000000000000000000000	
+ai_pathMomentum	float	2080	0.78	0.78	0 .. 0.9	
+ai_pathNegotiationOverlapCost	float	2080	300	300	0 .. 1000	
+ai_pathRandomPercent	int	2080	50	50	0 .. 200	
+ai_playerFarAccuracy	float	2000	0.1	0.1	0 .. 1	
+ai_playerFarRange	float	2000	2000	2000	0 .. 340282300000000000000000000000000000000	
+ai_playerNearAccuracy	float	2000	0.5	0.5	0 .. 1	
+ai_playerNearRange	float	2000	800	800	0 .. 340282300000000000000000000000000000000	
+ai_showBadPlaces	bool	80	0	0		
+ai_ShowCanshootChecks	bool	80	0	0		
+ai_showDodge	bool	80	0	0		
+ai_showFailedPaths	float	80	1	1	0 .. 10	
+ai_showNearestNode	int	80	0	0	0 .. 64	
+ai_showNodeDrawType	enum	80	Regular	Regular	Regular | Double Wide | Quadrotor	
+ai_showNodes	int	80	0	0	0 .. 4	
+ai_showNodesDist	float	80	384	384	0 .. 340282300000000000000000000000000000000	
+ai_showPathFindNodes	bool	80	0	0		
+ai_showPaths	int	80	0	0	0 .. 2	
+ai_showPotentialThreatDir	bool	80	0	0		
+ai_showVisData	int	80	0	0	0 .. 2	
+ai_showVisDataDist	float	80	1000	1000	0 .. 340282300000000000000000000000000000000	
+ai_showVolume	int	80	-1	-1	-1 .. 1023	
+ai_slowdownMaxYawDiff	float	4080	90	90	0 .. 180	
+ai_slowdownMinRate	float	4080	1	1	0 .. 1	
+ai_slowdownMinYawDiff	float	4080	0	0	0 .. 180	
+ai_slowdownRateBlendFactor	float	4080	1	1	0 .. 1	
+ai_threatUpdateInterval	int	2080	500	500	0 .. 2147483647	
+ai_trim_path_zigzags	bool	80	1	1		
+ai_turnRate	float	4080	0.3	0.3	0.01 .. 0.5	
+ai_useBetterLookahead	bool	4080	0	0		
+ai_useFacingTranslation	bool	4080	0	0		
+ai_useLeanRunAnimations	bool	4080	0	0		
+allClientDvarsEnabled	bool	20000	0	0		
+allEmblemsPurchased	bool	80	0	0		
+allEmblemsUnlocked	bool	80	0	0		
+allItemsPurchased	bool	80	0	0		
+allItemsUnlocked	bool	80	0	0		
+allowAllNAT	bool	20000	0	0		
+allowHost_matchesHostedRatio	float	20000	0	0	0 .. 1	
+allowHost_matchesHostedStreak	int	20000	0	0	0 .. 2147483647	
+allowHost_matchesPlayedRatio	float	20000	0	0	0 .. 1	
+allowHost_matchesPlayedStreak	int	20000	0	0	0 .. 2147483647	
+all_players_are_connected	int	4000	0	0	0 .. 2147483647	
+ammoCounterHide	bool	1100	0	0		
+bandwidth_retry_interval	int	20000	180000	180000	0 .. 2147483647	
+band_12players	int	20000	384000	384000	0 .. 2147483647	
+band_18players	int	20000	580000	580000	0 .. 2147483647	
+band_2players	int	20000	64000	64000	0 .. 2147483647	
+band_4players	int	20000	128000	128000	0 .. 2147483647	
+band_6players	int	20000	192000	192000	0 .. 2147483647	
+band_8players	int	20000	256000	256000	0 .. 2147483647	
+band_dedicated	int	0	2048000	2048000	0 .. 2147483647	
+band_demosystem	int	20000	64000	64000	0 .. 2147483647	
+barebones_class_mode	string	4000	"0"	"0"		
+bg_ads	bool	80	1	1		
+bg_aimSpreadMoveSpeedThreshold	float	180	11	11	0 .. 300	
+bg_aqs	bool	80	1	1		
+bg_aqsStyle	int	80	2	2	0 .. 2	
+bg_blendTimeOverride	int	80	-1	-1	-1 .. 10000	
+bg_bobMax	float	180	8	8	0 .. 36	
+bg_chargeShotAutoDischargeDelay	int	80	0	0	0 .. 2147483647	
+bg_chargeShotAutoFireDelay	int	80	0	0	0 .. 2147483647	
+bg_chargeShotCenterSpeedReductionPerBullet	float	80	0.075	0.075	0 .. 340282300000000000000000000000000000000	
+bg_chargeShotDamageIncreasePerBullet	float	80	0	0	0 .. 340282300000000000000000000000000000000	
+bg_chargeShotDischargeWhenQueueReachesMax	bool	80	0	0		
+bg_chargeShotFireWhenQueueReachesMax	bool	80	0	0		
+bg_chargeShotMaxBulletQueueOnEMP	int	80	1	1	0 .. 2147483647	
+bg_chargeShotMaxBulletsInQueue	int	80	3	3	0 .. 2147483647	
+bg_chargeShotMaxViewKick	float	80	85	85	0 .. 340282300000000000000000000000000000000	
+bg_chargeShotMinCenterSpeed	float	80	350	350	0 .. 340282300000000000000000000000000000000	
+bg_chargeShotPenetrationMultiplier	float	80	1	1	0 .. 30	
+bg_chargeShotQueueTime	int	80	500	500	0 .. 2147483647	
+bg_chargeShotUseOneAmmoForMultipleBullets	bool	80	0	0		
+bg_chargeShotViewKickIncreasePerBullet	float	80	0.5	0.5	0 .. 340282300000000000000000000000000000000	
+bg_disableWeaponPlantingInWater	bool	80	1	1		
+bg_dog_swim_enabled	bool	100	0	0		
+bg_dog_swim_water_max	float	20000	40	40	0 .. 100	
+bg_dog_swim_water_min	float	20000	20	20	0 .. 100	
+bg_fallDamageMaxHeight	float	180	300	300	1 .. 340282300000000000000000000000000000000	
+bg_fallDamageMinHeight	float	180	128	128	1 .. 340282300000000000000000000000000000000	
+bg_foliagesnd_fastinterval	int	180	500	500	0 .. 2147483647	
+bg_foliagesnd_maxspeed	float	180	180	180	0 .. 340282300000000000000000000000000000000	
+bg_foliagesnd_minspeed	float	180	40	40	0 .. 340282300000000000000000000000000000000	
+bg_foliagesnd_resetinterval	int	180	500	500	0 .. 2147483647	
+bg_foliagesnd_slowinterval	int	180	1500	1500	0 .. 2147483647	
+bg_forceAnimOverrideTimerCheck	bool	180	0	0		
+bg_forceDurationOverride	int	80	-1	-1	-1 .. 10000	
+bg_forceExplosiveBullets	bool	180	0	0		
+bg_gravity	float	2000	800	800	1 .. 340282300000000000000000000000000000000	
+bg_gunXOffset	float	4000	0	0	-1000 .. 1000	
+bg_ladder_yawcap	float	180	100	100	0 .. 360	
+bg_legYawCrouchTolerance	float	80	10	10	0 .. 180	
+bg_legYawProneTolerance	float	80	2	2	0 .. 180	
+bg_legYawTolerance	float	80	40	40	0 .. 180	
+bg_lowGravity	float	2000	400	400	1 .. 340282300000000000000000000000000000000	
+bg_maxGrenadeIndicatorSpeed	float	180	100	100	0 .. 1000	
+bg_moonGravity	float	2000	136	136	1 .. 340282300000000000000000000000000000000	
+bg_movingPlatformPitchScale	float	1000	0	0	0 .. 1	
+bg_plantInWaterDepth	float	4000	5	5	0 .. 1024	
+bg_playerAnimStanceAllowMovementInteruptTime	int	180	200	200	0 .. 1000	
+bg_proneSwingSpeed	float	80	0.08	0.08	0 .. 5	
+bg_prone_yawcap	float	180	45	45	0 .. 360	
+bg_serverDelayDamageKickForPing	bool	0	0	0		
+bg_shieldHitEncodeHeightVM	vec2	2080	-10 10	-10 10	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+bg_shieldHitEncodeHeightWorld	vec2	2080	-25 20	-25 20	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+bg_shieldHitEncodeWidthVM	vec2	2080	-16 16	-16 16	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+bg_shieldHitEncodeWidthWorld	vec2	2080	-14 14	-14 14	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+bg_shock_animation	bool	80	0	0		
+bg_shock_lookControl	bool	80	1	1		
+bg_shock_lookControl_fadeTime	float	80	2	2	0.001 .. 1000	
+bg_shock_lookControl_maxpitchspeed	float	80	90	90	0 .. 340282300000000000000000000000000000000	
+bg_shock_lookControl_maxyawspeed	float	80	90	90	0 .. 340282300000000000000000000000000000000	
+bg_shock_lookControl_mousesensitivityscale	float	80	0.5	0.5	0 .. 2	
+bg_shock_movement	float	80	1	1	0 .. 1	
+bg_shock_screenBlurBlendFadeTime	float	80	1	1	0.001 .. 1000	
+bg_shock_screenBlurBlendTime	float	80	0.4	0.4	0.001 .. 10	
+bg_shock_screenFlashShotFadeTime	float	80	1	1	0 .. 1000	
+bg_shock_screenFlashWhiteFadeTime	float	80	1	1	0 .. 1000	
+bg_shock_screenType	enum	80	blurred	blurred	blurred | flashed | none	
+bg_shock_sound	bool	80	1	1		
+bg_shock_soundDryLevel	float	80	1	1	0 .. 1	
+bg_shock_soundEnd	string	80	"shellshock_end"	"shellshock_end"		
+bg_shock_soundEndAbort	string	80	"shellshock_end_abort"	"shellshock_end_abort"		
+bg_shock_soundFadeInTime	float	80	0.25	0.25	0.001 .. 1000	
+bg_shock_soundFadeOutTime	float	80	2.5	2.5	0 .. 1000	
+bg_shock_soundLoop	string	80	"shellshock_loop"	"shellshock_loop"		
+bg_shock_soundLoopEndDelay	float	80	-3	-3	-10 .. 1000	
+bg_shock_soundLoopFadeTime	float	80	1.5	1.5	0 .. 1000	
+bg_shock_soundLoopSilent	string	80	"shellshock_loop_silent"	"shellshock_loop_silent"		
+bg_shock_soundModEndDelay	float	80	2	2	-1000 .. 1000	
+bg_shock_soundRoomType	string	80	"default"	"default"		
+bg_shock_soundSnapshot	string	80	"default"	"default"		
+bg_shock_soundWetLevel	float	80	0.5	0.5	0 .. 1	
+bg_shock_viewKickFadeTime	float	80	3	3	0.001 .. 1000	
+bg_shock_viewKickPeriod	float	80	0.75	0.75	0.001 .. 1000	
+bg_shock_viewKickRadius	float	80	0.05	0.05	0 .. 1	
+bg_shock_visionset_inTime	float	80	0	0	0 .. 30	
+bg_shock_visionset_name	string	80	""	""		
+bg_shock_visionset_outTime	float	80	0	0	0 .. 30	
+bg_slopeFrames	int	80	10	10	0 .. 30	
+bg_swingSpeed	float	80	0.15	0.15	0 .. 5	
+bg_teleportAlignTime	int	80	500	500	-1 .. 2000	
+bg_useClientDamageKick	bool	0	1	1		
+bg_vehicle_gravity	float	2080	985	985	0 .. 340282300000000000000000000000000000000	
+bg_vehicle_ground_max_normal	float	2080	0.4	0.4	0 .. 1	
+bg_vehicle_ground_min_normal	float	2080	0.7	0.7	0 .. 1	
+bg_vehicle_max_body_pitch	float	2080	12	12	0 .. 340282300000000000000000000000000000000	
+bg_vehicle_max_body_roll	float	2080	12	12	0 .. 340282300000000000000000000000000000000	
+bg_vehicle_max_pitch	float	2080	20	20	0 .. 340282300000000000000000000000000000000	
+bg_vehicle_max_roll	float	2080	20	20	0 .. 340282300000000000000000000000000000000	
+bg_vehicle_overclip	float	2080	0.001	0.001	0 .. 340282300000000000000000000000000000000	
+bg_vehicle_pitch_track	float	2080	2	2	0 .. 340282300000000000000000000000000000000	
+bg_vehicle_roll_track	float	2080	2	2	0 .. 340282300000000000000000000000000000000	
+bg_vehicle_slide_min_normal	float	2080	0.8	0.8	0 .. 1	
+bg_vehicle_sphere_bounds_offset_z	float	2080	-9	-9	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+bg_vehicle_stepsize	float	2080	12	12	0 .. 340282300000000000000000000000000000000	
+bg_vehicle_tangential_clip_max_scale	float	2080	1	1	0 .. 340282300000000000000000000000000000000	
+bg_vehicle_tangential_clip_vel_scale	float	2080	3	3	0 .. 340282300000000000000000000000000000000	
+bg_vehicle_trace_offset	float	2080	0.25	0.25	0 .. 340282300000000000000000000000000000000	
+bg_viewBobAmplitudeDtp	vec2	180	0.002 0.002	0.002 0.002	0 .. 1	
+bg_viewBobAmplitudeDucked	vec2	180	0.0075 0.0075	0.0075 0.0075	0 .. 1	
+bg_viewBobAmplitudeDuckedAds	vec2	180	0.0075 0.0075	0.0075 0.0075	0 .. 1	
+bg_viewBobAmplitudeProne	vec2	180	0.08 0.04	0.08 0.04	0 .. 1	
+bg_viewBobAmplitudeRoll	float	180	1.5	1.5	0 .. 90	
+bg_viewBobAmplitudeSprinting	vec2	180	0.02 0.014	0.02 0.014	0 .. 1	
+bg_viewBobAmplitudeStanding	vec2	4080	0.007 0.007	0.007 0.007	0 .. 1	
+bg_viewBobAmplitudeStandingAds	vec2	1180	0.007 0.007	0.007 0.007	0 .. 1	
+bg_viewBobAmplitudeSwimming	vec2	4080	3 2	3 2	0 .. 8	
+bg_viewKickMax	float	80	90	90	0 .. 90	
+bg_viewKickMin	float	80	0.5	0.5	0 .. 90	
+bg_viewKickRandom	float	80	0.4	0.4	0 .. 1	
+bg_viewKickScale	float	80	0.175	0.175	0 .. 10	
+bg_vsmode_hud	bool	180	0	0		
+bg_weaponBobAmplitudeBaseLaser	float	0	0.05	0.05	0 .. 1	
+bg_weaponBobAmplitudeDtp	vec2	180	0.002 0.002	0.002 0.002	0 .. 1	
+bg_weaponBobAmplitudeDucked	vec2	180	0.045 0.025	0.045 0.025	0 .. 1	
+bg_weaponBobAmplitudeProne	vec2	180	0.02 0.005	0.02 0.005	0 .. 1	
+bg_weaponBobAmplitudeRiding	vec2	180	0.0027 0.005	0.0027 0.005	0 .. 1	
+bg_weaponBobAmplitudeRoll	float	180	1.5	1.5	0 .. 90	
+bg_weaponBobAmplitudeRollLaser	float	180	1	1	0 .. 90	
+bg_weaponBobAmplitudeSprinting	vec2	180	0.02 0.014	0.02 0.014	0 .. 1	
+bg_weaponBobAmplitudeStanding	vec2	4080	0.055 0.025	0.055 0.025	0 .. 1	
+bg_weaponBobAmplitudeSwimming	vec2	4080	4 4	4 4	0 .. 8	
+bg_weaponBobFrequencySwimming	float	4080	0.1	0.1	0 .. 5	
+bg_weaponBobHeavyWeaponScalar	float	4080	1.5	1.5	1 .. 1000	
+bg_weaponBobLag	float	180	0.25	0.25	-1 .. 1	
+bg_weaponBobMax	float	180	8	8	0 .. 36	
+bg_weaponOffscreenReloadScale	float	4080	1	1	0 .. 1	
+blackboxHighVolumeProbability	string	4000	"0.001"	"0.001"		
+bot_AllowGrenades	bool	0	1	1		
+bot_CloseDistance	float	80	256	256	0 .. 4096	
+bot_CrouchDistance	float	80	32	32	1 .. 4096	
+bot_difficulty	int	0	1	1	0 .. 3	
+bot_enemies	int	0	0	0	0 .. 17	
+bot_Fov	float	80	65	65	1 .. 160	
+bot_friends	int	0	0	0	0 .. 17	
+bot_GoalRadius	float	80	128	128	0 .. 4096	
+bot_MaxAdsTime	int	80	1500	1500	0 .. 10000	
+bot_MaxCrouchTime	int	80	4000	4000	0 .. 10000	
+bot_MaxDeathTime	int	80	1000	1000	0 .. 10000	
+bot_MaxFireTime	int	80	600	600	0 .. 2000	
+bot_MaxGrenadeTime	int	80	1000	1000	0 .. 10000	
+bot_MaxPitchTime	int	80	1000	1000	0 .. 10000	
+bot_MaxReactionTime	int	80	1000	1000	0 .. 5000	
+bot_MaxStrafeTime	int	80	6000	6000	0 .. 10000	
+bot_MeleeDist	float	0	80	80	0 .. 256	
+bot_MinAdsTime	int	80	1000	1000	0 .. 10000	
+bot_MinCrouchTime	int	80	2000	2000	0 .. 10000	
+bot_MinDeathTime	int	80	500	500	0 .. 10000	
+bot_MinFireTime	int	80	400	400	0 .. 2000	
+bot_MinGrenadeTime	int	80	500	500	0 .. 10000	
+bot_MinPitchTime	int	80	500	500	0 .. 10000	
+bot_MinReactionTime	int	80	500	500	0 .. 5000	
+bot_MinStrafeTime	int	80	3000	3000	0 .. 10000	
+bot_PitchDown	float	80	20	20	0 .. 90	
+bot_PitchSpeed	float	80	90	90	0 .. 100	
+bot_PitchSpeedAds	float	80	5	5	0 .. 100	
+bot_PitchUp	float	80	-10	-10	-90 .. 0	
+bot_SprintDistance	float	80	256	256	1 .. 4096	
+bot_StrafeChance	float	80	0.1	0.1	0 .. 1	
+bot_TargetLeadBias	int	80	1	1	0 .. 25	
+bot_UseFriendNames	bool	0	1	1		
+bot_YawSpeed	float	80	1	1	0 .. 10	
+bot_YawSpeedAds	float	80	5	5	0 .. 100	
+bulletrange	float	100	8192	8192	0 .. 65536	
+bullet_penetrationEnabled	bool	80	1	1		
+bullet_penetrationMinFxDist	float	80	30	30	0 .. 1024	
+bullet_ricochetBaseChance	float	80	0.5	0.5	0 .. 0.95	
+cameraShakeRemoteHelo_Angles	vec3	80	0.221 0.15 2	0.221 0.15 2	0 .. 90	
+cameraShakeRemoteHelo_Freqs	vec3	80	31 90 0.5	31 90 0.5	0 .. 340282300000000000000000000000000000000	
+cameraShakeRemoteHelo_SpeedRange	vec2	80	2000 5000	2000 5000	0 .. 340282300000000000000000000000000000000	
+cameraShakeRemoteMissile_Angles	vec3	80	0.05 0.7 0.07	0.05 0.7 0.07	0 .. 90	
+cameraShakeRemoteMissile_Freqs	vec3	80	42 0.7 100	42 0.7 100	0 .. 340282300000000000000000000000000000000	
+cameraShakeRemoteMissile_SpeedRange	vec2	80	1000 4000	1000 4000	0 .. 340282300000000000000000000000000000000	
+cg_adsZScaleMax	float	80	1.25	1.25	1.01 .. 1.99	
+cg_airburstCameraRestriction	float	80	0.05	0.05	0 .. 1	
+cg_airburstLaseFlashTime	float	80	0.2	0.2	0 .. 340282300000000000000000000000000000000	
+cg_airburstLaseTime	float	80	0.5	0.5	0 .. 340282300000000000000000000000000000000	
+cg_airburstStrafeRestriction	float	80	0.05	0.05	0 .. 1	
+cg_allow_mature	bool	40	1	1		
+cg_allPlayerNamesVisible	bool	80	0	0		
+cg_altDofTrace	bool	0	1	1		
+cg_alt_mode_killstreak_fix_tu6	bool	20000	1	1		
+cg_artilleryKillCamBackDist	float	80	30	30	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_artilleryKillCamFov	float	80	30	30	0.1 .. 160	
+cg_artilleryKillCamGroundBackDist	float	80	30	30	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_artilleryKillCamGroundUpDist	float	80	15	15	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_artilleryKillCamUpDist	float	80	3	3	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_artilleryKillCamWallOutDist	float	80	10	10	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_artilleryKillCamWallSideDist	float	80	30	30	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_BallisticArc_BeginWidth	float	80	5	5	1 .. 1000	
+cg_BallisticArc_DrawDelay	int	80	0	0	0 .. 10000	
+cg_BallisticArc_EndWidth	float	80	20	20	1 .. 1000	
+cg_BallisticArc_ForceHitIndicator	bool	4000	0	0		
+cg_BallisticArc_MaxBounces	int	80	3	3	0 .. 5	
+cg_BallisticArc_MinBounces	int	80	0	0	0 .. 4	
+cg_BallisticArc_Offset	vec3	80	0 20 0	0 20 0	-100 .. 100	
+cg_cameraSpikeEnemyColor	color	80	255 0 0 255	255 0 0 255		
+cg_cameraSpikeHighlightBrightness	float	80	5	5	0 .. 340282300000000000000000000000000000000	
+cg_cameraVehicleExitTweenTime	float	80	0.4	0.4	0 .. 5	
+cg_cameraWaterClip	float	1080	4.5	4.5	-100 .. 100	
+cg_canSeeFriendlyFrustumExpand	float	80	-30	-30	-1000 .. 1000	
+cg_canSeeFriendlyFrustumMinDistance	float	80	100	100	0 .. 10000	
+cg_canSeeFriendlyFrustumUpdateInterval	int	80	250	250	1 .. 5000	
+cg_centertime	float	80	5	5	0 .. 340282300000000000000000000000000000000	
+cg_chatHeight	int	84000	8	8	0 .. 8	
+cg_cinematicFullscreen	bool	1000	1	1		
+cg_colorHue	float	80	0	0	0 .. 360	
+cg_colorSaturation	float	80	1	1	0 .. 1	
+cg_colorScale	vec3	80	1 1 1	1 1 1	-10 .. 10	
+cg_colorTemp	float	80	6500	6500	1650 .. 25000	
+cg_constantSizeHeadIcons	bool	80	0	0		
+cg_corpseHighlightFadeTime	float	80	2	2	0 .. 340282300000000000000000000000000000000	
+cg_crosshairAlpha	float	81	1	1	0 .. 1	
+cg_crosshairAlphaMin	float	81	0.5	0.5	0 .. 1	
+cg_crosshairDynamic	bool	81	0	0		
+cg_crosshairEnemyColor	bool	81	1	1		
+cg_cullBulletAngle	float	80	50	50	0 .. 90	
+cg_cullBullets	bool	80	1	1		
+cg_cursorHints	int	1	4	4	0 .. 4	
+cg_debugevents	bool	80	0	0		
+cg_debugposition	bool	80	0	0		
+cg_debug_overlay_viewport	bool	80	0	0		
+cg_destructibleKillCamCloseXYDist	float	80	24	24	0 .. 340282300000000000000000000000000000000	
+cg_destructibleKillCamCloseZDist	float	80	24	24	0 .. 340282300000000000000000000000000000000	
+cg_destructibleKillCamFarBlur	float	80	2	2	0 .. 10	
+cg_destructibleKillCamFarBlurDist	float	80	300	300	0 .. 340282300000000000000000000000000000000	
+cg_destructibleKillCamFarBlurStart	float	80	100	100	0 .. 340282300000000000000000000000000000000	
+cg_destructibleKillCamFov	float	80	50	50	0.1 .. 160	
+cg_destructibleKillCamNearBlur	float	80	4	4	4 .. 10	
+cg_destructibleKillCamNearBlurEnd	float	80	100	100	0 .. 10000	
+cg_destructibleKillCamNearBlurStart	float	80	0	0	0 .. 340282300000000000000000000000000000000	
+cg_destructibleKillCamRegularHeight	float	80	90	90	0 .. 10000	
+cg_destructibleKillCamZIncrease	float	80	15	15	0 .. 10000	
+cg_development	bool	0	0	0		
+cg_disableplayernames	bool	1080	0	0		
+cg_dogKillCamDistFromEyes	float	80	20	20	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_dogKillCamForwardDist	float	80	-40	-40	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_dogKillCamFov	float	80	90	90	0.1 .. 160	
+cg_dogKillCamSideDist	float	80	0	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_dogKillCamUpDist	float	80	30	30	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_dogKillMinDistFromTarget	float	80	100	100	0 .. 340282300000000000000000000000000000000	
+cg_draw2D	bool	80	1	1		
+cg_drawBigFPS	enum	20000	Off	Off	Off | Counters Only | All | ForceAllFPS	
+cg_drawBreathHint	bool	1	1	1		
+cg_drawCrosshair	bool	80	1	1		
+cg_drawCrosshairNames	bool	80	1	1		
+cg_drawCrosshairNamesPosX	int	80	300	300	0 .. 640	
+cg_drawCrosshairNamesPosY	int	80	180	180	0 .. 480	
+cg_drawFPS	enum	1	Simple	Off	Off | Simple | SimpleRanges | Verbose	
+cg_drawFPSOnly	bool	1	0	0		
+cg_drawFriendlyNames	bool	80	1	1		
+cg_drawGun	bool	80	1	1		
+cg_drawHealth	bool	80	0	0		
+cg_drawHoldBreathHint	bool	1	1	1		
+cg_drawlagometer	bool	20000	0	0		
+cg_drawMaterial	enum	80	Off	Off	Off | SHOW_TRIANGLE | SHOW_SURFACE | SHOW_SURFACE_NOCULL	
+cg_drawMaterialImageName	string	80	""	""		
+cg_drawMaterialImageNum	int	80	-1	-1	-2 .. 128	
+cg_drawModelAxis	int	80	-1	-1	-1 .. 256	
+cg_drawpaused	bool	0	1	1		
+cg_drawShellshock	bool	80	1	1		
+cg_drawTalk	enum	100	ALL	ALL	NONE | ALL | FRIENDLY | ENEMY	
+cg_drawThroughWalls	bool	80	0	0		
+cg_droneKillCamBackDist	float	80	300	300	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_droneKillCamUpDist	float	80	70	70	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_dumpAnims	int	80	-1	-1	-1 .. 1791	
+cg_EnableAdaptiveSkinLodScale	bool	0	1	1		
+cg_enableHelicopterNoCullLodOut	bool	4080	1	1		
+cg_enemyNameFadeIn	int	80	250	250	0 .. 2147483647	
+cg_enemyNameFadeOut	int	80	250	250	0 .. 2147483647	
+cg_explosiveKillCamBackDist	float	80	150	150	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_explosiveKillCamGroundBackDist	float	80	50	50	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_explosiveKillCamGroundUpDist	float	80	25	25	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_explosiveKillCamStopDecelDist	float	80	100	100	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_explosiveKillCamStopDist	float	80	200	200	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_explosiveKillCamUpDist	float	80	10	10	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_explosiveKillCamWallOutDist	float	80	10	10	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_explosiveKillCamWallSideDist	float	80	30	30	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_fakefireWizbyChance	float	80	0.2	0.2	0 .. 1	
+cg_firstPersonTracerChance	float	80	0	0	0 .. 1	
+cg_fixupSmodelCullDists	bool	0	0	0		
+cg_flareVisionSetFadeDuration	int	80	2000	2000	0 .. 2147483647	
+cg_footprints	bool	80	1	1		
+cg_footprintsDebug	int	80	0	0	0 .. 1	
+cg_footprintsDistortWater	int	80	0	0	0 .. 1	
+cg_footsteps	bool	80	1	1		
+cg_forceInfrared	bool	80	0	0		
+cg_fov	float	80	65	65	1 .. 160	
+cg_fovExtraCam	float	80	30	30	1 .. 160	
+cg_fovMin	float	80	10	10	1 .. 160	
+cg_fovScale	float	80	1	1	0.2 .. 2	
+cg_fov_default	float	C4000	65	65	65 .. 90	
+cg_fov_default_thirdperson	float	84000	40	40	1 .. 160	
+cg_friendlyNameFadeIn	int	80	0	0	0 .. 2147483647	
+cg_friendlyNameFadeOut	int	80	1500	1500	0 .. 2147483647	
+cg_fuelHudVersion	int	80	1	1	0 .. 3	
+cg_gun_move_f	float	80	0	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_gun_move_minspeed	float	80	0	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_gun_move_r	float	80	0	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_gun_move_rate	float	80	0	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_gun_move_u	float	80	0	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_gun_ofs_f	float	80	0	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_gun_ofs_r	float	80	0	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_gun_ofs_u	float	80	0	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_gun_rot_minspeed	float	80	0	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_gun_rot_p	float	80	0	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_gun_rot_r	float	80	0	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_gun_rot_rate	float	80	0	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_gun_rot_y	float	80	0	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_gun_x	float	80	0	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_gun_y	float	80	0	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_gun_z	float	80	0	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_headIconMinScreenRadius	float	1	0.015	0.02	0 .. 1	
+cg_heliKillCamFarBlur	float	80	2	2	0 .. 10	
+cg_heliKillCamFarBlurDist	float	80	300	300	0 .. 340282300000000000000000000000000000000	
+cg_heliKillCamFarBlurStart	float	80	100	100	0 .. 340282300000000000000000000000000000000	
+cg_heliKillCamFov	float	80	15	15	0.1 .. 160	
+cg_heliKillCamNearBlur	float	80	4	4	4 .. 10	
+cg_heliKillCamNearBlurEnd	float	80	100	100	0 .. 10000	
+cg_heliKillCamNearBlurStart	float	80	0	0	0 .. 340282300000000000000000000000000000000	
+cg_hudGrenadeIconHeight	float	1	25	25	0 .. 512	
+cg_hudGrenadeIconMaxRangeFlash	float	1080	500	500	0 .. 2000	
+cg_hudGrenadeIconMaxRangeFrag	float	1080	250	250	0 .. 1000	
+cg_hudGrenadeIconOffset	float	1	50	50	0 .. 512	
+cg_hudGrenadeIconWidth	float	1	25	25	0 .. 512	
+cg_hudGrenadePointerHeight	float	1	12	12	0 .. 512	
+cg_hudGrenadePointerPivot	vec2	1	12 27	12 27	0 .. 512	
+cg_hudGrenadePointerWidth	float	1	25	25	0 .. 512	
+cg_hudMapBorderWidth	float	1	2	2	0 .. 340282300000000000000000000000000000000	
+cg_hudMapFriendlyHeight	float	1	15	15	0 .. 340282300000000000000000000000000000000	
+cg_hudMapFriendlyWidth	float	1	15	15	0 .. 340282300000000000000000000000000000000	
+cg_hudMapPlayerHeight	float	1	20	20	0 .. 340282300000000000000000000000000000000	
+cg_hudMapPlayerWidth	float	1	20	20	0 .. 340282300000000000000000000000000000000	
+cg_hudMapRadarLineThickness	float	80	0.15	0.15	0.01 .. 10	
+cg_infraredBlur	float	80	1	1	1 .. 10	
+cg_infraredBlurTime	float	80	50	50	0 .. 10000	
+cg_InfraredFadeoutTime	float	80	2000	2000	10 .. 10000	
+cg_infraredFriendlies	int	0	0	0	0 .. 2	
+cg_infraredUseDefaultMaterial	bool	80	0	0		
+cg_killcamdebug	bool	80	0	0		
+cg_laserSightMaxDistance	float	80	3500	3500	0 .. 10000	
+cg_lastSpectatorSelectedThirdPerson	bool	1	1	1		
+cg_maxPlayerHighlightTargetSize	float	80	90	90	0 .. 340282300000000000000000000000000000000	
+cg_microwaveTurretKillCamBackOffset	float	80	-20	-20	-100 .. 100	
+cg_microwaveTurretKillCamFov	float	80	100	100	0.1 .. 160	
+cg_microwaveTurretKillCamHeightIncrease	float	80	80	80	0 .. 10000	
+cg_minCullBulletDist	float	80	128	128	0 .. 340282300000000000000000000000000000000	
+cg_missile_FOV	float	80	15	15	0 .. 65	
+cg_opticAttachmentViewmodelSwitch	float	80	1	1	0 .. 1	
+cg_overheadIconSize	float	1	1.1	0.7	0 .. 100	
+cg_overheadNamesFarDist	float	80	512	512	0 .. 340282300000000000000000000000000000000	
+cg_overheadNamesFarScale	float	80	0.7	0.7	0 .. 340282300000000000000000000000000000000	
+cg_overheadNamesGlow	color	80	0 0 0 255	0 0 0 255		
+cg_overheadNamesMaxDist	float	80	10000	10000	0 .. 340282300000000000000000000000000000000	
+cg_overheadNamesNearDist	float	80	64	64	0 .. 340282300000000000000000000000000000000	
+cg_overheadNamesSize	float	1	0.65	0.5	0 .. 100	
+cg_overheadNamesTagUpdateInterval	int	80	1	1	1 .. 5000	
+cg_overheadRankSize	float	1	0.5	0.5	0 .. 340282300000000000000000000000000000000	
+cg_playerFrustumHalfHeight	float	80	36	36	0 .. 128	
+cg_playerHighlightBlinkTime	int	80	1250	1250	0 .. 2147483647	
+cg_playerHighlightBrightness	float	80	3	3	0 .. 340282300000000000000000000000000000000	
+cg_playerHighlightEnemyColor	color	80	255 26 26 255	255 26 26 255		
+cg_playerHighlightMinFade	float	80	0.4	0.4	0 .. 1	
+cg_playerHighlightTargetSize	float	80	2500	2500	0 .. 340282300000000000000000000000000000000	
+cg_proneFeetCollisionHull	bool	80	1	1		
+cg_rangeFinderActiveColor	color	0	255 0 0 255	255 0 0 255		
+cg_rangeFinderActiveHeight	float	80	200	200	0 .. 340282300000000000000000000000000000000	
+cg_rangeFinderActiveWidth	float	80	400	400	0 .. 340282300000000000000000000000000000000	
+cg_rangeFinderDefaultColor	color	0	0 255 0 255	0 255 0 255		
+cg_rangeFinderDiamondIndicator	bool	80	1	1		
+cg_rangeFinderDiamondSize	float	80	50	50	0 .. 340282300000000000000000000000000000000	
+cg_rangeFinderMinEnemySpottingDist	int	80	-1	-1	-1 .. 2147483647	
+cg_rangeFinderPlayerTargetSize	float	80	50	50	0 .. 340282300000000000000000000000000000000	
+cg_retrieveHintTime	int	80	0	0	0 .. 2147483647	
+cg_retrieveHintTimeStuck	int	80	2000	2000	0 .. 2147483647	
+cg_rocketKillCamBackDist	float	80	350	350	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_rocketKillCamUpDist	float	80	100	100	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+cg_scoreboardMyColor	color	0	255 204 102 255	255 204 102 255		
+cg_ScoresPing_BgColor	color	1	64 64 64 128	64 64 64 128		
+cg_ScoresPing_HighColor	color	1	204 0 0 255	204 0 0 255		
+cg_ScoresPing_Interval	int	84000	1	100	1 .. 500	
+cg_ScoresPing_LowColor	color	1	0 191 0 255	0 191 0 255		
+cg_ScoresPing_MedColor	color	1	204 204 0 255	204 204 0 255		
+cg_scriptedKillCamCloseXYDist	float	80	24	24	0 .. 340282300000000000000000000000000000000	
+cg_scriptedKillCamCloseZDist	float	80	24	24	0 .. 340282300000000000000000000000000000000	
+cg_scriptedKillCamFarBlur	float	80	2	2	0 .. 10	
+cg_scriptedKillCamFarBlurDist	float	80	300	300	0 .. 340282300000000000000000000000000000000	
+cg_scriptedKillCamFarBlurStart	float	80	100	100	0 .. 340282300000000000000000000000000000000	
+cg_scriptedKillCamFov	float	80	50	50	0.1 .. 160	
+cg_scriptedKillCamNearBlur	float	80	4	4	4 .. 10	
+cg_scriptedKillCamNearBlurEnd	float	80	100	100	0 .. 10000	
+cg_scriptedKillCamNearBlurStart	float	80	0	0	0 .. 340282300000000000000000000000000000000	
+cg_showZombieControls	bool	0	0	0		
+cg_sonarAttachmentBlur	float	80	0	0	0 .. 10	
+cg_sonarAttachmentCounterColorMultiplier	float	80	0.02	0.02	0 .. 1	
+cg_sonarAttachmentCounterMaxSpeed	float	80	0.2	0.2	0.2 .. 6	
+cg_sonarAttachmentDistanceFactor	float	80	3	3	0 .. 100	
+cg_sonarAttachmentEmpFade	float	80	1	1	0.001 .. 5	
+cg_sonarAttachmentFadeFriendlies	bool	80	1	1		
+cg_sonarAttachmentHideFriendlies	bool	80	1	1		
+cg_sonarAttachmentMaxDist	float	80	1000	1000	250 .. 2500	
+cg_sonarAttachmentMaxSpeed	float	80	2.2	2.2	0.2 .. 6	
+cg_sonarAttachmentPulseInterval	float	80	2	2	0.25 .. 15	
+cg_sonarAttachmentPulseTime	float	80	2	2	0.1 .. 10	
+cg_sonarAttachmentSpeedDelay	float	80	0.8	0.8	0 .. 1	
+cg_sonarAttachmentSpeedTimeRatio	float	80	0	0	0 .. 1	
+cg_sonarAttachmentZmTurnedFadeTime	float	80	0.5	0.5	0 .. 10	
+cg_sonarAttachmentZmTurnedGraceTime	float	80	5	5	0 .. 20	
+cg_sonarAttachmentZmTurnedMinFade	float	80	0.4	0.4	0 .. 1	
+cg_streamLowDetailCamos	bool	0	1	1		
+cg_subtitleWidthStandard	int	1	520	520	130 .. 1664	
+cg_subtitleWidthWidescreen	int	1	450	520	130 .. 1664	
+cg_thirdPerson	int	80	0	0	0 .. 2	
+cg_thirdPersonAngle	float	80	0	0	-180 .. 360	
+cg_thirdPersonFocusDist	float	80	512	512	0 .. 1024	
+cg_thirdPersonMode	enum	80	Fixed	Fixed	Free | Fixed | Locked	
+cg_thirdPersonRange	float	80	120	120	0 .. 1024	
+cg_timedDamageDuration	int	80	500	500	1 .. 5000	
+cg_treadmarks	bool	80	0	0		
+cg_turretBipodOffset	float	80	17	17	-50 .. 50	
+cg_turretKillCamBackOffset	float	80	-75	-75	-100 .. 100	
+cg_turretKillCamCloseXYDist	float	80	24	24	0 .. 340282300000000000000000000000000000000	
+cg_turretKillCamCloseZDist	float	80	24	24	0 .. 340282300000000000000000000000000000000	
+cg_turretKillCamFarBlur	float	80	2	2	0 .. 10	
+cg_turretKillCamFarBlurDist	float	80	300	300	0 .. 340282300000000000000000000000000000000	
+cg_turretKillCamFarBlurStart	float	80	100	100	0 .. 340282300000000000000000000000000000000	
+cg_turretKillCamFov	float	80	65	65	0.1 .. 160	
+cg_turretKillCamHeightIncrease	float	80	75	75	0 .. 10000	
+cg_turretKillCamNearBlur	float	80	4	4	4 .. 10	
+cg_turretKillCamNearBlurEnd	float	80	25	25	0 .. 10000	
+cg_turretKillCamNearBlurStart	float	80	0	0	0 .. 340282300000000000000000000000000000000	
+cg_turretKillCamSideOffset	float	80	0	0	-100 .. 100	
+cg_ufo_scaler	float	180	6	6	0.001 .. 1000	
+cg_useColorControl	bool	80	0	0		
+cg_useSafeSpectatorCam	bool	20000	1	1		
+cg_useWeaponBasedVariableZoom	bool	80	1	1		
+cg_useWeaponSwitchReloadCancel	bool	80	1	1		
+cg_use_colored_smoke	bool	80	0	0		
+cg_usingClientScripts	bool	80	1	1		
+cg_usNewEventQueueScheme	bool	20000	1	1		
+cg_VelocityArrow_MaxSegmentLength	int	80	64	64	1 .. 1000	
+cg_VelocityArrow_MinSegmentLength	int	80	32	32	1 .. 1000	
+cg_VelocityArrow_RateOfChange	float	80	5	5	0 .. 360	
+cg_viewVehicleInfluenceGunner	vec3	1080	1 1 1	1 1 1	0 .. 1	
+cg_viewVehicleInfluenceGunnerFiring	vec3	1080	0 0 0	0 0 0	0 .. 1	
+cg_viewZSmoothingMax	float	80	16	16	0 .. 340282300000000000000000000000000000000	
+cg_viewZSmoothingMin	float	80	1	1	0 .. 340282300000000000000000000000000000000	
+cg_viewZSmoothingTime	float	80	0.1	0.1	0 .. 340282300000000000000000000000000000000	
+cg_visionSetLerpMaxDecreasePerFrame	float	80	0.01	0.01	0 .. 1	
+cg_visionSetLerpMaxIncreasePerFrame	float	80	0.02	0.02	0 .. 1	
+cg_watersheeting	bool	80	0	0		
+cg_weaponHeat	enum	80	OFF	OFF	OFF | 25% | 50% | 75% | 100%	
+cg_weaponHintsCoD1Style	bool	1000	1	1		
+cg_weaponSimulateFireAnims	bool	20000	1	1		
+challengeResponseResendBackoffInterval	int	20000	5	5	0 .. 2147483647	
+challengeResponseResendInterval	int	20000	30	30	0 .. 2147483647	
+checkEmblemForRank	bool	20000	1	1		
+clancard_clanid	string	0	"0"	"0"		
+classVersionNumber	int	0	132	0	0 .. 2147483647	
+ClickToContinue	bool	0	0	0		
+cl_bspmismatchFatal	bool	20000	0	0		
+cl_connectionAttempts	int	0	10	10	0 .. 2147483647	
+cl_connectTimeout	float	0	90	90	0 .. 3600	
+cl_deathMessageWidth	int	0	480	320	1 .. 640	
+cl_freelook	bool	1	1	1		
+cl_ingame	bool	40	0	0		
+cl_leanCountMin	int	20000	1	1	0 .. 10	
+cl_maxppf	int	1	5	5	1 .. 10	
+cl_migrationPingTime	int	20000	10	10	1 .. 1000	
+cl_motdString	string	40	""	""		
+cl_mouseAccel	float	1	0	0	0 .. 100	
+cl_nodelta	bool	80	0	0		
+cl_paused	int	40	0	0	0 .. 2	
+cl_profileWriteLimiter	float	20000	0.25	0.25	0 .. 10	
+cl_splitscreenGamestateHack	bool	20000	1	1		
+cl_timeout	float	0	20	20	0 .. 3600	
+cl_voice	bool	3	1	1		
+compass	bool	1100	1	1		
+compassClampIcons	bool	80	1	1		
+compassEnableColorBlindPlayerIcons	bool	20000	1	1		
+compassEnemyFootstepEnabled	bool	80	0	0		
+compassEnemyFootstepMaxRange	float	80	500	500	0 .. 340282300000000000000000000000000000000	
+compassEnemyFootstepMaxZ	float	80	100	100	0 .. 340282300000000000000000000000000000000	
+compassEnemyFootstepMinSpeed	float	80	140	140	0 .. 340282300000000000000000000000000000000	
+compassForcePlayerIcon	bool	80	0	0		
+compassGridAlign	int	80	0	0	0 .. 8	
+compassGridCols	int	80	5	5	1 .. 9	
+compassGridEnabled	bool	80	1	1		
+compassGridRows	int	80	5	5	1 .. 9	
+compassLocalRadarRadius	float	80	700	700	0.01 .. 10000	
+compassLocalRadarUpdateTime	float	80	2.25	2.25	0.01 .. 60	
+compassMaxRange	float	1000	2500	2500	0.0001 .. 340282300000000000000000000000000000000	
+compassMinRadius	float	80	0.0001	0.0001	0.0001 .. 340282300000000000000000000000000000000	
+compassMinRange	float	80	0.0001	0.0001	0.0001 .. 340282300000000000000000000000000000000	
+compassObjectiveDetailDist	float	1000	10	10	0.01 .. 340282300000000000000000000000000000000	
+compassObjectiveHeight	float	1	32	32	0 .. 340282300000000000000000000000000000000	
+compassObjectiveMaxHeight	float	1000	70	70	0 .. 340282300000000000000000000000000000000	
+compassObjectiveMinDistRange	float	1000	1	1	0.01 .. 340282300000000000000000000000000000000	
+compassObjectiveMinHeight	float	1000	-70	-70	-340282300000000000000000000000000000000 .. 0	
+compassObjectiveNearbyDist	float	1000	4	4	0.01 .. 340282300000000000000000000000000000000	
+compassObjectiveWidth	float	1	32	32	0 .. 340282300000000000000000000000000000000	
+compassRadarLineThickness	float	80	0.4	0.4	0.01 .. 10	
+compassRadarPingFadeTime	float	80	4	4	0.01 .. 60	
+compassRadarUpdateFastTime	float	80	2	2	0.01 .. 60	
+compassRadarUpdateTime	float	80	4	4	0.01 .. 60	
+compassSatellitePingFadeTime	float	80	8	8	0.01 .. 60	
+compassSatelliteScanTime	int	80	1000	1000	1 .. 60000	
+compassSatelliteStaticImageFadeTime	float	80	0	0	0 .. 60	
+compassShowEnemies	bool	80	1	1		
+compassSoundPingFadeTime	float	80	2	2	0 .. 10	
+compassStaticImageUpdateTime	int	80	4000	4000	1 .. 60000	
+com_desiredMenu	int	0	0	0	0 .. 2147483647	
+com_freemoveScale	float	80	1	1	0 .. 5	
+com_introPlayed	bool	0	0	0		
+com_maxclients	int	4	18	18	1 .. 18	
+com_maxfps	int	1	250	0	0 .. 1000	
+com_recommendedSet	bool	1	1	0		
+com_report_syserrors	bool	20000	1	1		
+com_statmon	bool	0	0	0		
+com_timescale	float	11C0	1	1	0.001 .. 10	
+com_voip_resume_time	int	0	0	0	0 .. 2147483647	
+content_trialcontentpackbits	int	20000	0	0	0 .. 2147483647	
+con_gameMsgWindow0FadeInTime	float	1	0.25	0.25	0 .. 340282300000000000000000000000000000000	
+con_gameMsgWindow0FadeOutTime	float	1	0.5	0.5	0.01 .. 340282300000000000000000000000000000000	
+con_gameMsgWindow0Filter	string	21	"gamenotify obituary"	"gamenotify obituary"		
+con_gameMsgWindow0LineCount	int	1	4	4	1 .. 9	
+con_gameMsgWindow0MsgTime	float	1	5	5	0 .. 340282300000000000000000000000000000000	
+con_gameMsgWindow0ScrollTime	float	1	0.25	0.25	0 .. 340282300000000000000000000000000000000	
+con_gameMsgWindow0SplitscreenScale	float	1	1.5	1.5	0 .. 340282300000000000000000000000000000000	
+con_gameMsgWindow1FadeInTime	float	1	0.25	0.25	0 .. 340282300000000000000000000000000000000	
+con_gameMsgWindow1FadeOutTime	float	1	0.01	0.01	0.01 .. 340282300000000000000000000000000000000	
+con_gameMsgWindow1Filter	string	21	"boldgame"	"boldgame"		
+con_gameMsgWindow1LineCount	int	1	1	1	1 .. 9	
+con_gameMsgWindow1MsgTime	float	1	3	3	0 .. 340282300000000000000000000000000000000	
+con_gameMsgWindow1ScrollTime	float	1	0.25	0.25	0 .. 340282300000000000000000000000000000000	
+con_gameMsgWindow1SplitscreenScale	float	1	1.5	1.5	0 .. 340282300000000000000000000000000000000	
+con_gameMsgWindow2FadeInTime	float	1	0.75	0.75	0 .. 340282300000000000000000000000000000000	
+con_gameMsgWindow2FadeOutTime	float	1	0.5	0.5	0.01 .. 340282300000000000000000000000000000000	
+con_gameMsgWindow2Filter	string	21	"subtitle"	"subtitle"		
+con_gameMsgWindow2LineCount	int	1	7	7	1 .. 9	
+con_gameMsgWindow2MsgTime	float	1	5	5	0 .. 340282300000000000000000000000000000000	
+con_gameMsgWindow2ScrollTime	float	1	0.25	0.25	0 .. 340282300000000000000000000000000000000	
+con_gameMsgWindow2SplitscreenScale	float	1	1.5	1.5	0 .. 340282300000000000000000000000000000000	
+con_gameMsgWindow3FadeInTime	float	1	0.25	0.25	0 .. 340282300000000000000000000000000000000	
+con_gameMsgWindow3FadeOutTime	float	1	0.5	0.5	0.01 .. 340282300000000000000000000000000000000	
+con_gameMsgWindow3Filter	string	21	"objnotify"	"objnotify"		
+con_gameMsgWindow3LineCount	int	1	0	0	1 .. 9	
+con_gameMsgWindow3MsgTime	float	1	0	0	0 .. 340282300000000000000000000000000000000	
+con_gameMsgWindow3ScrollTime	float	1	0.25	0.25	0 .. 340282300000000000000000000000000000000	
+con_gameMsgWindow3SplitscreenScale	float	1	1.5	1.5	0 .. 340282300000000000000000000000000000000	
+con_typewriterColorBase	vec3	1000	1 1 1	1 1 1	0 .. 1	
+counterDownloadInterval	int	20000	15	15	1 .. 2147483647	
+counterUploadInterval	int	20000	15	15	1 .. 2147483647	
+createfx	string	0	""	""		
+creditsScrollScale	float	0	1	1	0 .. 100	
+currentTUVersion	string	40	"tu17"	"tu17"		
+customGameMode	int	0	0	0	0 .. 3	
+custom_killstreak_1	string	4000	"0"	"0"		
+custom_killstreak_1_kills	string	4000	"0"	"0"		
+custom_killstreak_2	string	4000	"0"	"0"		
+custom_killstreak_2_kills	string	4000	"0"	"0"		
+custom_killstreak_3	string	4000	"0"	"0"		
+custom_killstreak_3_kills	string	4000	"0"	"0"		
+custom_perks_allow_pro	string	4000	"0"	"0"		
+debugRenderCollisionDistance	float	80	800	800	100 .. 2000	
+debugRenderMask	enum	80	All	All	All | Player | PlayerClip Only | Vehicle | Helicopter | AI Collision | AI Sight | Weapon | Mantle | Physics | Aim Assist | Spawn Visibility | Trigger | Clientside Trigger	
+debug_protocol	string	0	""	""		
+debug_show_viewpos	int	0	1	0	0 .. 1	
+dedicated	enum	20	listen server	listen server	listen server | dedicated LAN server | dedicated internet server	
+dedicatedPingLog_DoTestChance	float	20000	0	0	0 .. 1	
+dedicatedPingLog_Interval	int	20000	1000	1000	0 .. 2147483647	
+dedicatedPingLog_MaxTestTime	int	20000	10000	10000	0 .. 2147483647	
+dedicatedPingLog_ServerLocation	string	0	""	""		
+dedicatedPingLog_TimesToPing	int	20000	2	2	0 .. 5	
+dedicatedPingLog_WaitBeforePing	int	20000	1000	1000	0 .. 2147483647	
+defaultDamageDuration	float	80	300	300	0 .. 10000	
+defaultDamageInterval	float	80	300	300	0 .. 10000	
+defaultHitDamage	float	80	5	5	1 .. 200	
+demoname	string	0	""	""		
+demoRenderDuration	int	0	121	121	0 .. 2147483647	
+demoRenderSizeX	int	0	1280	1280	0 .. 1280	
+demoRenderSizeY	int	0	720	720	0 .. 720	
+demo_bookmarkEventThresholdTime	float	20000	2	2	1 .. 4	
+demo_bytesPerSecondMax	int	20000	7168	7168	0 .. 2147483647	
+demo_bytesPerSecondMin	int	20000	2048	2048	0 .. 2147483647	
+demo_client	int	0	0	0	0 .. 18	
+demo_dollycamHighlightThreshholdDistance	float	20000	40	40	1 .. 340282300000000000000000000000000000000	
+demo_dollycamMarkerInformationFarDist	float	20000	400	400	0 .. 340282300000000000000000000000000000000	
+demo_dollycamMarkerInformationFarScale	float	20000	0.4	0.4	0 .. 340282300000000000000000000000000000000	
+demo_dollycamMarkerInformationNearDist	float	20000	100	100	0 .. 340282300000000000000000000000000000000	
+demo_dollycamMarkerInformationThreshholdDistance	float	20000	400	400	1 .. 340282300000000000000000000000000000000	
+demo_dollycamMarkerTimeScaleMode	int	0	0	0	0 .. 2	
+demo_dollycamMarkerTimeScaleValue	float	0	1	1	0.1 .. 6	
+demo_dollycamTrackWidth	float	20000	0.75	0.75	0 .. 340282300000000000000000000000000000000	
+demo_downloadStreamDataBlockRequestSize	int	20000	524288	524288	0 .. 2147483647	
+demo_downloadStreamDataBlockThrottleTime	int	20000	3000	1500	0 .. 2147483647	
+demo_downloadStreamMaxRetryAttemps	int	20000	8	8	0 .. 2147483647	
+demo_downloadStreamRetryWaitTime	int	20000	3000	3000	0 .. 2147483647	
+demo_downloadStreamThrottleTime	int	20000	0	0	0 .. 2147483647	
+demo_enableClipRecordEvent	bool	20000	1	1		
+demo_enabled	bool	20000	1	1		
+demo_enableDollyCam	bool	20000	1	1		
+demo_enableSvBandwidthLimitThrottle	bool	20000	1	1		
+demo_errormessage	string	40	""	""		
+demo_errortitle	string	40	""	""		
+demo_extraNetworkProfileData	bool	20000	0	0		
+demo_filesizeLimit	float	20000	10	10	0.1 .. 340282300000000000000000000000000000000	
+demo_freeCameraLockOnHighlightThreshholdDistance	float	20000	100	100	1 .. 340282300000000000000000000000000000000	
+demo_freeCameraLockOnOrbitRadius	float	0	-100	-100	-800 .. 200	
+demo_freeCameraShowLockableObjectsAlways	bool	0	1	1		
+demo_highlightReelGameResultFilter	int	0	0	0	0 .. 3	
+demo_highlightReelMinimumStarsFilter	int	0	1	1	1 .. 5	
+demo_highlightReelNumberOfSegments	int	0	20	20	1 .. 20	
+demo_highlightReelPlayerFilter	int	0	0	0	0 .. 5	
+demo_highlightReelStylesFilter	int	0	0	0	0 .. 11	
+demo_highlightReelTransitionFilter	int	0	0	0	0 .. 2	
+demo_inGameThrottleBandwitdhPercent	float	20000	0.5	0.5	0 .. 1	
+demo_inLobbyThrottleBandwitdhPercent	float	20000	0.9	0.9	0 .. 1	
+demo_keyframerate	int	0	10	10	1 .. 2147483647	
+demo_matchRecordEventOnPlaylists	int64	20000	-1	-1		
+demo_maxTimeScale	float	20000	6	6	0.1 .. 340282300000000000000000000000000000000	
+demo_packetsPerSecondMax	int	20000	10	10	0 .. 2147483647	
+demo_packetsPerSecondMin	int	20000	2	2	0 .. 2147483647	
+demo_pause	bool	0	0	0		
+demo_pauseOnNextSnapshot	bool	0	0	0		
+demo_recordingrate	int	20000	100	100	50 .. 2147483647	
+demo_recordPrivateMatch	bool	0	0	0		
+demo_recordStaticEntityPositions	bool	0	0	0		
+demo_refreshDollyCamFxEveryFrame	bool	20000	1	1		
+demo_save_smp	bool	20000	0	0		
+demo_selectedSegmentIndex	int	0	0	0	0 .. 2147483647	
+demo_streamingAdjustmentFactor	float	20000	0.2	0.2	0 .. 1	
+demo_streamingSendSocketBuffSizeForOtherUploads	int	20000	0	0	0 .. 2147483647	
+demo_streamingSendSocketBuffSizeForRecording	int	20000	2048	2048	0 .. 2147483647	
+demo_streamUploadKeepAliveFrequency	int	20000	0	0	0 .. 2147483647	
+demo_svBandwidthLimitThrottleMaxBytesPercent	float	20000	0.7	0.7	0 .. 1	
+demo_svBandwidthLimitThrottleTimeout	int	20000	10000	10000	0 .. 2147483647	
+demo_useCinematicsBuffer	bool	20000	1	1		
+developer	int	0	0	0	0 .. 2	
+developer_script	bool	0	0	0		
+disableAllTheEliteThings	bool	20000	1	1		
+disableHost_matchesHostedRatio	float	20000	0	0	0 .. 340282300000000000000000000000000000000	
+disableHost_matchesHostedStreak	int	20000	0	0	0 .. 2147483647	
+disableHost_matchesPlayedRatio	float	20000	0	0	0 .. 340282300000000000000000000000000000000	
+disableHost_matchesPlayedStreak	int	20000	0	0	0 .. 2147483647	
+disableLookAtEntityLogic	bool	80	1	1		
+disable_rope	bool	1080	0	0		
+disable_vcs	bool	20000	0	0		
+disable_vcs_viewmodel	bool	20000	0	0		
+disconnected_ctrls	string	0	""	""		
+dlc3_zm_ai_lookAheadAllowBackTrack	bool	20000	0	0		
+dlc3_zm_ai_lookAheadAllowRestore	bool	20000	0	0		
+dog_MeleeDamage	int	1000	150	150	1 .. 10000	
+dog_turn180_angle	float	80	135	135	0 .. 360	
+dog_turn90_angle	float	80	70	70	0 .. 360	
+dog_turn_min_goal_dist	float	80	40	40	0 .. 1024	
+door_breach_weapondrop	bool	4080	1	1		
+doublescreen	bool	0	0	0		
+doublesided_raycasts	bool	80	0	0		
+dtp	bool	4080	1	1		
+dtp_exhaustion_window	float	4080	1500	1500	100 .. 10000	
+dtp_fall_damage_max_height	float	4080	200	200	0 .. 1000	
+dtp_fall_damage_min_height	float	4080	65	65	0 .. 1000	
+dtp_max_apex_duration	int	4080	400	400	0 .. 10000	
+dtp_max_slide_addition	float	4080	0	0	0 .. 10000	
+dtp_max_slide_duration	float	4080	300	300	0 .. 10000	
+dtp_min_speed	float	4080	3.16	3.16	0 .. 1000	
+dtp_new_trajectory	bool	4080	1	1		
+dtp_new_trajectory_multiplier	float	4080	2	2	0 .. 10	
+dtp_post_move_pause	float	4080	100	100	0 .. 10000	
+dtp_startup_delay	float	4080	250	250	100 .. 10000	
+dwFileFetchTryIntervalBase	int	20000	2	2	0 .. 65535	
+dwFileFetchTryIntervalMax	int	20000	30	30	0 .. 65535	
+dwFileFetchTryMaxAttempts	int	20000	30	30	0 .. 65535	
+dwStreamingSendSocketBuffSize	int	0	0	0	0 .. 2147483647	
+dwVerboseQosLogging	bool	20000	1	1		
+dw_active	bool	0	1	1		
+dw_connectafterlogin	bool	0	0	0		
+dw_defaultDTLSAssociationTimeout	float	20000	120	120	10 .. 1800	
+dw_dupe_key	bool	40	0	0		
+dw_logging_frequency	int	20000	2	1	0 .. 2147483647	
+dw_logging_last_match_logged	string	0	"0"	"0"		
+dw_logging_level_chance	float	20000	0.01	0	0 .. 1	
+dw_party_active	bool	0	1	1		
+dw_popup	string	0	""	""		
+dynEntPieces_angularVelocity	vec3	80	0 0 0	0 0 0	-180 .. 180	
+dynEntPieces_impactForce	float	80	1000	1000	0 .. 1000000	
+dynEntPieces_velocity	vec3	80	0 0 0	0 0 0	-1000 .. 1000	
+dynEnt_bulletForce	float	1080	0.8	0.8	0 .. 1000000	
+dynEnt_damageRadiusScale	float	80	1	1	0 .. 1	
+dynEnt_explodeForce	float	80	12	12	0 .. 1000000	
+dynEnt_explodeMaxEnts	int	80	20	20	0 .. 4096	
+dynEnt_explodeMinForce	float	80	0.01	0.01	0 .. 340282300000000000000000000000000000000	
+dynEnt_explodeSpinScale	float	80	4	4	0 .. 100	
+dynEnt_explodeUpbias	float	80	0.5	0.5	0 .. 2	
+dynEnt_shouldCullEntitiesForSplitscreen	bool	20000	0	0		
+dynEnt_spawnedLimit	int	1000	50	50	0 .. 256	
+emblemImageUpload	bool	20000	0	0		
+enableERegErrorRecording	bool	20000	1	1		
+enableJapaneseElite	bool	20000	0	1		
+enableUCDErrorRecording	bool	20000	0	0		
+enable_global_wind	bool	1000	0	0		
+enable_grass_wind	bool	1000	0	0		
+enable_moving_paths	int	0	1	1	0 .. 1	
+enable_new_prone_check	int	80	0	0	0 .. 1	
+excellentPing	int	20000	60	75	1 .. 1000	
+exp_softclip	float	5000	0.25	0.25	0 .. 1	
+fbEnabled	bool	20000	0	0		
+fixedtime	int	80	0	0	0 .. 1000	
+fixedtime_float	float	80	0	0	0 .. 1000	
+fixNegativeLosses	bool	20000	1	1		
+flame_config_valid	bool	4080	0	0		
+flame_debug_render	int	4080	0	0	0 .. 2	
+flame_kick_offset	vec3	80	-2 0 -0.5	-2 0 -0.5	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+flame_kick_recover_speed	float	80	4	4	0 .. 340282300000000000000000000000000000000	
+flame_kick_speed	float	80	4	4	0 .. 340282300000000000000000000000000000000	
+flame_render	bool	4080	1	1		
+flame_system_enabled	bool	5000	0	0		
+flame_team_damage	bool	4080	0	0		
+flame_test	bool	4080	0	0		
+flame_use_dvars	bool	4080	0	0		
+flareDisableEffects	bool	80	0	0		
+footstep_sounds_cutoff	float	4000	1000	1000	0 .. 30000	
+friction	float	180	5.5	5.5	0 .. 100	
+FriendXuidToJoinOnBoot	string	0	"0"	"0"		
+fshCustomGameName	string	0	""	""		
+fshElite	bool	20000	0	0		
+fshEnableRender	bool	20000	1	1		
+fshFileDebug	bool	20000	0	0		
+fshMtxName	string	20000	"mtx_storage"	"mtx_storage"		
+fshRecentsXUID	string	0	""	""		
+fshRenderSuccessURL	string	20000	"https://www.youtube.com/my_videos"	"https://www.youtube.com/my_videos"		
+fshRenderWriteTimeout	int	20000	30000	30000	0 .. 2147483647	
+fshRetryDelay	int	20000	3000	3000	0 .. 2147483647	
+fshSearchTaskDelay	int	20000	1200	1200	0 .. 2147483647	
+fshSkipFileStats	bool	20000	0	0		
+fshStaffXuid	string	0	"2535285330711699"	"2535285330711699"		
+fshSummaryDelay	int	0	1000	1000	0 .. 2147483647	
+fshThrottleEnabled	bool	20000	1	1		
+fshThrottleKBytesPerSec	int	20000	256	256	0 .. 2147483647	
+fs_basegame	string	10	"data"	"data"		
+fs_basepath	string	210	"C:\game"	"C:\game"		
+fs_cdpath	string	10	""	""		
+fs_copyfiles	bool	10	0	0		
+fs_debug	int	0	0	0	0 .. 2	
+fs_game	string	14	""	""		
+fs_homepath	string	210	"C:\game"	"C:\game"		
+fs_ignoreLocalized	bool	A0	0	0		
+fs_restrict	bool	10	0	0		
+fs_usedevdir	bool	10	0	0		
+fs_userDocuments	string	10	"C:\Users\WDAGUtilityAccount\Documents\Activision\CoD"	"C:\Users\WDAGUtilityAccount\Documents\Activision\CoD"		
+fs_usermapdir	string	44	""	""		
+fxfrustumCutoff	float	100	1000	1000	0 .. 5000	
+gamedate	string	40	"May 10 2014"	"May 10 2014"		
+gamename	string	44	?	?		
+geographicalMatchmakingOverride	int	20000	1	1	0 .. 2	
+goodPing	int	20000	100	150	1 .. 1000	
+gpad_buttonsConfig	string	4000	"buttons_default"	"buttons_default"		
+gpad_button_deadzone	float	80	0.13	0.13	0 .. 1	
+gpad_button_lstick_deflect_max	string	4000	"1.0"	"1.0"		
+gpad_button_rstick_deflect_max	string	4000	"1.0"	"1.0"		
+gpad_debug	int	80	0	0	-2147483648 .. 2147483647	
+gpad_enabled	bool	1	1	0		
+gpad_sticksConfig	string	4000	"thumbstick_default"	"thumbstick_default"		
+gpad_stick_deadzone_max	float	80	0.01	0.01	0 .. 1	
+gpad_stick_deadzone_min	float	80	0.2	0.2	0 .. 1	
+gpad_stick_pressed	float	80	0.4	0.4	0 .. 1	
+gpad_stick_pressed_hysteresis	float	80	0.1	0.1	0 .. 1	
+grenadeBounceRestitutionMax	float	80	0.3	0.3	0 .. 340282300000000000000000000000000000000	
+grenadeBumpFreq	float	80	0.3	0.3	0 .. 340282300000000000000000000000000000000	
+grenadeBumpMag	float	80	0.4	0.4	0 .. 340282300000000000000000000000000000000	
+grenadeBumpMax	float	80	100	100	0 .. 340282300000000000000000000000000000000	
+grenadeCurveMax	float	80	4	4	0 .. 340282300000000000000000000000000000000	
+grenadeFrictionHigh	float	80	0.4	0.4	0 .. 1	
+grenadeFrictionLow	float	80	0.01	0.01	0 .. 1	
+grenadeFrictionMaxThresh	float	80	100	100	0 .. 340282300000000000000000000000000000000	
+grenadeRestThreshold	float	80	20	20	0 .. 340282300000000000000000000000000000000	
+grenadeRollingEnabled	bool	1080	1	1		
+grenadeWobbleFreq	float	80	0.08	0.08	0 .. 340282300000000000000000000000000000000	
+grenadeWobbleFwdMag	float	80	10	10	0 .. 340282300000000000000000000000000000000	
+grenadeWobbleSideDamp	float	80	0.01	0.01	0 .. 340282300000000000000000000000000000000	
+grenadeWobbleSideMag	float	80	1	1	0 .. 340282300000000000000000000000000000000	
+grenade_indicators_enabled	bool	4000	1	1		
+groupDownloadInterval	int	20000	900	900	0 .. 2147483647	
+groupUploadInterval	int	20000	300	300	0 .. 2147483647	
+gts_validation_enabled	bool	20000	1	1		
+gumpgumpgumpgump_name3	string	0	""	""		
+gumpgumpgump_name3	string	0	""	""		
+gumpgump_name3	string	0	""	""		
+gump_name3	string	0	""	""		
+gunXPGroups	string	20000	""	""		
+g_actorAndVehicleAntilag	bool	2080	1	1		
+g_actorAndVehicleAntilagDebug	bool	2080	0	0		
+g_ai	bool	2080	1	1		
+g_aiEventDump	int	80	-1	-1	-1 .. 1023	
+g_allowVote	bool	0	1	1		
+g_avoidEnabled	bool	80	1	1		
+g_banIPs	string	1	""	""		
+g_broadcastLocalSound	bool	20000	1	1		
+g_compassShowEnemies	bool	80	0	0		
+g_connectpaths	int	0	0	0	0 .. 3	
+g_customTeamName_Allies	string	100	""	""		
+g_customTeamName_Axis	string	100	""	""		
+g_customTeamName_Three	string	80	""	""		
+g_debugBullets	int	80	0	0	-3 .. 6	
+g_debugDamage	bool	80	0	0		
+g_debugLocDamage	int	80	0	0	0 .. 2	
+g_debugLocDamageEntity	int	80	-1	-1	-1 .. 1023	
+g_debugLocHit	int	80	0	0	0 .. 2	
+g_debugLocHitTime	int	80	500	500	0 .. 2147483647	
+g_disableDemonwareSubscriptionRefresh	bool	20000	1	1		
+g_disableEliteButton	bool	20000	0	0		
+g_disableEliteEmblemUploads	bool	80	1	1		
+g_disableEliteRegistrationPopup	bool	80	0	0		
+g_disablePlatformAutofill	bool	20000	0	0		
+g_dumpAnims	int	80	-1	-1	-1 .. 1023	
+g_dumpAnimsCommands	int	4080	-1	-1	-1 .. 1023	
+g_entinfo	enum	80	off	off	off | all ents / draw lines / draw info | selected ent / draw lines / draw info | selected ent / draw info | all ents / draw goal lines and radii | selected ent / draw goal lines and radii | script models considered for network | selected ent / animation tree	
+g_entinfo_AItext	enum	80	brief	brief	all | brief | combat | movement | state	
+g_entinfo_maxdist	float	80	2048	2048	0 .. 340282300000000000000000000000000000000	
+g_entinfo_scale	float	80	1.2	1.2	0 .. 10	
+g_entinfo_type	enum	80	AI only	AI only	all | AI only | Vehicle only | Trigger only	
+g_erroronpathsnotconnected	bool	80	1	1		
+g_FactionName_Allies	string	0	""	""		
+g_FactionName_Axis	string	0	""	""		
+g_fogColorReadOnly	color	10C0	255 0 0 255	255 0 0 255		
+g_fogHalfDistReadOnly	float	10C0	0.1	0.1	0 .. 340282300000000000000000000000000000000	
+g_fogStartDistReadOnly	float	10C0	0	0	0 .. 340282300000000000000000000000000000000	
+g_friendlyfireDist	float	80	256	256	0 .. 15000	
+g_friendlyNameDist	float	80	15000	15000	0 .. 15000	
+g_gametype	string	24	"tdm"	"tdm"		
+g_ignoreVisData	bool	0	0	0		
+g_inactivity	int	84000	0	0	0 .. 2147483647	
+g_knockback	float	0	1000	1000	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+g_lagged_damage_threshold	int	20000	500	500	0 .. 2147483647	
+g_loadScripts	bool	0	1	1		
+g_log	string	1	"games_mp.log"	"games_mp.log"		
+g_logSync	bool	1	0	0		
+g_logTimeStampInSeconds	bool	1	0	0		
+g_mantleBlockTimeBuffer	int	80	500	500	0 .. 60000	
+g_maxDroppedWeapons	int	0	16	16	2 .. 32	
+g_maxElapsedTime_Before_ERegPopup	int	20000	1209600	1209600	0 .. 2147483647	
+g_maxERegPopupsShown	int	20000	5	5	0 .. 2147483647	
+g_minElapsedTime_Before_ERegPopup	int	20000	604800	604800	0 .. 2147483647	
+g_minElapsedTime_Before_RefreshUCDAccountStatus	int	20000	604800	604800	0 .. 2147483647	
+g_minGrenadeDamageSpeed	float	80	400	400	0 .. 340282300000000000000000000000000000000	
+g_minNumLogins_Before_ERegPopup	int	20000	4	4	0 .. 2147483647	
+g_motd	string	0	""	""		
+g_no_script_spam	bool	0	0	0		
+g_password	string	0	""	""		
+g_quadrotorFlyHeight	float	1000	150	150	0 .. 5000	
+g_redCrosshairs	bool	21	1	1		
+g_removeRedundantLinks	bool	0	1	1		
+g_ScoresColor_Allies	color	80	23 117 18 255	23 117 18 255		
+g_ScoresColor_Axis	color	80	176 18 13 255	176 18 13 255		
+g_ScoresColor_EnemyTeam	color	80	176 18 13 255	176 18 13 255		
+g_ScoresColor_Free	color	80	194 199 26 255	194 199 26 255		
+g_ScoresColor_MyTeam	color	80	64 184 64 255	64 184 64 255		
+g_ScoresColor_Spectator	color	80	64 64 64 255	64 64 64 255		
+g_spawnai	bool	20A0	1	1		
+g_speed	int	0	190	190	-2147483648 .. 2147483647	
+g_synchronousClients	bool	100	0	0		
+g_TeamColor_Allies	color	80	153 163 176 255	153 163 176 255		
+g_TeamColor_Axis	color	80	166 145 105 255	166 145 105 255		
+g_TeamColor_EnemyTeam	color	80	255 80 89 255	255 80 89 255		
+g_TeamColor_EnemyTeamAlt	color	80	255 128 0 255	255 128 0 255		
+g_TeamColor_Free	color	80	191 64 64 255	191 64 64 255		
+g_TeamColor_MyTeam	color	80	102 179 102 255	102 179 102 255		
+g_TeamColor_MyTeamAlt	color	80	80 237 249 255	80 237 249 255		
+g_TeamColor_MyTeamAlt_Party	color	80	144 157 255 255	144 157 255 255		
+g_TeamColor_Party	color	80	69 182 214 255	69 182 214 255		
+g_TeamColor_Spectator	color	80	64 64 64 255	64 64 64 255		
+g_TeamIcon_Allies	string	100	"faction_128_usmc"	"faction_128_usmc"		
+g_TeamIcon_Axis	string	100	"faction_128_arab"	"faction_128_arab"		
+g_TeamIcon_Free	string	100	""	""		
+g_TeamIcon_Spectator	string	100	""	""		
+g_TeamName_Allies	string	180	"GAME_ALLIES"	"GAME_ALLIES"		
+g_TeamName_Axis	string	180	"GAME_AXIS"	"GAME_AXIS"		
+g_TeamName_Three	string	80	"GAME_THREE"	"GAME_THREE"		
+g_turretBipodOffset	float	80	17	17	-50 .. 50	
+g_turretServerPitchMax	float	80	10	10	-50 .. 50	
+g_turretServerPitchMin	float	80	15	15	-50 .. 50	
+g_useholdspawndelay	int	80	500	500	0 .. 1000	
+g_vehicleDebug	int	80	0	0	0 .. 4	
+g_vehicleDrawPath	string	80	""	""		
+g_vehicleDrawSplines	bool	80	0	0		
+g_vehiclePlaneCurveTime	float	80	1.5	1.5	0 .. 340282300000000000000000000000000000000	
+hatch_mantle_fwd	float	180	44	44	-256 .. 256	
+hatch_mantle_up	float	180	10	10	-256 .. 256	
+hiDef	bool	40	1	1		
+highlightedPlayerName	string	0	""	""		
+hudElemPausedBrightness	float	80	0.4	0.4	0 .. 1	
+ik_ai_hand_get_data	bool	4080	0	0		
+ik_ai_hand_offset_vec	vec3	4080	0 0 0	0 0 0	-20 .. 20	
+ik_ai_hand_rotation_vec	vec3	4080	0 0 0	0 0 0	-180 .. 180	
+ik_ai_hand_tuning	int	4080	0	0	0 .. 3	
+ik_ai_pool_size	int	4080	8	8	0 .. 32	
+ik_ai_range_max	float	4080	600	600	0 .. 9999	
+ik_debug	int	4080	0	0	0 .. 2	
+ik_dvar_ai_aim_tracking_rate	float	1000	0.05	0.05	0.01 .. 5	
+ik_dvar_lookatentity_eyes_scale	float	1000	1	1	0 .. 1	
+ik_dvar_lookatentity_notorso	bool	1000	0	0		
+ik_dvar_lookatentity_tracking_rate	float	1000	0.5	0.5	0.01 .. 5	
+ik_dvar_lookatpos_eyes_scale	float	1000	1	1	0 .. 1	
+ik_dvar_lookatpos_notorso	bool	1000	0	0		
+ik_dvar_lookatpos_tracking_rate	float	1000	0.15	0.15	0.01 .. 5	
+ik_enable	bool	4080	1	1		
+ik_enable_ai_hand	bool	4080	0	0		
+ik_enable_ai_terrain	int	4080	0	0	0 .. 2	
+ik_enable_player_hand	bool	4080	1	1		
+ik_enable_player_terrain	bool	4080	1	1		
+ik_foot_test	bool	4080	0	0		
+ik_hand_test	bool	4080	0	0		
+ik_left_hand_lerp_test	bool	4080	0	0		
+ik_lookatentity_head_scale	float	1000	0.8	0.8	0 .. 1	
+ik_lookatpos_head_scale	float	1000	0.8	0.8	0 .. 1	
+ik_paranoid_matrix_checks	bool	4080	0	0		
+ik_pelvis_test	bool	4080	0	0		
+ik_pitch_limit_max	float	1000	60	60	0 .. 180	
+ik_pitch_limit_thresh	float	1000	30	30	0 .. 180	
+ik_right_hand_lerp_test	bool	4080	0	0		
+ik_roll_limit_max	float	1000	100	100	0 .. 180	
+ik_roll_limit_thresh	float	1000	30	30	0 .. 180	
+ik_yaw_limit_max	float	1000	90	90	0 .. 180	
+ik_yaw_limit_thresh	float	1000	45	45	0 .. 180	
+inviteText	string	0	""	""		
+invite_waitPeriod	int	20000	30000	30000	15000 .. 2147483647	
+in_mouse	bool	30	1	1		
+jump_height	float	180	39	39	0 .. 1000	
+jump_ladderPushVel	float	180	128	128	0 .. 1024	
+jump_slowdownEnable	bool	180	1	1		
+jump_spreadAdd	float	180	64	64	0 .. 512	
+jump_stepSize	float	180	18	18	0 .. 64	
+killOnlyTrailFX	bool	20000	1	1		
+laggedDamageTagThreshold	int	20000	100	100	0 .. 2147483647	
+lagometer_pos	vec2	0	-50 60	-50 60	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+lanChallengeResponse	bool	0	0	0		
+language	string	0	"polish"	""		
+laserAlpha	float	1000	0.75	0.75	0 .. 1	
+laserDebug	bool	80	0	0		
+laserEndOffset	float	1080	-2	-2	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+laserFadeADS	bool	1	1	1		
+laserFlarePct	float	1080	0.25	0.25	0 .. 340282300000000000000000000000000000000	
+laserFlarePct_alt	float	1080	0	0	0 .. 340282300000000000000000000000000000000	
+laserLightBeginOffset	float	1080	10	10	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+laserLightBodyTweak	float	80	15	15	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+laserLightEndOffset	float	1080	-1	-1	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+laserLightRadius	float	1080	0.45	0.45	0.001 .. 340282300000000000000000000000000000000	
+laserLightRadius_alt	float	1080	100	100	0.001 .. 340282300000000000000000000000000000000	
+laserLightRangePlayer	float	1080	2000	2000	1 .. 340282300000000000000000000000000000000	
+laserLightWithoutNightvision	bool	1	0	0		
+laserRadius	float	1080	0.35	0.35	0.001 .. 340282300000000000000000000000000000000	
+laserRadius_alt	float	1080	30	30	0.001 .. 340282300000000000000000000000000000000	
+laserRange	float	1080	1500	1500	1 .. 340282300000000000000000000000000000000	
+laserRangePlayer	float	1080	2000	2000	1 .. 340282300000000000000000000000000000000	
+laserRange_alt	float	1080	5000	5000	1 .. 340282300000000000000000000000000000000	
+lbTaskDelay	int	20000	2000	2000	0 .. 2147483647	
+leagueLoserBonus	int	20000	7500	500	0 .. 15000	
+leagueWinnerBonus	int	20000	10000	1000	0 .. 15000	
+league_defaultPlaylistID	int	20000	50	50	0 .. 2147483647	
+league_forcePreSeason	bool	20000	0	0		
+league_friendsRefetchTime	int	0	15	15	0 .. 2147483647	
+league_historyInfoRefetchTime	int	0	600000	600000	0 .. 2147483647	
+league_kickForBadHash	string	4000	"0"	"0"		
+league_leaderboardRefetchTime	int	0	180000	180000	0 .. 2147483647	
+league_teamLeagueInfoRefetchTime	int	0	180000	180000	0 .. 2147483647	
+livestreamcontrollerneeded	bool	0	1	1		
+liveVideoURLEnv	string	0	"/dev/"	"/dev/"		
+liveVideoURLExpiration	int	0	120	120	0 .. 2147483647	
+liveVideoURLParam	string	0	"?eclipseps3="	"?eclipseps3="		
+liveVideoURLSalt	string	0	"!3clips3ps3!"	"!3clips3ps3!"		
+liveVideoURLServer	string	0	"http://cdn-eclipse-ps3.callofduty.com"	"http://cdn-eclipse-ps3.callofduty.com"		
+liveVoteErrorBackoff	int	0	60000	60000	0 .. 2147483647	
+liveVoteTaskDelay	int	0	1000	1000	0 .. 2147483647	
+live_dedicatedUnparkPingExcellent	int	20000	75	75	10 .. 150	
+live_dedicatedUnparkPingMax	int	20000	300	300	50 .. 500	
+live_maxMatchMakingPing	int	20000	300	300	200 .. 500	
+live_maxMostAwesomePing	int	20000	75	75	10 .. 150	
+live_minMatchMakingPing	int	20000	30	30	10 .. 100	
+live_readPublisherStorageLocally	bool	0	0	0		
+live_service	bool	10	1	1		
+live_startmatchDeadline	int	0	0	0	60 .. 2147483647	
+live_statscaching	bool	20000	1	1		
+live_steamid	string	40	"310000402f8e09e"	"310000402f8e09e"		
+live_testValue	string	20000	"-justatestvalue-"	"-justatestvalue-"		
+live_useActiveFriends	bool	20000	0	0		
+live_useTwitch	bool	20000	1	1		
+live_useTwitter	bool	20000	1	1		
+live_useYouTube	bool	20000	1	1		
+loc_forceEnglish	bool	21	0	0		
+loc_language	int	21	9	0	0 .. 15	
+loc_warnings	bool	0	0	0		
+loc_warningsAsErrors	bool	0	0	0		
+logfile	int	0	0	0	0 .. 2	
+log_append	bool	1	0	0		
+long_blocking_call	bool	0	0	0		
+lowAmmoWarningColor1	color	0	255 255 255 255	255 255 255 255		
+lowAmmoWarningColor2	color	0	255 255 255 255	255 255 255 255		
+lowAmmoWarningNoAmmoColor1	color	0	204 0 0 204	204 0 0 204		
+lowAmmoWarningNoAmmoColor2	color	0	255 0 0 255	255 0 0 255		
+lowAmmoWarningNoReloadColor1	color	0	179 179 0 204	179 179 0 204		
+lowAmmoWarningNoReloadColor2	color	0	255 255 0 255	255 255 0 255		
+ls_demoauthor	string	0	""	""		
+ls_demoduration	int	0	0	0	0 .. 2147483647	
+ls_demotitle	string	0	""	""		
+ls_gametype	string	0	""	""		
+ls_maplocation	string	0	""	""		
+ls_mapname	string	0	""	""		
+ls_status	string	0	""	""		
+lui_checksum_enabled	bool	20000	1	1		
+lui_disable_blur	bool	0	0	0		
+lui_error_report	bool	20000	1	1		
+lui_error_report_delay	int	20000	1000	1000	0 .. 2147483647	
+lui_timescale	float	80	1	1	0.001 .. 10	
+mantle_adjustment_tu	bool	180	1	1		
+mantle_check_angle	float	180	60	60	0 .. 180	
+mantle_check_glass_extra_range	float	180	10	10	0 .. 32	
+mantle_check_radius	float	180	0.1	0.1	0 .. 15	
+mantle_check_range	float	180	20	20	0 .. 128	
+mantle_check_range_mp	float	180	10	10	0 .. 128	
+mantle_debug	bool	80	0	0		
+mantle_enable	bool	1180	1	1		
+mantle_view_yawcap	float	180	60	60	0 .. 180	
+mantle_weapon_anim_height	float	180	32	32	0 .. 57	
+mantle_weapon_height	float	180	39	39	0 .. 57	
+mapcrc	int	140	0	0	-2147483648 .. 2147483647	
+mapname	string	44	""	""		
+matchmaking_debug	bool	20000	1	1		
+maxLossesValue	int	20000	2000000000	2000000000	0 .. 2147483647	
+maxMetPlayerListCount	int	20000	50	50	0 .. 2147483647	
+maxreservedslots	int	40	6	6	0 .. 6	
+maxStatsBackupInterval	int	20000	1	1	-1 .. 65535	
+melee_debug	bool	80	0	0		
+metPlayerListCleanupInterval	int	20000	60000	60000	0 .. 2147483647	
+metPlayerListUpdateInterval	int	20000	10000	10000	0 .. 2147483647	
+metPlayerListUploadInterval	int	20000	300000	300000	0 .. 2147483647	
+microwave_turretplacement_traceOffset	float	20000	-8	-8	-100 .. 100	
+microwave_turret_placement_trace_maxs	float	20000	22	22	0 .. 340282300000000000000000000000000000000	
+microwave_turret_placement_trace_mins	float	20000	-22	-22	-100 .. 340282300000000000000000000000000000000	
+migration_blocksperframe	int	20000	0	0	0 .. 32	
+migration_forceHost	int	20000	-1	-1	-1 .. 2147483647	
+migration_limit	int	20000	5	5	0 .. 2147483647	
+migration_minclientcount	int	20000	3	3	1 .. 18	
+migration_msgtimeout	int	20000	500	500	0 .. 2147483647	
+migration_soak	bool	20000	0	0		
+migration_timeBetween	int	20000	30000	30000	0 .. 2147483647	
+minDelayForOtherPlayerStatsFetch	int	20000	300000	300000	0 .. 2147483647	
+miniscoreboardhide	bool	0	0	0		
+missileDroneAccelClimb	float	80	1	1	0 .. 340282300000000000000000000000000000000	
+missileDroneAccelDescend	float	80	900	900	0 .. 340282300000000000000000000000000000000	
+missileDroneClimbAngleDirect	float	80	90	90	0 .. 340282300000000000000000000000000000000	
+missileDroneClimbAngleTop	float	80	50	50	0 .. 340282300000000000000000000000000000000	
+missileDroneClimbCeilingDirect	float	80	0	0	0 .. 340282300000000000000000000000000000000	
+missileDroneClimbCeilingTop	float	80	3000	3000	0 .. 340282300000000000000000000000000000000	
+missileDroneClimbHeightDirect	float	80	0	0	0 .. 340282300000000000000000000000000000000	
+missileDroneClimbHeightTop	float	80	15000	15000	0 .. 340282300000000000000000000000000000000	
+missileDroneClimbMaxDist	float	80	400	400	0 .. 340282300000000000000000000000000000000	
+missileDroneClimbToOwner	float	80	700	700	0 .. 340282300000000000000000000000000000000	
+missileDroneDistanceAvoidance	float	80	800	800	0 .. 340282300000000000000000000000000000000	
+missileDroneDistanceAvoidanceSec	float	80	2	2	0 .. 340282300000000000000000000000000000000	
+missileDroneDistSqTargetAvoidanceDisabled	float	80	640000	640000	0 .. 340282300000000000000000000000000000000	
+missileDroneflattenRollRatio	float	80	0.85	0.85	0 .. 1	
+missileDroneSpeedLimitClimb	float	80	300	300	0 .. 340282300000000000000000000000000000000	
+missileDroneSpeedLimitDescend	float	80	2000	2000	0 .. 340282300000000000000000000000000000000	
+missileDroneSpeedMin	float	80	100	100	0 .. 340282300000000000000000000000000000000	
+missileDroneTurnDecel	float	80	0.02	0.02	0 .. 1	
+missileDroneTurnMaxRate	float	80	300	300	0 .. 360	
+missileDroneTurnMaxRoll	float	80	40	40	0 .. 360	
+missileDroneTurnMaxRollChange	float	80	3	3	0 .. 360	
+missileDroneTurnRateAscent	float	80	25	25	0 .. 340282300000000000000000000000000000000	
+missileDroneTurnRateAvoidance	float	80	100	100	0 .. 340282300000000000000000000000000000000	
+missileDroneTurnRateDecent	float	80	45	45	0 .. 340282300000000000000000000000000000000	
+missileDroneTurnRateSmallAdjustments	float	80	0.9	0.9	0 .. 1	
+missileHellfireMaxSlope	float	80	0.3	0.3	0 .. 340282300000000000000000000000000000000	
+missileHellfireUpAccel	float	80	20	20	0.1 .. 340282300000000000000000000000000000000	
+missileJavAccelClimb	float	80	300	300	0 .. 340282300000000000000000000000000000000	
+missileJavAccelDescend	float	80	3000	3000	0 .. 340282300000000000000000000000000000000	
+missileJavClimbAngleDirect	float	80	85	85	0 .. 340282300000000000000000000000000000000	
+missileJavClimbAngleTop	float	80	50	50	0 .. 340282300000000000000000000000000000000	
+missileJavClimbCeilingDirect	float	80	0	0	0 .. 340282300000000000000000000000000000000	
+missileJavClimbCeilingTop	float	80	3000	3000	0 .. 340282300000000000000000000000000000000	
+missileJavClimbHeightDirect	float	80	10000	10000	0 .. 340282300000000000000000000000000000000	
+missileJavClimbHeightTop	float	80	15000	15000	0 .. 340282300000000000000000000000000000000	
+missileJavClimbToOwner	float	80	700	700	0 .. 340282300000000000000000000000000000000	
+missileJavSpeedLimitClimb	float	80	1000	1000	0 .. 340282300000000000000000000000000000000	
+missileJavSpeedLimitDescend	float	80	6000	6000	0 .. 340282300000000000000000000000000000000	
+missileJavTurnDecel	float	80	0.05	0.05	0 .. 1	
+missileJavTurnRateDirect	float	80	60	60	0 .. 340282300000000000000000000000000000000	
+missileJavTurnRateTop	float	80	100	100	0 .. 340282300000000000000000000000000000000	
+missileMolotovBlobNum	int	80	5	5	1 .. 10	
+missileMolotovBlobTime	float	80	2	2	0.1 .. 10	
+missilePlantableSize	float	80	5	5	0 .. 340282300000000000000000000000000000000	
+missileTVGuidedBoost	float	80	2	2	0.1 .. 10	
+missileTVGuidedBoostSpeedDown	int	80	-1000	-1000	-10000 .. 0	
+missileTVGuidedBoostSpeedUp	int	80	1000	1000	0 .. 10000	
+missileTVGuidedFlatteningRollAccel	float	80	2	2	0 .. 340282300000000000000000000000000000000	
+missileTVGuidedMaxRollAngle	float	80	35	35	0 .. 340282300000000000000000000000000000000	
+missileTVGuidedMPSpecific	bool	80	1	1		
+missileTVGuidedStickDeadzone	int	80	15	15	-128 .. 127	
+missileTVGuidedTurningRollAccel	float	80	1.5	1.5	0 .. 340282300000000000000000000000000000000	
+missileTVGuidedTurnRate	float	80	3	3	0 .. 340282300000000000000000000000000000000	
+missileWaterMaxDepth	float	80	60	60	0 .. 340282300000000000000000000000000000000	
+missingCommandWillError	bool	20000	0	0		
+mortarStrikesLeft	int	0	0	0	0 .. 3	
+motdDelay	int	20000	86400	86400	0 .. 2147483647	
+m_filter	bool	1	0	0		
+m_forward	float	1	0.25	0.25	-1 .. 1	
+m_pitch	float	1	0.022	0.022	-1 .. 1	
+m_side	float	1	0.25	0.25	-1 .. 1	
+m_yaw	float	1	0.022	0.022	-1 .. 1	
+net_broadcast_port	int	20	4976	4976	0 .. 65535	
+net_emu_client	string	0	""	""		
+net_emu_jitter	int	0	0	0	0 .. 1000	
+net_emu_latency	int	0	0	0	0 .. 1000	
+net_emu_packet_loss	int	0	0	0	0 .. 100	
+net_emu_server	string	0	""	""		
+net_ip	string	20	"localhost"	"localhost"		
+net_noudp	bool	21	0	0		
+net_port	int	20	4976	4976	0 .. 65535	
+net_socksEnabled	bool	21	0	0		
+net_socksPassword	string	21	""	""		
+net_socksPort	int	21	1080	1080	0 .. 65535	
+net_socksServer	string	21	""	""		
+net_socksUsername	string	21	""	""		
+nextarena	string	0	""	""		
+nextmap	string	0	""	""		
+nightVisionDisableEffects	bool	1000	0	0		
+nightVisionFadeInOutTime	float	1000	0.1	0.1	0 .. 10000	
+nightVisionPowerOnTime	float	1000	0.3	0.3	0 .. 10000	
+onlinegame	bool	0	0	0		
+overrideNVGModelWithKnife	bool	1000	0	0		
+partyend_reason	string	0	""	""		
+partyMigrate_debugEnabled	bool	20000	0	0		
+partyMigrate_disabled	bool	0	0	0		
+partymigrate_HostWaitMS	int	0	1000	1000	0 .. 2147483647	
+partyMigrate_maxBWPackets	int	20000	5	5	0 .. 65535	
+partymigrate_MaxPacketWaitTime	int	20000	1000	1000	0 .. 2147483647	
+partymigrate_MinScoreDiff	int	20000	10	10	0 .. 2147483647	
+partyMigrate_NomineeRecalcInterval	int	0	2000	2000	0 .. 2147483647	
+partymigrate_NomineeWaitMS	int	0	2000	2000	0 .. 2147483647	
+partyMigrate_TestInterval	int	0	4000	4000	0 .. 2147483647	
+partyprober_chanceToFailAssociation	float	20000	0	0	0 .. 1	
+partyprober_chanceToFailSend	float	20000	0	0	0 .. 1	
+party_allowguests	bool	0	1	1		
+party_autoteams	bool	0	1	1		
+party_challengeResponseGraceTime	string	4000	"86400000"	"86400000"		
+party_challengeResponseInterval	int	20000	1000	1000	100 .. 2147483647	
+party_chanceToFailConnection	float	20000	0	0	0 .. 1	
+party_chooseLowestPingSlot	bool	20000	1	1		
+party_clientTimeout	int	0	12000	12000	1000 .. 120000	
+party_connectTimeout	int	20000	8000	8000	0 .. 2147483647	
+party_connectToOthers	bool	0	1	1		
+party_connect_dedicated	bool	20000	0	0		
+party_considerStreamingForHostMigration	bool	20000	1	1		
+party_debugShowSkill	bool	0	0	0		
+party_dedicatedMergeMinPlayers	int	20000	8	8	0 .. 36	
+party_dedicatedOnly	bool	20000	0	0		
+party_disableLockin	bool	20000	0	0		
+party_disconnectPlayerOnJoinFailed	bool	20000	0	0		
+party_disconnectPlayerOnRemoval	bool	20000	0	0		
+party_editingsettings	bool	0	0	0		
+party_firstSubpartyIndex	int	0	0	0	0 .. 18	
+party_forceMemberUpdateOnVoiceConnectivityBits	bool	20000	0	0		
+party_forceMigrateAfterRound	bool	20000	1	1		
+party_forceMigrateOnMatchStartRegression	bool	20000	0	0		
+party_gamesize	string	40	""	""		
+party_gameStartTimerLength	int	20000	10	10	0 .. 99999	
+party_gameStartTimerLengthPrivate	int	20000	5	5	0 .. 99999	
+party_gametype	string	40	""	""		
+party_hostname	string	40	""	""		
+party_iamhost	bool	40	0	0		
+party_isPreviousMapVoted	bool	0	0	0		
+party_joinInProgressAllowed	bool	20000	1	1		
+party_keepPartyAliveWhileMatchmaking	bool	20000	1	1		
+party_kickplayerquestion	string	40	""	""		
+party_leagueValidityGrace	int	20000	4000	4000	0 .. 2147483647	
+party_linearMapCycle	bool	0	0	0		
+party_linearMapCycleRandom	bool	0	0	0		
+party_lobbyExtensionTime	int	20000	10	10	0 .. 2147483	
+party_localTeamTest	bool	0	0	0		
+party_mapname	string	40	""	""		
+party_mappacks	string	40	""	""		
+party_matchedPlayerCount	int	0	4	4	0 .. 18	
+party_maxChangeListDiff	int	20000	2147483647	2147483647	0 .. 2147483647	
+party_maxDesperateMigrationTime	int	20000	6000	6000	1000 .. 2147483647	
+party_maxlocalplayers	int	0	1	1	1 .. 1	
+party_maxlocalplayers_leaguematch	int	20000	1	1	1 .. 18	
+party_maxlocalplayers_local_splitscreen	int	0	1	1	1 .. 1	
+party_maxlocalplayers_mainlobby	int	20000	1	1	1 .. 1	
+party_maxlocalplayers_playermatch	int	0	1	1	1 .. 1	
+party_maxlocalplayers_privatematch	int	0	1	1	1 .. 1	
+party_maxlocalplayers_systemlink	int	0	1	1	1 .. 1	
+party_maxlocalplayers_theater	int	20000	1	1	1 .. 1	
+party_maxlocalplayers_wagermatch	int	0	1	1	1 .. 1	
+party_maxMemberUpdateInterval	int	20000	200	5000	50 .. 2147483647	
+party_maxMigrationTime	int	20000	10000	10000	1000 .. 2147483647	
+party_maxplayers	int	0	18	18	1 .. 19	
+party_maxplayers_leaguematch	int	20000	4	4	1 .. 18	
+party_maxplayers_local_splitscreen	int	0	1	1	1 .. 18	
+party_maxplayers_partylobby	int	0	18	18	1 .. 18	
+party_maxplayers_playermatch	int	0	12	12	1 .. 18	
+party_maxplayers_privatematch	int	0	18	18	1 .. 18	
+party_maxplayers_systemlink	int	0	18	18	1 .. 18	
+party_maxplayers_theater	int	0	6	6	1 .. 18	
+party_maxplayers_wagermatch	int	0	6	6	1 .. 18	
+party_maxplayers_wagerpartylobby	int	0	6	6	1 .. 18	
+party_membersMissingMapPack	bool	40	0	0		
+party_memberUpdateBackoffRate	float	20000	2	2	1 .. 1000	
+party_mergingEnabled	bool	0	1	1		
+party_mergingJitter	int	20000	15000	15000	0 .. 2147483647	
+party_migrateRestTime	int	20000	1000	1000	0 .. 2147483647	
+party_minLobbyTime	int	0	45	45	0 .. 2147483	
+party_minMemberUpdateInterval	int	20000	200	200	50 .. 2147483647	
+party_minplayers	int	0	2	2	1 .. 18	
+party_minResumeMs	int	20000	2000	2000	0 .. 2147483647	
+party_neverJoinRecent	bool	20000	0	0		
+party_playerCount	int	0	1	1	0 .. 18	
+party_playervisible	bool	40	0	0		
+party_pregameStartTimerLength	int	20000	5	5	0 .. 99999	
+party_pregameStartTimerLengthPrivate	int	20000	0	0	0 .. 99999	
+party_readyAllowOnlyLocalPlayers	bool	0	0	0		
+party_readyButtonVisible	bool	0	0	0		
+party_readyPercentRequired	float	0	0	0	0 .. 1	
+party_reconnectToClientOnTimeout	bool	20000	1	1		
+party_reconnectToHostOnTimeout	bool	20000	1	1		
+party_requestMigrateDuringAutoStartIfStreaming	bool	20000	1	1		
+party_restartMatchmakingTimer	int	20000	0	0	0 .. 2147483	
+party_searchInterval	int	20000	10000	10000	10000 .. 2147483647	
+party_sequentialPreviousMapVotingAllowed	bool	0	0	0		
+party_simulateLongQoS	bool	20000	0	0		
+party_skillAllowancePerSecond	float	20000	0.01	0.01	0 .. 1	
+party_skillBaseDifferenceAllowance	float	20000	0.02	0.02	0 .. 1	
+party_subSearchInterval	int	20000	30000	30000	10000 .. 2147483647	
+party_teamSwitchDelay	float	20000	1.5	1.5	0 .. 10	
+party_theaterTimeoutWhenLoaded	int	20000	18000	18000	1000 .. 2147483647	
+party_theaterTimeoutWhenLoading	int	20000	40000	40000	1000 .. 2147483647	
+party_vetoButtonVisible	bool	0	0	0		
+party_vetoDelayTime	int	20000	4	4	0 .. 2147483647	
+party_vetoPassed	bool	0	0	0		
+party_vetoPercentRequired	float	20000	0.501	0.501	0 .. 1	
+password	string	2	""	""		
+pclive_updateFriends	float	20000	0	0	0 .. 1	
+pc_newversionavailable	bool	40	0	0		
+penetrationCount	int	100	5	5	0 .. 5	
+penetrationCount_allies	int	100	5	5	0 .. 5	
+penetrationCount_axis	int	100	5	5	0 .. 5	
+perk_armorPiercing	float	80	95	95	0 .. 340282300000000000000000000000000000000	
+perk_blackbirdShowsGpsJammer	bool	80	1	1		
+perk_bulletPenetrationMultiplier	float	80	2	2	0 .. 30	
+perk_damageKickReduction	float	80	0.25	0.25	0 .. 1	
+perk_deathStreakCountRequired	int	80	3	3	1 .. 10	
+perk_delayExplosiveTime	float	80	0.9	0.9	0 .. 10	
+perk_disarmExplosiveTime	float	80	2	2	0 .. 20	
+perk_dogsAttackGhost	bool	80	1	1		
+perk_extraBreath	float	80	5	5	0 .. 340282300000000000000000000000000000000	
+perk_fastLadderClimbMultiplier	float	80	1.75	1.75	0 .. 340282300000000000000000000000000000000	
+perk_fireproof	float	80	95	95	0 .. 340282300000000000000000000000000000000	
+perk_flakJacket	float	80	35	35	0 .. 340282300000000000000000000000000000000	
+perk_flakJacket_hardcore	float	80	20	20	0 .. 340282300000000000000000000000000000000	
+perk_gpsjammer_alpha	float	80	0.5	0.5	0 .. 1	
+perk_gpsjammer_fade_time	int	80	500	500	0 .. 60000	
+perk_gpsjammer_graceperiods	int	80	10	10	0 .. 30	
+perk_gpsjammer_min_distance	int	80	100	100	0 .. 10000	
+perk_gpsjammer_min_speed	int	80	100	100	0 .. 300	
+perk_gpsjammer_time_period	int	80	150	150	50 .. 10000	
+perk_grenadeDeath	string	80	"frag_grenade_short_mp"	"frag_grenade_short_mp"		
+perk_grenadeTossBackTimer	int	80	2500	2500	0 .. 6000	
+perk_healthRegenMultiplier	float	80	1.5	1.5	1 .. 5	
+perk_interactSpeedMultiplier	float	80	1.15	1.15	0 .. 10	
+perk_killstreakDeathPenaltyMultiplier	float	80	0.5	0.5	0 .. 1	
+perk_killstreakMomentumMultiplier	float	80	1.2	1.2	1 .. 2	
+perk_killstreakReduction	int	80	1	1	0 .. 5	
+perk_mantleReduction	float	80	0.4	0.4	0 .. 1	
+perk_marksmanEnemyNameFadeIn	int	80	5	5	0 .. 2147483647	
+perk_marksmanEnemyNameFadeOut	int	80	5	5	0 .. 2147483647	
+perk_nottargetedbyai_graceperiod	int	80	2000	2000	0 .. 10000	
+perk_nottargetedbyai_min_speed	int	80	0	0	0 .. 300	
+perk_scavenger_clip_multiplier	float	80	1	1	0 .. 10	
+perk_scavenger_lethal_proc	int	80	1	1	0 .. 10	
+perk_scavenger_tactical_proc	int	80	1	1	0 .. 10	
+perk_shellShockReduction	float	80	0.5	0.5	0 .. 1	
+perk_speedMultiplier	float	80	1.07	1.07	0 .. 5	
+perk_sprintMultiplier	float	80	2	2	0 .. 3	
+perk_sprintRecoveryMultiplier	float	80	0.3	0.3	0 .. 1	
+perk_throwbackInnerRadius	float	80	120	120	0 .. 340282300000000000000000000000000000000	
+perk_weapAdsMultiplier	float	80	0.5	0.5	0.01 .. 1	
+perk_weapEquipmentUseMultiplier	float	80	0.6	0.6	0.01 .. 1	
+perk_weapMeleeMultiplier	float	80	0.5	0.5	0.01 .. 1	
+perk_weapRateMultiplier	float	80	0.75	0.75	0 .. 1	
+perk_weapReloadMultiplier	float	80	0.5	0.5	0 .. 1	
+perk_weapSpreadMultiplier	float	80	0.65	0.65	0 .. 1	
+perk_weapSwitchMultiplier	float	80	0.5	0.5	0.01 .. 1	
+perk_weapTossMultiplier	float	80	0.5	0.5	0.01 .. 1	
+phys_buoyancy	bool	1000	0	0		
+phys_buoyancyDistanceCutoff	float	1000	2500	2500	0 .. 340282300000000000000000000000000000000	
+phys_buoyancyFloatHeightOffset	float	1000	-2	-2	-100 .. 100	
+phys_disableEntsAndDynEntsCollision	bool	1000	0	0		
+phys_gravity	float	1000	-800	-800	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+phys_gravity_dir	vec3	1000	0 0 1	0 0 1	-1 .. 1	
+phys_impact_distance_cutoff	float	1000	800	800	0 .. 340282300000000000000000000000000000000	
+phys_impact_fx	bool	1000	1	1		
+phys_impact_intensity_limit	float	0	50	50	0 .. 340282300000000000000000000000000000000	
+phys_maxFloatTime	int	1000	30000	30000	1000 .. 2147483647	
+phys_piecesSpawnDistanceCutoff	float	1000	1000	1000	0 .. 340282300000000000000000000000000000000	
+phys_ragdoll_buoyancy	bool	1000	0	0		
+phys_vehicleDamageFroceScale	float	1000	0.3	0.3	0 .. 10	
+phys_vehicleGravityMultiplier	float	1000	1	1	0.5 .. 2	
+phys_vehicleWheelEntityCollision	bool	1000	1	1		
+pickupPrints	bool	80	0	0		
+playerPushAmount	float	1000	0	0	0 .. 1000	
+player_adsExitDelay	int	180	0	0	0 .. 1000	
+player_animRunThreshhold	float	80	140	140	0 .. 50000	
+player_animWalkThreshhold	float	80	30	30	0 .. 50000	
+player_backSpeedScale	float	180	0.7	0.7	0 .. 20	
+player_bayonetLaunchDebugging	bool	80	0	0		
+player_bayonetLaunchProof	bool	80	1	1		
+player_bayonetLaunchZCap	float	80	300	300	0 .. 500	
+player_bayonetRange	float	80	85	85	0 .. 1000	
+player_bayonetTargetDist	int	80	65	65	0 .. 1000	
+player_breath_fire_delay	float	180	0	0	0 .. 30	
+player_breath_gasp_lerp	float	180	4	4	0 .. 50	
+player_breath_gasp_scale	float	180	2.5	2.5	0 .. 50	
+player_breath_gasp_time	float	180	0	0	0 .. 30	
+player_breath_hold_lerp	float	180	1.5	1.5	0 .. 50	
+player_breath_hold_time	float	180	4.5	4.5	0 .. 30	
+player_breath_snd_delay	float	180	1	1	0 .. 2	
+player_breath_snd_lerp	float	180	2	2	0 .. 100	
+player_clipSizeMultiplier	float	80	1	1	0 .. 340282300000000000000000000000000000000	
+player_debugHealth	bool	180	0	0		
+player_disableWeaponsOnVehicle	bool	1000	1	1		
+player_dmgtimer_flinchTime	int	180	500	500	0 .. 2000	
+player_dmgtimer_maxTime	float	180	750	750	0 .. 340282300000000000000000000000000000000	
+player_dmgtimer_minScale	float	180	0	0	0 .. 1	
+player_dmgtimer_stumbleTime	int	180	500	500	0 .. 2000	
+player_dmgtimer_timePerPoint	float	180	100	100	0 .. 340282300000000000000000000000000000000	
+player_enableShuffleAnims	bool	80	0	0		
+player_enduranceSpeedScale	float	180	1.7	1.7	1 .. 20	
+player_footstepsThreshhold	float	180	10	10	0 .. 50000	
+player_forceRedCrosshair	bool	1000	0	0		
+player_knockbackMoveThreshhold	float	180	160	160	0 .. 50000	
+player_lastStandBleedoutTime	float	4080	30	30	0 .. 340282300000000000000000000000000000000	
+player_lastStandBleedoutTimeNoRevive	float	80	10	10	0 .. 340282300000000000000000000000000000000	
+player_lastStandHealthOverlayTime	float	80	8	8	0 .. 340282300000000000000000000000000000000	
+player_lean_rotate	vec2	80	1.25 1.25	1.25 1.25	0 .. 3	
+player_lean_rotate_crouch	vec2	80	1 1	1 1	0 .. 3	
+player_lean_shift	vec2	80	5 2.5	5 2.5	0 .. 20	
+player_lean_shift_crouch	vec2	80	12.5 2.5	12.5 2.5	0 .. 20	
+player_lookAtEntityAllowChildren	bool	1000	0	0		
+player_meleeCalcSpeedFromTarget	bool	80	1	1		
+player_meleeChargeFriction	float	80	1200	1200	1 .. 5000	
+player_meleeChargeMaxSpeed	float	80	800	800	0 .. 2000	
+player_meleeHeight	float	80	10	10	0 .. 1000	
+player_meleeInterruptFrac	float	1000	1	1	0 .. 1	
+player_meleeRange	float	0	55	55	0 .. 1000	
+player_meleeWidth	float	80	10	10	0 .. 1000	
+player_MGUseRadius	float	80	128	128	0 .. 340282300000000000000000000000000000000	
+player_moveThreshhold	float	180	2	2	0 .. 20	
+player_move_factor_on_torso	float	80	0	0	0 .. 1	
+player_name	string	40	"Redacted"	"Unknown Soldier"		
+player_revivePlayerListCycleTime	float	80	2	2	0 .. 340282300000000000000000000000000000000	
+player_reviveTriggerRadius	float	80	64	64	0 .. 256	
+player_runbkThreshhold	float	180	60	60	0 .. 50000	
+player_runThreshhold	float	180	110	110	0 .. 50000	
+player_scopeExitOnDamage	bool	180	0	0		
+player_slick_accel	float	4080	0.25	0.25	0 .. 10	
+player_slick_invspeed	float	4080	150	150	0 .. 10000	
+player_slick_wishspeed	float	4080	1000	1000	0 .. 10000	
+player_sliding_friction	float	4080	1.5	1.5	0 .. 100	
+player_sliding_velocity_cap	float	4080	500	500	0 .. 10000	
+player_sliding_wishspeed	float	4080	4000	4000	0 .. 10000	
+player_slopeAnimAngle	float	80	30	30	15 .. 80	
+player_spectateSpeedScale	float	180	1	1	0 .. 20	
+player_sprintCameraBob	float	180	0.5	0.5	0 .. 2	
+player_sprintForwardMinimum	int	100	105	105	0 .. 255	
+player_sprintMinTime	float	180	1	1	0 .. 12.8	
+player_sprintRechargePause	float	180	0	0	0 .. 9000	
+player_sprintSpeedScale	float	180	1.5	1.5	0 .. 5	
+player_sprintStrafeSpeedScale	float	180	0.667	0.667	0 .. 2	
+player_sprintThreshhold	float	180	185	185	0 .. 50000	
+player_sprintTime	float	100	4	4	0 .. 12.8	
+player_sprintUnlimited	bool	100	0	0		
+player_standingViewHeight	int	80	60	60	0 .. 70	
+player_strafeAnimCosAngle	float	180	0.5	0.5	0 .. 1	
+player_strafeSpeedScale	float	180	0.8	0.8	0 .. 20	
+player_sustainAmmo	bool	80	0	0		
+player_swimDamage	int	4080	15	15	0 .. 5000	
+player_swimDamagerInterval	float	4080	1	1	0 .. 5000	
+player_swimTime	float	4080	16	16	0 .. 5000	
+player_throwbackInnerRadius	float	80	90	90	0 .. 340282300000000000000000000000000000000	
+player_throwbackOuterRadius	float	80	160	160	0 .. 340282300000000000000000000000000000000	
+player_throwbackOuterRadius_zm	float	80	192	192	0 .. 340282300000000000000000000000000000000	
+player_turnAnims	bool	180	1	1		
+player_useRadius	float	3080	128	128	0 .. 340282300000000000000000000000000000000	
+player_useRadius_zm	float	3080	72	72	0 .. 340282300000000000000000000000000000000	
+player_viewLockEnt	int	1000	0	0	0 .. 1024	
+player_viewRateScale	float	1000	0	0	0 .. 300	
+player_view_pitch_down	float	1180	85	85	-90 .. 90	
+player_view_pitch_up	float	1180	85	85	-90 .. 90	
+player_waterSpeedScale	float	4080	1.3	1.3	0 .. 20	
+player_zombieMeleeHeight	float	80	20	20	0 .. 1000	
+player_zombieMeleeRange	float	0	85	85	0 .. 1000	
+player_zombieMeleeWidth	float	80	30	30	0 .. 1000	
+player_zombieSpeedScale	float	180	1.21	1.21	0.1 .. 20	
+player_zombieSprintSpeedScale	float	180	1.37	1.37	0.1 .. 20	
+playlist_allowdevmaps	bool	20000	0	0		
+playlist_enabled	bool	14	0	0		
+playlist_entry	int	4	0	0	0 .. 8192	
+playlist_excludeGametype	string	0	""	""		
+playlist_excludeGametypeMap	string	0	""	""		
+playlist_excludeMap	string	0	""	""		
+playlist_next	int	0	1	1	1 .. 200	
+popInLetterFXTime	int	80	40	40	1 .. 2147483647	
+probation_league_enabled	bool	20000	0	1		
+probation_league_forgiveCount	int	20000	1	1	1 .. 2147483647	
+probation_league_kickcalar	float	20000	1	1	0 .. 10	
+probation_league_matchHistoryWindow	int	20000	15	15	0 .. 32	
+probation_league_probationThreshold	float	20000	3	3	0 .. 32	
+probation_league_probationTime	float	20000	5	5	0 .. 340282300000000000000000000000000000000	
+probation_league_quitScalar	float	20000	1	1	0 .. 10	
+probation_league_timeoutScalar	float	20000	1	1	0 .. 10	
+probation_league_warningThreshold	float	20000	2	2	0 .. 32	
+probation_public_enabled	bool	20000	0	1		
+probation_public_forgiveCount	int	20000	1	1	1 .. 2147483647	
+probation_public_kickScalar	float	20000	1	1	0 .. 10	
+probation_public_matchHistoryWindow	int	20000	15	15	0 .. 32	
+probation_public_probationThreshold	float	20000	5	5	0 .. 32	
+probation_public_probationTime	float	20000	5	5	0 .. 340282300000000000000000000000000000000	
+probation_public_quitScalar	float	20000	0	0	0 .. 10	
+probation_public_timeoutScalar	float	20000	0.5	0.5	0 .. 10	
+probation_public_warningThreshold	float	20000	4	4	0 .. 32	
+probation_version	int	20000	4	4	0 .. 2147483647	
+profileDirtyInterval	int	20000	300	300	60 .. 2147483647	
+prone_bipod_enable	bool	180	1	1		
+protocol	int	44	2091	2091	2091 .. 2091	
+qosMaxAllowedPing	int	0	300	300	1 .. 1000	
+qosPreferredPing	int	0	150	150	1 .. 1000	
+quit_on_error	bool	0	0	0		
+radius_damage_debug	bool	80	0	0		
+ragdoll_baselerp_time	int	80	1000	1000	100 .. 6000	
+ragdoll_bullet_force	float	80	0.5	0.5	0 .. 10000	
+ragdoll_bullet_upbias	float	80	0.5	0.5	0 .. 10000	
+ragdoll_debug	int	80	0	0	0 .. 2147483647	
+ragdoll_enable	bool	84000	1	1		
+ragdoll_explode_force	float	80	18	18	0 .. 60000	
+ragdoll_explode_upbias	float	80	0.8	0.8	0 .. 2	
+ragdoll_fps	int	80	20	20	0 .. 100	
+ragdoll_jitter_scale	float	80	1	1	0 .. 10	
+ragdoll_jointlerp_time	int	80	3000	3000	100 .. 6000	
+ragdoll_max_life	int	1000	9000	9000	0 .. 2147483647	
+ragdoll_reactivation_cutoff	float	1000	1200	1200	0 .. 30000	
+ragdoll_rotvel_scale	float	80	1	1	0 .. 2000	
+ragdoll_self_collision_scale	float	80	1.2	1.2	0.1 .. 10	
+rate	int	42	20000	20000	1000 .. 25000	
+rcon_password	string	0	""	""		
+recordPointsSpent	bool	20000	1	1		
+redactionDisplayTime	int	80	50	50	1 .. 2147483647	
+redactionFadeDuration	int	80	6500	6500	1 .. 2147483647	
+redactionStartStrokeTime	int	80	1000	1000	1 .. 2147483647	
+redactionStrokeTime	int	80	1000	1000	1 .. 2147483647	
+reliableResendTime	int	20000	300	300	0 .. 2147483647	
+reliableTimeoutTime	int	20000	20000	20000	0 .. 2147483647	
+reportUserInterval	int	0	2	2	1 .. 2147483647	
+restore_gump_name	string	0	""	""		
+revive_time_taken	float	80	1.15	1.15	0 .. 340282300000000000000000000000000000000	
+riotshield_assist_time	float	80	4	4	0 .. 340282300000000000000000000000000000000	
+riotshield_bullet_damage_scale	float	80	0.025	0.025	0 .. 1	
+riotshield_damage_score_max	int	80	2000	2000	0 .. 2147483647	
+riotshield_damage_score_threshold	int	80	400	400	0 .. 2147483647	
+riotshield_deployed_health	int	80	300	300	0 .. 2147483647	
+riotshield_deploy_limit_radius	float	80	100	100	0 .. 340282300000000000000000000000000000000	
+riotshield_deploy_pitch_max	float	80	20	20	0 .. 340282300000000000000000000000000000000	
+riotshield_deploy_roll_max	float	80	25	25	0 .. 340282300000000000000000000000000000000	
+riotshield_deploy_zdiff_max	float	80	30	30	0 .. 340282300000000000000000000000000000000	
+riotshield_destroyed_cleanup_time	float	80	10	10	0 .. 340282300000000000000000000000000000000	
+riotshield_explosive_damage_scale	float	80	1	1	0 .. 1	
+riotshield_melee_damage_scale	float	80	1	1	0 .. 1	
+riotshield_projectile_damage_scale	float	80	0.01	0.01	0 .. 1	
+r_aaSamples	int	21	1	1	1 .. 16	
+r_aaSamplesMax	int	0	8	8	1 .. 16	
+r_alphaMap	enum	80	Unchanged	Unchanged	Unchanged | 255 | 192 | 128	
+r_anaglyphFX_enable	bool	1	0	0		
+r_aspectRatio	enum	21	auto	auto	auto | standard | wide 16:10 | wide 16:9	
+r_aspectRatioWindow	float	0	2.3704	2.3704	0 .. 10	
+r_autoLodScale	bool	80	0	0		
+r_autopriority	bool	1	0	0		
+r_blinkCullNone	int	80	0	0	0 .. 2	
+r_blinkLayers	int	80	0	0	0 .. 4	
+r_blinkLitQuasiOpaque	int	80	0	0	0 .. 2	
+r_blinkTrans	int	80	0	0	0 .. 2	
+r_bloomHiQuality	bool	4001	0	0		
+r_bloomTweaks	bool	5000	0	0		
+r_blur	float	80	0	0	0 .. 32	
+r_brightness	float	80	0.9	0	0.5 .. 1.5	
+r_brushLimit	int	80	512	512	0 .. 1024	
+r_clearColor	color	0	0 0 0 0	0 0 0 0		
+r_clearColor2	color	0	0 0 0 0	0 0 0 0		
+r_clipCodec	enum	0	VP8	VP8	MJPEG | VP8	
+r_clipFPS	int	0	30	30	10 .. 60	
+r_clipSize	enum	0	480	480	360 | 480 | 720 | 1080	
+r_cmdbuf_worker	bool	84000	0	0		
+r_colorMap	enum	80	Unchanged	Unchanged	Black | Unchanged | White | Gray Linear | Gray sRGB	
+r_contrast	float	80	1	1	0 .. 4	
+r_convergence	float	0	4	6	0.1 .. 100	
+r_cubicUpsampleParam	float	1000	-0.5	-0.5	-1 .. 1	
+r_currentMonitor	int	0	0	0	0 .. 8	
+r_customMode	string	21	""	""		
+r_debugMetalStorm	bool	80	0	0		
+r_debugPerformance	enum	80	none	none	none | current | average	
+r_debugShader	enum	80	none	none	none | normal | basisTangent | basisBinormal | basisNormal | lmapDir	
+r_debugShowCoronas	bool	80	0	0		
+r_debugShowDynamicLights	bool	80	0	0		
+r_debugShowPrimaryLights	bool	80	0	0		
+r_defaultMode	string	0	""	""		
+r_desaturation	float	80	1	1	0 .. 4	
+r_disableGenericFilter	bool	80	0	0		
+r_dlightLimit	int	0	4	4	0 .. 4	
+r_dobjLimit	int	80	512	512	0 .. 1024	
+r_dofHDR	int	4001	0	0	0 .. 2	
+r_dof_bias	float	4080	0.5	0.5	0.1 .. 3	
+r_dof_enable	bool	0	1	1		
+r_dof_farBlur	float	4080	1.8	1.8	0 .. 10	
+r_dof_farEnd	float	4080	7000	7000	0 .. 20000	
+r_dof_farStart	float	4080	1000	1000	0 .. 20000	
+r_dof_nearBlur	float	4080	6	6	4 .. 10	
+r_dof_nearEnd	float	4080	60	60	0 .. 1000	
+r_dof_nearStart	float	4080	10	10	0 .. 1000	
+r_dof_showdebug	bool	80	0	0		
+r_dof_tweak	bool	4080	0	0		
+r_dof_viewModelEnd	float	4080	8	8	0 .. 128	
+r_dof_viewModelStart	float	4080	2	2	0 .. 128	
+r_dpvs_useCellForceInvisibleBits	bool	80	1	1		
+r_drawDebugFogParams	bool	80	0	0		
+r_drawLightmapDrawlists	bool	80	1	1		
+r_drawLitDrawlists	bool	80	1	1		
+r_drawWater	bool	80	1	1		
+r_dualPlayActive	bool	1000	0	0		
+r_dualPlayEnable	bool	1	0	0		
+r_dualPlayTestCount	bool	20000	1	1		
+r_enableCubicUpsample	bool	1000	1	1		
+r_enableFlashlight	int	5000	0	0	0 .. 2	
+r_enableOccluders	bool	80	1	1		
+r_enablePlayerShadow	bool	5080	0	0		
+r_exposureTweak	bool	5000	0	0		
+r_exposureValue	float	5000	3	3	-6 .. 16	
+r_extracam_custom_aspectratio	float	1000	-1	-1	-1 .. 5	
+r_extracam_lod_scale	float	1000	2	2	0.1 .. 100	
+r_filmLut	float	0	-1	-1	-1 .. 9	
+r_filmTweakBrightness	float	1000	0	0	-1 .. 1	
+r_filmTweakDesaturation	float	1000	0.2	0.2	0 .. 1	
+r_filmTweakEnable	bool	1000	0	0		
+r_filmTweakInvert	bool	1000	0	0		
+r_filmTweakLut	int	1000	-1	-1	-1 .. 9	
+r_filmUseTweaks	bool	80	0	0		
+r_finalShiftX	vec3	5000	0 0 0	0 0 0	-5 .. 5	
+r_finalShiftY	vec3	5000	0 0 0	0 0 0	-5 .. 5	
+r_flameFX_distortionScaleFactor	vec4	1081	0 1 1 0.5119	0 1 1 0.5119	0 .. 1	
+r_flameFX_fadeDuration	float	1001	0.5	0.5	0 .. 15	
+r_flameFX_FPS	int	1081	15	15	1 .. 60	
+r_flameFX_magnitude	float	1081	0.0215	0.0215	0 .. 1	
+r_flameScaler	float	1000	1	1	0 .. 1	
+r_flame_allowed	bool	1	1	1		
+r_flashLightBobAmount	vec3	5000	0 0 0	0 0 0	0 .. 50	
+r_flashLightBobRate	vec3	5000	0 0.2 0.3	0 0.2 0.3	0 .. 2	
+r_flashLightBrightness	float	5000	10	10	0 .. 25	
+r_flashLightColor	vec3	5000	1 1 1	1 1 1	0 .. 1	
+r_flashLightEndRadius	float	5000	300	300	1 .. 1200	
+r_flashLightFlickerAmount	float	5000	0	0	0 .. 1	
+r_flashLightFlickerRate	float	5000	65	65	0.1 .. 65	
+r_flashLightFovInnerFraction	float	5000	0.7	0.7	0 .. 0.99	
+r_flashLightOffset	vec3	5000	0 2 1	0 2 1	-100 .. 100	
+r_flashLightRange	float	5000	350	350	1 .. 1200	
+r_flashLightShadows	bool	5000	1	1		
+r_flashLightSpecularScale	float	5000	1	1	0 .. 10	
+r_flashLightStartRadius	float	5000	0	0	0 .. 1200	
+r_fog	bool	80	1	1		
+r_fogBaseDist	float	80	0	0	0 .. 20000	
+r_fogBaseHeight	float	80	0	0	-50000 .. 50000	
+r_fogColor	vec3	80	0.5 0.5 0.5	0.5 0.5 0.5	0 .. 32	
+r_fogHalfDist	float	80	1	1	1 .. 40000	
+r_fogHalfHeight	float	80	1	1	1 .. 50000	
+r_fogOpacity	float	80	0.25	0.25	0 .. 1	
+r_fogSunColor	vec3	80	1 1 1	1 1 1	0 .. 32	
+r_fogSunInner	float	80	0	0	0 .. 180	
+r_fogSunOpacity	float	80	0.5	0.5	0 .. 1	
+r_fogSunOuter	float	80	0	0	0 .. 180	
+r_fogSunPitch	float	80	-45	-45	-360 .. 360	
+r_fogSunYaw	float	80	0	0	-360 .. 360	
+r_fogTweak	bool	80	0	0		
+r_fog_disable	bool	80	0	0		
+r_fontResolution	int	40	720	720	720 .. 1080	
+r_forceCameraHdg	int	80	0	0	0 .. 3	
+r_forceCameraNode	int	80	-1	-1	-1 .. 3000	
+r_forceCamerarecord	bool	80	0	0		
+r_forceLod	enum	80	none	none	high | medium | low | lowest | none	
+r_fullbright	bool	80	0	0		
+r_fullPrepass	bool	80	0	0		
+r_fullscreen	int	21	0	1	0 .. 2	
+r_fxaa	bool	84000	0	1		
+r_genericSceneVector0	vec4	5000	0 0 0 0	0 0 0 0	0 .. 100	
+r_genericSceneVector1	vec4	5000	0 0 0 0	0 0 0 0	0 .. 100	
+r_genericSceneVector2	vec4	5000	0 0 0 0	0 0 0 0	0 .. 100	
+r_genericSceneVector3	vec4	5000	0 0 0 0	0 0 0 0	0 .. 100	
+r_genericSceneVector_debug	bool	5000	0	0		
+r_glossMap	enum	80	Unchanged	Unchanged	0 | Unchanged | 255 | 204 | 153 | 102 | 51	
+r_grassEnable	bool	0	1	1		
+r_grassWindForceEnable	bool	80	1	1		
+r_heroLighting	bool	0	1	1		
+r_heroLightScale	vec3	5080	1 1 1	1 1 1	0 .. 2	
+r_heroWeaponLighting	bool	0	0	0		include weapons in hero lighting
+r_highLodDist	float	80	-1	-1	-1 .. 340282300000000000000000000000000000000	
+r_ignorehwgamma	bool	21	0	0		
+r_lightConflicts	bool	80	0	0		
+r_lightGridContrast	float	1000	0	0	-1 .. 1	
+r_lightGridEnableTweaks	bool	1000	0	0		
+r_lightGridIntensity	float	1000	1	1	0 .. 2	
+r_lightMapFilterDisable	bool	80	0	0		
+r_lightmapOnlyBspSurfs	bool	80	1	1		
+r_lightmapOnlyEntSurfs	bool	80	1	1		
+r_lightmapOnlySModelSurfs	bool	80	1	1		
+r_lightMapSecondary	enum	80	Unchanged	Unchanged	Black | Unchanged | Intensity 1 | Intensity 2 | Intensity 3 | Intensity 4 | Intensity 5 | Intensity 6 | Intensity 7 | Intensity 8 | Intensity 9 | Intensity 10 | Intensity 11 | Intensity 12 | Intensity 13 | Intensity 14 | Intensity 15 | Intensity 16 | Intensity 17 | Intensity 18 | Intensity 19 | Intensity 20 | Intensity 21 | Intensity 22 | Intensity 23 | Intensity 24 | Intensity 25 | Intensity 26 | Intensity 27 | Intensity 28 | Intensity 29 | Intensity 30 | Intensity 31	
+r_lightTweakAmbient	float	240	0.1	0.1	0 .. 4	
+r_lightTweakAmbientColor	color	240	255 0 0 255	255 0 0 255		
+r_lightTweakSunColor	linearRGB	1200	1 1 0	1 1 0		
+r_lightTweakSunDiffuseColor	color	240	0 0 255 255	0 0 255 255		
+r_lightTweakSunDirection	vec3	1200	0 0 0	0 0 0	-360 .. 360	
+r_lightTweakSunLight	float	1200	1	1	0 .. 32	
+r_loadForRenderer	bool	20	1	1		
+r_loadingScreen	bool	4000	0	0		
+r_lockPvs	bool	80	0	0		
+r_lockPvsInCode	bool	80	0	0		
+r_lodBiasRigid	float	80	0	0	-1000 .. 0	
+r_lodBiasSkinned	float	80	0	0	-1000 .. 0	
+r_lodScaleRigid	float	80	1	1	1 .. 4	
+r_lodScaleSkinned	float	80	1	1	1 .. 4	
+r_lowestLodDist	float	80	-1	-1	-1 .. 340282300000000000000000000000000000000	
+r_lowLodDist	float	80	-1	-1	-1 .. 340282300000000000000000000000000000000	
+r_materialXYZ	colorXYZ	0	3.86 3.98 4.55	3.86 3.98 4.55		
+r_mediumLodDist	float	80	-1	-1	-1 .. 340282300000000000000000000000000000000	
+r_missile_cam_debug_display	int	80	0	0	0 .. 10	
+r_mode	enum	21	3050x1668	3050x1668	3050x1668	
+r_mode1	enum	4000	3050x1668	3050x1668	3050x1668	
+r_modelLimit	int	80	1024	1024	0 .. 1024	
+r_modelVertColor	bool	A0	1	1		
+r_monitor	int	21	1	0	0 .. 8	
+r_monitorCount	int	0	1	0	0 .. 8	
+r_multiGpu	bool	1	1	1		
+r_multi_extracam_debug	int	80	-1	-1	-1 .. 10	
+r_noipak	bool	10	0	0		
+r_norefresh	bool	80	0	0		
+r_normalMap	float	80	0	0	0 .. 1	
+r_num_viewports	int	0	1	0	0 .. 4	
+r_occlusionMap	enum	80	Unchanged	Unchanged	0 | Unchanged | 255 | 128	
+r_open_automate	bool	0	0	0		
+r_outdoorAwayBias	float	1000	32	32	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+r_outdoorDownBias	float	1000	0	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+r_outdoorFeather	float	1000	8	8	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+r_picmip	int	1	1	0	0 .. 3	
+r_picmip_bump	int	1	1	0	0 .. 3	
+r_picmip_manual	bool	1	0	0		
+r_picmip_spec	int	1	1	0	0 .. 3	
+r_poisonFX_blurMax	float	5080	4	4	0 .. 20	
+r_poisonFX_blurMin	float	5000	1.5	0	0 .. 20	
+r_poisonFX_debug_enable	bool	5000	0	0		
+r_poisonFX_dvisionX	float	4000	20	0	-20 .. 20	
+r_poisonFX_pulse	float	4000	2	1.1	1 .. 2	
+r_portalMinRecurseDepth	int	80	2	2	0 .. 100	
+r_portalWalkLimit	int	80	0	0	0 .. 100	
+r_previousFullscreen	int	1	1	1	0 .. 2	
+r_primaryLightTweakDiffuseStrength	float	80	1	1	0 .. 10	
+r_primaryLightTweakSpecularStrength	float	80	1	1	0 .. 10	
+r_primaryLightUseTweaks	bool	80	0	0		
+r_qrcode_debug_display	int	80	-1	-1	-1 .. 12	
+r_qrcode_debug_display_size	float	80	400	400	0 .. 2000	
+r_remotescreen_renderlastframe	bool	80	1	1		
+r_resampleScene	bool	80	1	1		
+r_resolution	int	1	720	720	480 .. 1080	
+r_reviveFX_debug	bool	80	0	0		
+r_reviveFX_edgeAmount	float	5000	0	0	0 .. 1	
+r_reviveFX_edgeColorTemp	float	5000	6500	6500	1650 .. 25000	
+r_reviveFX_edgeContrast	vec3	5000	1 1 1	1 1 1	0 .. 2	
+r_reviveFX_edgeMaskAdjust	float	5000	0	0	-1 .. 1	
+r_reviveFX_edgeOffset	vec3	5000	0 0 0	0 0 0	-2 .. 2	
+r_reviveFX_edgeSaturation	float	5000	1	1	0 .. 2	
+r_reviveFX_edgeScale	vec3	5000	1 1 1	1 1 1	0 .. 2	
+r_rimIntensity	float	5000	0	0	0 .. 50	
+r_rimIntensity_debug	bool	5000	0	0		
+r_scaleViewport	float	80	1	1	0 .. 1	
+r_seethru_decal_enable	bool	1080	0	0		
+r_shaderDebugA	int	1000	0	0	0 .. 1	
+r_shaderDebugB	int	1000	0	0	0 .. 1	
+r_shaderDebugC	float	1000	0	0	0 .. 1	
+r_shaderWarming	bool	0	0	0		
+r_shaderWarmingPerFrame	int	0	5	5	1 .. 50	
+r_shader_constant_set_debug_range	float	80	-1	-1	-2 .. 2000	
+r_shader_constant_set_enable	bool	80	1	1		
+r_showForcedInvisibleCells	bool	80	0	0		
+r_showLightGrid	bool	80	0	0		
+r_showLightingOrigins	bool	80	0	0		
+r_showMissingLightGrid	bool	80	0	0		
+r_showOutdoorVolumeDebug	bool	80	0	0		
+r_showPenetration	enum	80	off	off	off | flash penetrable materials | flash non-penetrable materials	
+r_showReflectionProbeSelection	enum	80	off	off	off | bsp | static models | ents	
+r_showSunDirectionDebug	bool	80	0	0		
+r_singleCell	bool	80	0	0		
+r_skinnedCacheOverflowLodMaxScale	float	0	4	4	1 .. 10	
+r_skinnedCacheOverflowLodScaleDecay	float	0	3	3	0.01 .. 10	
+r_skipPvs	bool	80	0	0		
+r_skyColorTemp	float	1000	6500	6500	1650 .. 25000	
+r_skyRotation	float	1000	0	0	-360 .. 360	
+r_skyTransition	float	1000	0	0	0 .. 1	
+r_sky_intensity_angle0	float	1000	90	90	-90 .. 90	
+r_sky_intensity_angle1	float	1000	90	90	-90 .. 90	
+r_sky_intensity_factor0	float	1000	1	1	0 .. 10	
+r_sky_intensity_factor1	float	1000	1	1	0 .. 10	
+r_sky_intensity_showDebugDisplay	bool	80	0	0		
+r_smp_worker	bool	0	1	1		
+r_smp_worker_thread0	bool	4000	1	1		
+r_smp_worker_thread1	bool	4000	1	1		
+r_smp_worker_thread2	bool	4000	1	1		
+r_smp_worker_thread3	bool	4000	1	1		
+r_smp_worker_thread4	bool	4000	1	1		
+r_smp_worker_thread5	bool	4000	1	1		
+r_smp_worker_threads	int	0	6	6	2 .. 8	
+r_sortBackToFront	bool	80	1	1		
+r_sortDrawSurfsBsp	bool	80	0	0		
+r_sortDrawSurfsStaticModel	bool	80	1	1		
+r_specularMap	enum	80	Unchanged	Unchanged	Non metal (sRGB 56) | Unchanged | Metal (sRGB 255)	
+r_spotLightEntityShadows	bool	80	1	1		
+r_spotLightShadows	bool	80	1	1		
+r_spotLightSModelShadows	bool	80	1	1		
+r_ssao	bool	0	0	0		
+r_ssaoBias	float	0	0.55	0.55	0 .. 5	
+r_ssaoDebug	bool	0	0	0		
+r_ssaoIntensity	float	0	0.53	0.53	0 .. 1	
+r_ssaoRadius	float	0	12	12	0 .. 200	
+r_ssaoScale	float	0	50	50	0 .. 1000	
+r_stereo3DAvailable	bool	1	0	0		
+r_stereo3DEyeSeparation	float	1000	0.3	0.3	0 .. 100	
+r_stereo3DEyeSeparationScaler	float	1000	1	1	0 .. 1	
+r_stereo3DIPD	float	1000	0.0726	0.0726	0 .. 1	
+r_stereo3DMode	int	1	0	0	0 .. 1	
+r_stereo3DOn	bool	201	0	0		
+r_stereoFocusDepth	float	1	20	20	20 .. 70	
+r_stereoGunShift	float	1	0.6	0.6	0 .. 0.92	
+r_stereoTurretShift	float	1000	0	0	0 .. 10000	
+r_sunblind_fadein	float	0	0.5	0.5	0 .. 60	
+r_sunblind_fadeout	float	0	3	3	0 .. 60	
+r_sunblind_max_angle	float	0	5	5	0 .. 90	
+r_sunblind_max_darken	float	0	0.75	0.75	0 .. 1	
+r_sunblind_min_angle	float	0	30	30	0 .. 90	
+r_sunFlareTint	vec4	1000	0 0 1 1	0 0 1 1	0 .. 1	
+r_sunflare_fadein	float	0	1	1	0 .. 60	
+r_sunflare_fadeout	float	0	1	1	0 .. 60	
+r_sunflare_max_alpha	float	0	1	1	0 .. 1	
+r_sunflare_max_angle	float	0	2	2	0 .. 90	
+r_sunflare_max_size	float	0	2500	2500	0 .. 10000	
+r_sunflare_min_angle	float	0	45	45	0 .. 90	
+r_sunflare_min_size	float	0	0	0	0 .. 10000	
+r_sunflare_shader	string	0	"sun_flare"	"sun_flare"		
+r_sunglare_fadein	float	0	0.5	0.5	0 .. 60	
+r_sunglare_fadeout	float	0	3	3	0 .. 60	
+r_sunglare_max_angle	float	0	5	5	0 .. 90	
+r_sunglare_max_lighten	float	0	0.75	0.75	0 .. 1	
+r_sunglare_min_angle	float	0	30	30	0 .. 90	
+r_sunsprite_shader	string	0	"sun"	"sun"		
+r_sunsprite_size	float	0	16	16	1 .. 1000	
+r_sun_from_dvars	bool	80	0	0		
+r_sun_fx_position	vec3	0	0 0 0	0 0 0	-360 .. 360	
+r_superFlareDraw	bool	5000	1	1		
+r_superflare_drawlist	enum	0	post viewmodel	post viewmodel	off(with fx) | pre viewmodel | post viewmodel | post blur	
+r_swrk_override_characterCharredAmount	float	80	0	0	0 .. 1	
+r_swrk_override_characterDissolveColor	vec4	80	0 0 0 0	0 0 0 0	0 .. 10	
+r_swrk_override_wetness	float	80	0	0	0 .. 1	
+r_tension_enable	bool	1080	1	1		
+r_texFilterAnisoMax	int	1	16	16	1 .. 16	
+r_texFilterAnisoMin	int	1	1	1	1 .. 16	
+r_texFilterDisable	bool	80	0	0		
+r_texFilterMipBias	float	80	0	0	-16 .. 15.99	
+r_texFilterMipMode	enum	1	Unchanged	Unchanged	Unchanged | Force Trilinear | Force Bilinear | Force Mipmaps Off	
+r_texFilterQuality	int	21	0	1	0 .. 2	
+r_textureMode	string	4000	"bilinear"	"bilinear"		
+r_txaa	bool	0	0	0		
+r_txaaDepth1	float	0	0.02	0.02	0 .. 1	
+r_txaaDepth2	float	0	1	1	0 .. 1	
+r_txaaMode	int	0	-1	-1	-1 .. 7	
+r_txaaMotion1	float	0	32	32	0 .. 128	
+r_txaaMotion2	float	0	0.01	0.01	0 .. 128	
+r_txaaSupported	bool	0	1	0		
+r_ui3d_debug_display	bool	80	0	0		
+r_ui3d_h	float	80	1	1	0 .. 1	
+r_ui3d_use_debug_values	int	80	-1	-1	-1 .. 8	
+r_ui3d_w	float	80	1	1	0 .. 1	
+r_ui3d_x	float	80	0	0	0 .. 1	
+r_ui3d_y	float	80	0	0	0 .. 1	
+r_vc_compile	int	0	0	0	0 .. 2147483647	
+r_viewportBackingColor	color	0	20 20 20 255	20 20 20 255		
+r_vsync	bool	1	0	1		
+r_vsyncThreshold	int	0	10	10	0 .. 100	
+r_warmShaders	bool	0	0	0		
+r_waterFogTest	bool	80	0	0		
+r_waterSheetingFX_allowed	bool	1	1	1		
+r_waterSheetingFX_distortionScaleFactor	vec4	0	0.022 1 0 0	0.022 1 0 0	0 .. 1	
+r_waterSheetingFX_enable	bool	0	0	0		
+r_waterSheetingFX_magnitude	float	0	0.0655	0.0655	0 .. 1	
+r_waterSheetingFX_radius	float	0	4.4405	4.4405	0 .. 32	
+r_watersim_enabled	string	4000	"0"	"0"		
+r_waterWaveAmplitude	vec4	5000	0 0 0 0	0 0 0 0	0 .. 256	
+r_waterWaveAngle	vec4	5000	0 0 0 0	0 0 0 0	0 .. 360	
+r_waterWaveBase	float	5000	0	0	-48 .. 48	
+r_waterWaveNormalScale	float	5000	1	1	0.25 .. 4	
+r_waterWavePhase	vec4	5000	0 0 0 0	0 0 0 0	0 .. 6.2832	
+r_waterWaveScriptShader0	vec4	5000	0 0 0 0	0 0 0 0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+r_waterWaveScriptShader1	vec4	5000	0 0 0 0	0 0 0 0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+r_waterWaveSpeed	vec4	5000	1 1 1 1	1 1 1 1	0 .. 2	
+r_waterWaveSteepness	vec4	5000	0 0 0 0	0 0 0 0	0 .. 1	
+r_waterWaveWavelength	vec4	5000	1 1 1 1	1 1 1 1	1 .. 1024	
+r_zbufferDebug	bool	80	0	0		
+r_zbufferDebugRange	float	80	10000	10000	1 .. 15000	
+r_zebrastripe	int	80	0	0	0 .. 3	
+r_zfar	float	80	0	0	0 .. 340282300000000000000000000000000000000	
+r_znear	float	5080	4	4	1 .. 10000	
+r_zombieDarkness	bool	5000	0	0		
+r_zombieDisableEarthEffect	bool	5000	0	0		
+r_zombieDisableSlideEffect	bool	5000	0	0		
+r_zombieNameAllowDevList	bool	5000	1	1		
+r_zombieNameAllowFriendsList	bool	5000	1	1		
+safeArea_horizontal	float	0	0.85	0.85	0.85 .. 1	
+safeArea_vertical	float	0	0.85	0.85	0.85 .. 1	
+saved_gameskill	string	4000	""	""		
+scr_allies	string	0	""	""		
+scr_axis	string	0	""	""		
+scr_codpointsmatchscale	float	0	0.1	0.1	0 .. 1	
+scr_codpointsperchallenge	float	0	0.1	0.1	0 .. 1	
+scr_codpointsxpscale	float	0	0.1	0.1	0 .. 1	
+scr_custom_score_assist	string	4000	"-1"	"-1"		
+scr_disableChallenges	bool	20000	0	0		
+scr_disableSetDStat	bool	20000	0	0		
+scr_disableStatTracking	bool	20000	0	0		
+scr_disable_air_death_ragdoll	string	4000	"0"	"0"		
+scr_disable_cac	string	4000	"0"	"0"		
+scr_disable_weapondrop	string	4000	"0"	"0"		
+scr_dynamic_source_loading	bool	0	1	1		
+scr_game_bulletdamage	string	4000	"1.0"	"1.0"		
+scr_gunxpscale	float	20000	1	1	0 .. 3	
+scr_hardcore	int	0	0	0	0 .. 2147483647	
+scr_hardpoint_allowdogs	string	4000	"1"	"1"		
+scr_hardpoint_allowuav	string	4000	"1"	"1"		
+scr_hostmigrationtest	bool	0	0	0		
+scr_killcam	int	0	0	0	0 .. 2147483647	
+scr_min_prestige	string	4000	"0"	"0"		
+scr_numLives	int	0	0	0	0 .. 2147483647	
+scr_player_sprinttime	float	0	4	4	0 .. 340282300000000000000000000000000000000	
+scr_rampagebonusscale	float	20000	0.75	0.75	0 .. 10	
+scr_rankXpCap	int	20000	2147483647	2147483647	0 .. 2147483647	
+scr_scorestreaks	int	20000	1	1	0 .. 1	
+scr_scorestreaks_maxstacking	int	20000	1	1	1 .. 64	
+scr_showperksonspawn	string	4000	"1"	"1"		
+scr_sideBetTimer	string	4000	"0"	"0"		
+scr_team_fftype	int	4	0	0	0 .. 2147483647	
+scr_team_teamkillerplaylistbanpenalty	string	4000	"0"	"0"		
+scr_team_teamkillerplaylistbanquantum	string	4000	"0"	"0"		
+scr_wagerBet	int	0	100	0	0 .. 2147483647	
+scr_wagerPool	string	4000	"0"	"0"		
+scr_wagerSideBet	string	4000	"0"	"0"		
+scr_wagerTier	int	0	0	0	0 .. 2147483647	
+scr_wager_defaultScore	string	4000	"0"	"0"		
+scr_wager_firstPayout	string	4000	"0"	"0"		
+scr_wager_firstPlayer	string	4000	"0"	"0"		
+scr_wager_secondPayout	string	4000	"0"	"0"		
+scr_wager_secondPlayer	string	4000	"0"	"0"		
+scr_wager_thirdPayout	string	4000	"0"	"0"		
+scr_wager_thirdPlayer	string	4000	"0"	"0"		
+scr_writeConfigStrings	bool	0	0	0		
+scr_xpscale	float	20000	1	1	0 .. 3	
+scr_xpzmscale	string	4000	"1"	"1"		
+sd_xa2_device_guid	string	4000	""	""		
+sd_xa2_device_name	string	4000	""	""		
+searchSessionDedicatedGeoMin	int	20000	1	1	0 .. 2147483647	
+searchSessionDedicatedMaxPing	int	20000	150	150	0 .. 2147483647	
+searchSessionGeo1Weight	float	0	0	0	0 .. 1	
+searchSessionGeo2Weight	float	0	0	0	0 .. 1	
+searchSessionGeo3Weight	float	0	0	0	0 .. 1	
+searchSessionGeo4Weight	float	0	0	0	0 .. 1	
+searchSessionGeoMin	int	0	0	0	0 .. 4	
+searchSessionIgnoreMapPacks	bool	0	0	0		
+searchSessionIsEmpty	bool	0	0	0		
+searchSessionMapPackFlags	int	0	2147483647	2147483647	0 .. 2147483647	
+searchSessionMaxIntervalTime	int	0	30	30	15 .. 180	
+searchSessionMaxIntervalTimeBeforeUnpark	int	0	10	15	0 .. 90	
+searchSessionNextTaskDelay	int	0	1000	1000	0 .. 100000	
+searchSessionRandom_0	float	0	0.5	0.5	0 .. 1	
+searchSessionRandom_1	float	0	0.8	0.8	0 .. 1	
+searchSessionSkillWeight	float	0	0	0	0 .. 1	
+selectedFriendIndex	int	40	0	0	-2147483648 .. 2147483647	
+selectedFriendName	string	0	""	""		
+selectedGroupIndex	int	40	0	0	-2147483648 .. 2147483647	
+selectedMenuItemIndex	int	0	0	0	-2147483648 .. 2147483647	
+selectedPlayerXuid	string	0	""	""		
+sensitivity	string	4000	"5"	"5"		
+sessionSearchMaxAttempts	int	20000	5	5	0 .. 2147483647	
+sessionTaskFailDebug	bool	20000	0	0		
+session_nonblocking	bool	20000	1	1		
+shieldBlastDamageProtection_120	float	2080	0.1	0.1	0 .. 1	
+shieldBlastDamageProtection_180	float	2080	0	0	0 .. 1	
+shieldBlastDamageProtection_30	float	2080	0.4	0.4	0 .. 1	
+shieldBlastDamageProtection_60	float	2080	0.2	0.2	0 .. 1	
+shieldDeployShakeDuration	int	80	500	500	0 .. 2147483647	
+shieldDeployShakeScale	float	80	0.35	0.35	0 .. 340282300000000000000000000000000000000	
+shieldImpactBulletShakeDuration	int	80	500	500	0 .. 2147483647	
+shieldImpactBulletShakeScale	float	80	0.25	0.25	0 .. 340282300000000000000000000000000000000	
+shieldImpactExplosionHighShakeDuration	int	80	1250	1250	0 .. 2147483647	
+shieldImpactExplosionHighShakeScale	float	80	0.5	0.5	0 .. 340282300000000000000000000000000000000	
+shieldImpactExplosionLowShakeDuration	int	80	800	800	0 .. 2147483647	
+shieldImpactExplosionLowShakeScale	float	80	0.4	0.4	0 .. 340282300000000000000000000000000000000	
+shieldImpactExplosionThreshold	int	80	85	85	0 .. 2147483647	
+shieldImpactMissileShakeDuration	int	80	1500	1500	0 .. 2147483647	
+shieldImpactMissileShakeScale	float	80	0.5	0.5	0 .. 340282300000000000000000000000000000000	
+shieldPlayerBulletProtectionDegrees	float	2080	60	60	0 .. 180	
+shortversion	string	44	"1"	"1"		
+shoutcastHighlightedClient	int	0	-1	-1	-1 .. 18	
+shoutcastSelectedClient	int	0	-1	-1	-1 .. 18	
+showVisionSetDebugInfo	int	80	-1	-1	-1 .. 3	
+sidebet_made	string	4000	""	""		
+skill_scoreBeta	float	20000	1.4142	1.4142	0 .. 100	
+skill_scoreRange	float	20000	8	8	0 .. 100	
+skill_teamBeta	float	20000	1.4142	1.4142	0 .. 100	
+skill_teamRange	float	20000	4.2	4.2	0 .. 100	
+sm_enable	bool	84000	1	1		
+sm_fastSunShadow	bool	80	1	1		
+sm_maxLights	int	1	4	4	0 .. 4	
+sm_polygonOffsetBias	int	10A0	8192	8192	0 .. 65536	
+sm_polygonOffsetScale	float	84000	2	2	0 .. 8	
+sm_spotEnable	bool	1000	1	1		
+sm_spotQuality	int	1	0	0	0 .. 2	
+sm_spotShadowFadeTime	float	0	1	1	0.01 .. 5	
+sm_spotShadowLargeRadiusScale	float	1080	1	1	0 .. 5	
+sm_strictCull	bool	80	0	0		
+sm_sunAlwaysCastsShadow	bool	1080	0	0		
+sm_sunEnable	bool	1000	1	1		
+sm_sunQuality	int	1	0	0	0 .. 2	
+sm_sunSampleSizeNear	float	5000	0.5	0.5	0.0625 .. 4	
+sm_sunShadowCenter	vec3	1080	0 0 0	0 0 0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+sm_sunShadowScale	float	1080	1	1	0.25 .. 1	
+sm_sunShadowSmall	bool	1000	0	0		
+sm_sunShadowSmallEnable	bool	5000	0	0		
+snd_autoSim	bool	80	1	1		
+snd_autosim_window	bool	80	1	1		
+snd_boat_current_rpm	float	80	2.5	2.5	0 .. 10	
+snd_boat_engine_off	float	80	0.0015	0.0015	0 .. 1	
+snd_boat_lerp_rpm	float	80	0.8	0.8	0 .. 4	
+snd_boat_pitch_high_max	float	80	1.15	1.15	0 .. 2	
+snd_boat_pitch_high_min	float	80	0.87	0.87	0 .. 2	
+snd_boat_pitch_idle_max	float	80	1.13	1.13	0 .. 2	
+snd_boat_pitch_idle_min	float	80	0.89	0.89	0 .. 2	
+snd_boat_pitch_low_max	float	80	1.19	1.19	0 .. 2	
+snd_boat_pitch_low_min	float	80	0.95	0.95	0 .. 2	
+snd_boat_pitch_med_max	float	80	1.08	1.08	0 .. 2	
+snd_boat_pitch_med_min	float	80	0.84	0.84	0 .. 2	
+snd_boat_rpm_high_fin_end	float	80	1.19	1.19	0 .. 2	
+snd_boat_rpm_high_start	float	80	0.6	0.6	0 .. 2	
+snd_boat_rpm_idle_end	float	80	0.46	0.46	0 .. 2	
+snd_boat_rpm_idle_fout_start	float	80	0.17	0.17	0 .. 2	
+snd_boat_rpm_low_end	float	80	0.95	0.95	0 .. 2	
+snd_boat_rpm_low_fin_end	float	80	0.42	0.42	0 .. 2	
+snd_boat_rpm_low_fout_start	float	80	0.71	0.71	0 .. 2	
+snd_boat_rpm_low_start	float	80	0.05	0.05	0 .. 2	
+snd_boat_rpm_med_end	float	80	1.22	1.22	0 .. 2	
+snd_boat_rpm_med_fin_end	float	80	0.66	0.66	0 .. 2	
+snd_boat_rpm_med_fout_start	float	80	0.95	0.95	0 .. 2	
+snd_boat_rpm_med_start	float	80	0.36	0.36	0 .. 2	
+snd_boat_rpm_scalar	float	80	1.25	1.25	0 .. 10	
+snd_boat_using_lerp_rpm	bool	80	0	0		
+snd_boat_water_fast_min	float	80	19.42	19.42	1 .. 50	
+snd_boat_water_idle_max	float	80	12.05	12.05	1 .. 50	
+snd_boat_water_pitch_max	float	80	1.31	1.31	0.5 .. 2	
+snd_boat_water_slow_max	float	80	25.21	25.21	1 .. 50	
+snd_boat_water_slow_min	float	80	1	1	1 .. 50	
+snd_draw3D	enum	80	Off	Off	Off | Targets | Names | Verbose	
+snd_drawInfo	enum	0	None	None	None | 3D | Stream | 2D	
+snd_drawSort	enum	0	priority	priority	priority | channel | alias | dry level | entity	
+snd_futz	float	80	0	0	0 .. 1	
+snd_jetgun_loop_start	float	80	0.06	0.06	0 .. 1	
+snd_jetgun_pitch_end	float	80	1.13	1.13	0 .. 2	
+snd_jetgun_pitch_start	float	80	1	1	0 .. 2	
+snd_losOcclusion	bool	84000	1	1		
+snd_max_ram_voice	int	80	58	58	0 .. 58	
+snd_max_stream_voice	int	80	10	10	0 .. 10	
+snd_minigun_loop_start	float	80	0.12	0.12	0 .. 1	
+snd_minigun_pitch_end	float	80	1	1	0 .. 2	
+snd_minigun_pitch_start	float	80	0.69	0.69	0 .. 2	
+snd_ps3_vol_occlusion_attenuation_dry	float	80	-20	-20	-80 .. 0	
+snd_ps3_vol_occlusion_attenuation_wet	float	80	-10	-10	-80 .. 0	
+snd_speakerConfiguration	enum	1	Stereo	Stereo	Stereo | 5.1 | 5.1 No Center 3D | 7.1	
+snd_throttle_reduce_vol	float	80	0.4	0.4	0 .. 1	
+snd_throttle_time_held_down	float	80	4000	4000	0 .. 10000	
+snd_trace_master	bool	80	0	0		
+snd_trace_reverb	bool	80	0	0		
+snd_trace_voice	bool	80	0	0		
+spawnsystem_allow_culling	bool	20000	0	0		
+spawnsystem_allow_non_team_spawns	bool	20000	0	0		
+spawnsystem_badspawn_aggression_delay	int	20000	2000	2000	0 .. 1000000	
+spawnsystem_badspawn_damage_delay	int	20000	3000	3000	0 .. 1000000	
+spawnsystem_badspawn_force_record	bool	80	0	0		
+spawnsystem_danger_time	int	20000	1000	1000	0 .. 10000	
+spawnsystem_debug	bool	80	0	0		
+spawnsystem_debug_archive	int	80	0	0	0 .. 5	
+spawnsystem_debug_best_points	bool	80	1	1		
+spawnsystem_debug_influencers	int	80	1	1	0 .. 2	
+spawnsystem_debug_influencer_pulse	bool	80	1	1		
+spawnsystem_debug_influencer_types	bool	80	0	0		
+spawnsystem_debug_liveedit	bool	80	0	0		
+spawnsystem_debug_player	string	80	""	""		
+spawnsystem_debug_points	int	80	1	1	0 .. 2	
+spawnsystem_debug_point_weights	bool	80	1	1		
+spawnsystem_debug_showclients	bool	80	1	1		
+spawnsystem_debug_sideswitched	bool	80	0	0		
+spawnsystem_debug_team	string	80	""	""		
+spawnsystem_debug_visibility	bool	80	1	1		
+spawnsystem_debug_visibility_time	int	80	1	1	0 .. 100000	
+spawnsystem_demo_enable_parsing	bool	80	0	0		
+spawnsystem_demo_max_written	int	20000	204800	204800	0 .. 262144	
+spawnsystem_enemy_influencer_stacking	bool	20000	1	1		
+spawnsystem_enemy_spawned_influencer_stacking	bool	20000	0	0		
+spawnsystem_friend_influencer_stacking	bool	20000	0	0		
+spawnsystem_old_vis_mask	bool	20000	0	0		
+spawnsystem_score_cull_min_points	int	20000	12	12	0 .. 30	
+spawnsystem_score_cull_percent	int	20000	50	50	0 .. 80	
+spawnsystem_score_cull_time_max	int	20000	1000	1000	0 .. 2000	
+spawnsystem_score_cull_time_min	int	20000	200	200	0 .. 2000	
+spawnsystem_sight_check_max_distance	float	20000	2600	2600	1500 .. 3500	
+spawnsystem_sight_height_offset	float	20000	65	65	-100 .. 200	
+spawnsystem_weapon_influencer_min_length	float	20000	0.1	0.1	0.01 .. 1	
+spawnsystem_weapon_influencer_push_through	float	20000	50	50	-1024 .. 1024	
+spawnsystem_weapon_influencer_sight_check	bool	20000	1	1		
+spawnsystem_weapon_influencer_update_interval	int	20000	151	151	0 .. 5000	
+splitscreen	bool	0	0	0		
+splitscreen_lobbyPlayerCount	string	0	""	""		
+splitscreen_partyPlayerCount	string	0	""	""		
+splitscreen_playerCount	int	0	1	1	1 .. 1	
+spmode	bool	100	0	0		
+statsLocationFatal	bool	20000	1	1		
+stats_version_check	bool	20000	1	1		
+stat_version	int	0	121	12	0 .. 2147483647	
+stopspeed	float	180	100	100	0 .. 1000	
+storeMapPackMaskToStats	bool	20000	1	1		
+sv_allowAnonymous	bool	4	0	0		
+sv_assistWorkers	bool	20000	0	0		
+sv_authenticating	bool	40	0	0		
+sv_badLoadoutAction	enum	20000	ACTION_KICKANDRECORDEVENT	ACTION_KICKANDRECORDEVENT	ACTION_NOTHING | ACTION_RECORDEVENT | ACTION_KICK | ACTION_KICKANDRECORDEVENT	
+sv_badRankAction	enum	20000	ACTION_KICKANDRECORDEVENT	ACTION_KICKANDRECORDEVENT	ACTION_NOTHING | ACTION_RECORDEVENT | ACTION_KICK | ACTION_KICKANDRECORDEVENT	
+sv_bitfieldTracking	bool	0	0	0		
+sv_cheats	bool	58	0	0		
+sv_clientFpsLimit	int	20004	0	0	0 .. 500	
+sv_clientside	bool	0	0	0		
+sv_clientSideBullets	bool	100	1	1		
+sv_clientSideVehicles	bool	100	1	1		
+sv_connectionLogProbability	float	20000	0.001	0.001	0 .. 1	
+sv_connectionLogSamplesPerSecond	float	20000	0.05	0.05	0 .. 10	
+sv_connectTimeout	int	0	90	90	0 .. 1800	
+sv_disableClientConsole	bool	4	0	0		
+sv_dwlsgerror	bool	0	0	0		
+sv_endGameIfISuck	bool	0	1	1		
+sv_expensive_bullet_time	float	20000	8	8	0 .. 1000	
+sv_externalEventLoop	bool	20000	1	1		
+sv_FakeRemoteClient	bool	40	0	0		
+sv_fakeServerLoad	int	0	0	0	0 .. 500	
+sv_fakeServerLoadRand	int	0	0	0	0 .. 500	
+sv_FFCheckSums	string	48	""	""		
+sv_FFNames	string	48	""	""		
+sv_floodprotect	int	1	4	4	0 .. 2147483647	
+sv_forceunranked	bool	0	0	0		
+sv_hostname	string	5	"BlackOpsPrivate"	"BlackOpsPrivate"		
+sv_iwdNames	string	48	""	""		
+sv_iwds	string	48	""	""		
+sv_keywords	string	4	""	""		
+sv_mapRotation	string	0	""	""		
+sv_mapRotationCurrent	string	0	""	""		
+sv_maxclients	string	4000	"24"	"24"		
+sv_maxPhysExplosionSpheres	int	1000	-1	-1	-1 .. 100	
+sv_maxPing	int	5	0	0	0 .. 999	
+sv_minPing	int	5	0	0	0 .. 999	
+sv_networkRateSolution	int	0	0	0	0 .. 3	
+sv_network_fps	int	20000	100	100	20 .. 200	
+sv_noname	string	0	"Unknown Soldier"	"Unknown Soldier"		
+sv_onlineHostSnapshotRateThrottled	bool	0	0	0		
+sv_paused	int	40	0	0	0 .. 2	
+sv_playlistFetchInterval	int	20000	3600	3600	600 .. 2147483647	
+sv_privateClients	int	4	0	0	0 .. 18	
+sv_privateClientsForClients	int	4	0	0	0 .. 18	
+sv_privatePassword	string	0	""	""		
+sv_pure	bool	4	0	0		
+sv_rateBoostingAllowUnackDeltas	bool	0	1	1		
+sv_rateBoostingDebugForceSuspend	bool	0	0	0		
+sv_rateBoostingEnabled	bool	0	1	0		
+sv_rateBoostingMaxUploadUsage	float	0	0.8	0.8	0 .. 1	
+sv_rateBoostingMinUploadScale	float	0	1.8	1.8	1 .. 20	
+sv_rateBoostingRecoverTime	int	0	5	5	1 .. 60	
+sv_rateBoostingSuspendBadFramesCPU	int	0	5	5	1 .. 60	
+sv_rateBoostingSuspendBadFramesCPUThreshold	int	0	42	42	1 .. 100	
+sv_rateBoostingSuspendBadFramesCPUTimeout	int	0	750	750	1 .. 10000	
+sv_rateBoostingSuspendedMaxUploadUsage	float	0	0.5	0.5	0 .. 1	
+sv_reconnectlimit	int	1	3	3	0 .. 1800	
+sv_referencedFFCheckSums	string	48	""	""		
+sv_referencedFFNames	string	48	""	""		
+sv_referencedIwdNames	string	48	""	""		
+sv_referencedIwds	string	48	""	""		
+sv_restrictedTempEnts	bool	1000	0	0		
+sv_running	bool	40	0	0		
+sv_serverLogClientPings	int	0	0	0	0 .. 5000	
+sv_timeout	int	20000	60	60	0 .. 1800	
+sv_voice	bool	5	1	1		
+sv_voiceQuality	int	100	3	3	0 .. 9	
+sv_writeConfigStrings	bool	0	0	0		
+sv_zombietime	int	0	2	2	0 .. 1800	
+systemlink	bool	0	0	0		
+sys_configSum	int	11	0	0	-2147483648 .. 2147483647	
+sys_configureGHz	float	11	0.0317	0	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+sys_cpuGHz	float	40	0.01	0.01	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+sys_cpuName	string	40	"AMD Ryzen 9 5900X 12-Core Processor            "	"AMD Ryzen 9 5900X 12-Core Processor            "		
+sys_gpu	string	11	"NVIDIA GeForce GTX 1080 Ti"	""		
+sys_sysMB	int	11	4096	0	-2147483648 .. 2147483647	
+teamsplitter_verbose	bool	0	0	0		
+terriblePing	int	20000	500	300	1 .. 1000	
+TestIntervalJitter	int	0	2000	2000	0 .. 2147483647	
+throwback_enabled	bool	4000	1	1		
+tickerHeaderWidth	int	0	0	0	-2147483648 .. 2147483647	
+timescale	float	180	1	1	0.001 .. 10	
+tree_bend	float	1000	1	1	0 .. 5	
+tree_frequency	float	1000	2	2	0 .. 20	
+tree_random	float	1000	0.1	0.1	0 .. 5	
+tu10_demo_oldposInsteadOfMapCenter	bool	20000	0	0		
+tu10_demo_skipBuildingDemoSnapshotDuringCinematicPlayback	bool	20000	1	1		
+tu10_eliteMarketingOptInPopupEnabled	bool	20000	1	1		
+tu10_noProfileWriteSleep	bool	20000	1	1		
+tu10_reconnectToClientOnDTLSTimeout	bool	20000	1	1		
+tu10_searchSessionIgnoreMapPacks	bool	0	1	1		
+tu10_statsCheckIW6promo	bool	20000	1	1		
+tu10_updateLobbyMapPackFlagsOnClientJoin	string	4000	"1"	"1"		
+tu11_AddMapPackFlagsUserInfo	bool	20000	1	1		
+tu11_cg_killstreak_target_diamond_when_emped	bool	20000	1	1		
+tu11_deleteSessionIfNotHost	bool	20000	1	1		
+tu11_demoSendEventOnFailure	bool	20000	1	1		
+tu11_gateInGameMenusOnInitialPlayersConnectedRespondedTo	bool	20000	1	1		
+tu11_handleLowmipReadErrors	int	20000	0	0	0 .. 4095	
+tu11_luiCompleteAnimationFix	bool	20000	1	1		
+tu11_partymigrate_allowPrivatePartyClientsToHost	bool	20000	1	1		
+tu11_partymigrate_useStdDev	bool	20000	1	1		
+tu11_partymigrate_WirelessLatencyIncrease	float	20000	0	0	0 .. 5	
+tu11_player_keepZVelocity	bool	20000	1	1		
+tu11_resetGameModesOnCablePull	bool	20000	1	1		
+tu11_returnChangedInUpdateClientInfoWhenRemovingAttachModel	bool	20000	0	0		
+tu11_sendVoteToFBEnabled	bool	20000	0	1		
+tu11_showGeoInfo	bool	20000	1	1		
+tu11_statsSetConnectionType	bool	20000	1	1		
+tu11_useMissileKnockbackHeldWeaponsOnly	bool	20000	1	1		
+tu11_use_animscripted_blends	bool	20000	1	1		
+tu11_waitOnContent	bool	20000	1	1		
+tu11_waitOnContentTimeout	int	20000	10000	10000	0 .. 2147483647	
+tu11_zombie_turret_placement_ignores_bodies	bool	20000	1	1		
+tu12_always_switch_away_from_briefcase	bool	20000	1	1		
+tu12_cg_vehicleCamAboveWater	float	4000	0	0	0 .. 256	
+tu12_destructible_entity_radius_damage_fix	bool	20000	1	1		
+tu12_mtxLostVoteChecks	bool	20000	1	1		
+tu12_searchSessionOverrideGeoLocation	bool	0	0	1		
+tu12_updatePCacheOfAllLocalPlayers	bool	20000	1	1		
+tu12_validate_bonus_cards_on_server	bool	20000	0	0		
+tu12_zm_force_center_cg_cursorhint	bool	20000	0	0		
+tu12_zm_stack_fire_fix	bool	20000	0	0		
+tu12_zm_stop_firing_when_overheated	bool	20000	0	0		
+tu12_zombies_allow_hint_weapon_from_script	bool	20000	0	0		
+tu12_zombie_allow_switch_to_detonator_only	bool	20000	1	1		
+tu13_allow_no_player_melee_blood	bool	20000	0	0		
+tu13_bg_enableBulletWeaponBounce	bool	80	0	0		
+tu13_filterdedicatedserverresults	bool	20000	0	0		
+tu13_recordContentAvailable	bool	20000	1	1		
+tu13_zm_check_traversal_max_z	float	20000	0	0	0 .. 1000	
+tu14_aiAllowForceNoCullCheck	bool	20000	0	0		
+tu14_bg_chargeShotExponentialAmmoPerChargeLevel	bool	1000	0	0		
+tu14_demo_enableHeliHeightLockExcludeFromDemo	bool	20000	0	0		
+tu14_initialize_groundEntityNum	bool	20000	0	0		
+tu14_preventStartingChargeShotWhileFiring	bool	20000	1	1		
+tu14_reloadCustomGameTypesAfterFFOTD	bool	20000	1	1		
+tu14_resumeLobbyCountdown	bool	20000	1	1		
+tu15_quadrotorPathingFix	bool	20000	1	1		
+tu15_zombie_local_player_test_honors_client_server_divide	bool	20000	0	0		
+tu16_waitOnGhostLBRetrieval	bool	20000	0	0		
+tu16_waitOnGhostLBRetrievalTimeout	int	20000	10000	10000	0 .. 2147483647	
+tu2_delayComErrorForPlaylistRules	bool	20000	0	1		
+tu2_luiHacksDisabled	bool	20000	1	1		
+tu2_partyCheckRulesAlways	bool	20000	0	1		
+tu2_partyCheckRulesOnSetup	bool	20000	1	1		
+tu2_stopPartyForPlaylistRules	bool	20000	1	1		
+tu3_canSetDvars	bool	20000	1	1		
+tu3_disableDWGuests	bool	20000	1	1		
+tu3_resetStatsOnFailedValidate	bool	20000	0	0		
+tu4_checkStatsCheckSum	bool	20000	0	0		
+tu4_checkXUIDBeforeStatsUpload	bool	20000	0	0		
+tu4_copyGamertagOnStatsDownload	bool	20000	1	1		
+tu4_removeClientsFromInactivePartyToNotify	bool	20000	1	1		
+tu4_removeUsingXuidClientFromPartyToNotify	bool	20000	1	1		
+tu4_statsParity	bool	20000	1	1		
+tu4_useRealXUIDForStats	bool	20000	1	1		
+tu5_check_unique_attachments_enabled	bool	20000	1	1		
+tu5_uav_ads_fix	bool	20000	1	1		
+tu6_CaCImportVerifyDLCWeapons	bool	20000	1	1		
+tu6_cg_destructible_radius_damage_enabled	bool	20000	0	0		
+tu6_checkNonPrimaryXUIDPS3	bool	20000	0	0		
+tu6_clearFileShareOnSignOut	bool	20000	1	1		
+tu6_conflictingAttachmentCheck	bool	20000	1	1		
+tu6_dynEnt_disable_rb_collision	bool	80	1	1		
+tu6_dynEnt_small_cylinder_dimension	float	80	4	4	0 .. 64	
+tu6_dynEnt_small_cylinder_max_avel	float	80	256	256	1 .. 1024	
+tu6_emblemVoting	bool	20000	0	0		
+tu6_enableDLCWeapons	bool	20000	1	0		
+tu6_execffotdlua	bool	20000	1	1		
+tu6_hideDLCImages	bool	20000	1	1		
+tu6_ignoreOtherModesDLC	bool	20000	1	1		
+tu6_ignoreSeasonPass	bool	20000	1	1		
+tu6_marketingOptIn	bool	20000	1	1		
+tu6_perkBonusCardCheck	bool	20000	1	1		
+tu6_player_jump_blocks_tac_insert	bool	20000	0	0		
+tu6_player_shallowWaterHeight	float	4000	0	0	0 .. 70	
+tu6_verifyUnusedAttachmentSlotsCheck	bool	20000	1	1		
+tu6_writeStatsXUIDOnGameStart	bool	20000	0	0		
+tu7_3rdPersonSpecateFix	bool	80	1	1		
+tu7_additionalGrenadeChecks	bool	20000	1	1		
+tu7_botsCountAsPartyMembers	bool	20000	1	1		
+tu7_cg_deathCamAboveWater	float	4000	0	0	0 .. 256	
+tu7_clampMeleeChargeHorzLaunch	bool	20000	1	1		
+tu7_clampMeleeChargeJumping	bool	20000	1	1		
+tu7_clampMeleeChargeJumpingMaxZVel	float	20000	240	240	0 .. 2000	
+tu7_fileshareRetry	bool	20000	1	1		
+tu7_fileshareShowFailure	bool	20000	1	1		
+tu7_itemOptionLocked	bool	20000	1	1		
+tu7_itemOptionLockedByChallenge	bool	20000	1	1		
+tu7_itemOptionLockedByChallengeResult	bool	20000	1	1		
+tu7_itemOptionLockedResult	bool	20000	1	1		
+tu7_mapbased_killstreaks_fix	bool	20000	1	1		
+tu7_partyDoublePartyCloseFix	bool	20000	1	1		
+tu7_restoreBlur	bool	20000	1	1		
+tu7_scoreboardPingAsNumbers	bool	20000	1	1		
+tu7_setGuestStatsFetched	bool	20000	1	1		
+tu7_skipStableStats	bool	20000	1	1		
+tu7_statsCheckGroupMask	bool	20000	1	1		
+tu7_statsCheckSeasonPass	bool	20000	1	1		
+tu7_statsErrorBackup	bool	20000	0	0		
+tu7_statsErrorNormal	bool	20000	0	0		
+tu7_statsErrorOtherPlayer	bool	20000	0	0		
+tu7_statsErrorStable	bool	20000	0	0		
+tu7_ui_multiteam_compass_fix	bool	20000	1	1		
+tu7_usePCmatchmaking	bool	20000	1	1		
+tu7_usePingSlider	bool	20000	1	1		
+tu7_verifyStableStats	bool	20000	1	1		
+tu8_additionalMTXChecks	bool	20000	1	1		
+tu8_autoRestartSteamServerFailed	bool	20000	1	1		
+tu8_cancelMatchStartReturnValue	bool	20000	0	0		
+tu8_comerrorSteamServerFailed	bool	20000	1	1		
+tu8_defaultClassSetCount	int	20000	1	1	0 .. 10	
+tu8_mtx_enabled	int	20000	2	0	0 .. 2	
+tu8_nullStatsBuffer	bool	20000	1	0		
+tu8_partyDisconnectExtraPacket	bool	20000	1	1		
+tu8_purchasedClassSetCount	int	20000	10	10	0 .. 10	
+tu8_script_mover_workaround	bool	20000	1	1		
+tu8_storeContentInfoInStats	bool	20000	1	1		
+tu8_trackStatsAccessError	bool	20000	1	1		
+tu8_useClassSets	bool	20000	1	1		
+tu9_checkForValidGameMode	bool	20000	1	1		
+tu9_clearedMapPackFlagsFix	bool	20000	1	1		
+tu9_deletePresenceSessionInGraveYardFix	bool	20000	1	1		
+tu9_ingnoreValidateWeaponOnDeath	bool	20000	1	1		
+tu9_keepSwappedPlayersInPartyToNotify	bool	20000	1	1		
+tu9_offlinehostdisconnectfix	bool	20000	1	1		
+tu9_partyErrorOnInGameMigrateFail	bool	20000	1	1		
+tu9_projectile_dobj_fix	bool	20000	1	1		
+tu9_rerunPlaylistRulesOnHost	bool	20000	1	1		
+tu9_steamCheckMTX	bool	20000	1	1		
+tu9_steamRetryServerInit	bool	20000	1	1		
+tu9_tank_minimap_fix	bool	20000	1	1		
+tu9_testMissingContentPacks	bool	20000	0	1		
+tu9_turret_mark_rate	int	20000	16	16	0 .. 2147483647	
+tu9_validateStatsOnSignout	bool	20000	1	1		
+turretplacement_traceOffset	float	20000	12	12	0 .. 100	
+turretplacement_useTraceOffset	bool	20000	1	1		
+turretPlayerAvoidScale	float	80	1.7	1.7	0 .. 340282300000000000000000000000000000000	
+turret_KillstreakTargetTime	int	80	4000	4000	0 .. 2147483647	
+turret_placement_trace_maxs	float	20000	42	42	0 .. 340282300000000000000000000000000000000	
+turret_placement_trace_mins	float	20000	-42	-42	-100 .. 340282300000000000000000000000000000000	
+turret_SentryTargetTime	int	80	1000	1000	0 .. 2147483647	
+turret_TargetLeadBias	int	80	1	1	0 .. 25	
+tu_10_matchRatingSampleChance	float	0	0	0	0 .. 1	
+tu_allowDLCWeaponsByOwnership	bool	20000	0	1		
+tu_cleanUpTurretOnDisconnect	bool	20000	1	1		
+tu_deferScriptMissileDetonation	bool	20000	1	1		
+tu_dontDropKillstreakOnDeath	bool	20000	1	1		
+tu_enforceRechamberOnSwitch	bool	20000	1	1		
+tu_isolateDamageFlash	bool	20000	1	1		
+tu_limitGrenadeImpacts	bool	20000	1	1		
+twEnabled	string	4000	"1"	"1"		
+twitchEnabled	bool	20000	1	1		
+typeWriterCod7LetterFXTime	int	80	50	50	1 .. 2147483647	
+ui_allow_classchange	bool	80	0	0		
+ui_allow_controlschange	string	4000	"1"	"1"		
+ui_ammo_stock_width	int	0	0	0	0 .. 2147483647	
+ui_animSpeedScale	float	80	1	1	0.001 .. 340282300000000000000000000000000000000	
+ui_autoContinue	bool	0	0	0		
+ui_bigFont	float	1	0.688	0.688	0 .. 1	
+ui_borderLowLightScale	float	0	0.35	0.6	0 .. 1	
+ui_busyBlockIngameMenu	int	4000	0	0	0 .. 1	
+ui_choice_noaction	int	0	0	0	0 .. 2147483647	
+ui_combatCurrScrollBarPos	int	0	0	0	-2147483648 .. 2147483647	
+ui_currentMap	int	0	0	0	0 .. 2147483647	
+ui_currentNetMap	int	0	0	0	0 .. 2147483647	
+ui_customModeDesc	string	0	""	""		
+ui_customModeEditDesc	string	0	""	""		
+ui_customModeEditName	string	0	""	""		
+ui_customModeName	string	0	""	""		
+ui_custom_name	string	0	""	""		
+ui_deadquote	string	4000	""	""		
+ui_dedicated	int	0	0	0	0 .. 2	
+ui_demoname	string	0	""	""		
+ui_detailedMM	bool	20000	1	1		
+ui_display_aar	bool	0	0	0		
+ui_drawBuildNumber	bool	0	1	1		
+ui_drawOldUI	bool	0	1	1		
+ui_drawSpinnerAfterMovie	int	0	0	0	0 .. 1	
+ui_DSPPromotionInterval	int	20000	30	86400	0 .. 2147483647	
+ui_email_address	string	1	""	""		
+ui_enableDSPPromotion	bool	20000	1	0		
+ui_enableGhostUpsellPopup	bool	20000	0	0		
+ui_enableSPReminderPopup	bool	20000	0	0		
+ui_errorMessage	string	40	""	""		
+ui_errorMessageDebug	string	40	""	""		
+ui_errorTitle	string	40	""	""		
+ui_ethernetLinkActive	bool	0	1	1		
+ui_extraBigFont	string	4000	"1.0"	"1.0"		
+ui_favoriteAddress	string	0	""	""		
+ui_favoriteName	string	0	""	""		
+ui_favorite_message	string	0	""	""		
+ui_friendMessage	string	0	""	""		
+ui_friendNameNew	string	0	""	""		
+ui_friendPendingSelectedInd	int	40	0	0	-2147483648 .. 2147483647	
+ui_friendSelectedInd	int	40	0	0	-2147483648 .. 2147483647	
+ui_friendsListOpen	bool	0	0	0		
+ui_fxFontColor	color	0	255 255 255 255	255 255 255 255		
+ui_fxFontGlowColor	color	0	140 166 212 255	140 166 212 255		
+ui_fxFontOutlineColor	color	0	168 199 255 255	168 199 255 255		
+ui_fxFontShadowColor	color	0	0 0 0 255	0 0 0 255		
+ui_gametype	string	0	"tdm"	""		
+ui_gametype_text	string	0	""	""		
+ui_ghostUpsellPopupInterval	int	20000	86400	86400	0 .. 2147483647	
+ui_gv_reloadSpeedModifier	string	4000	"0"	"0"		
+ui_heatMapColor	color	20000	255 0 0 255	255 0 0 255		
+ui_heatMapColorForPlayer	color	20000	255 255 0 255	255 255 0 255		
+ui_hideLeaderboards	bool	20000	0	0		
+ui_hideMiniLeaderboards	bool	20000	1	0		
+ui_hideminimap	bool	4000	0	0		
+ui_hud_hardcore	bool	80	0	0		
+ui_hud_obituaries	int	0	1	0	0 .. 2147483647	
+ui_hud_showobjicons	int	0	1	0	0 .. 2147483647	
+ui_hud_visible	bool	80	1	1		
+ui_ignoreMousePos	bool	0	0	0		
+ui_inGameStoreVisible	bool	0	1	0		
+ui_inviteScreen	bool	0	0	0		
+ui_inviteSelectedInd	int	40	0	0	-2147483648 .. 2147483647	
+ui_isClanMember	bool	0	0	0		
+ui_isDLCPopupEnabled	bool	0	1	0		
+ui_isDLCRequiredPopupEnabled	string	4000	"1"	"1"		
+ui_joinGametype	int	1	0	0	0 .. 2147483647	
+ui_keyboardtitle	string	0	""	""		
+ui_keyboard_dvar_edit	string	0	""	""		
+ui_keyboard_dvar_new	string	0	""	""		
+ui_language	int	0	0	0	0 .. 16	
+ui_languagechanged	bool	0	0	0		
+ui_lastServerRefresh_0	string	0	""	""		
+ui_lastServerRefresh_1	string	0	""	""		
+ui_lastServerRefresh_2	string	0	""	""		
+ui_lastServerRefresh_3	string	0	""	""		
+ui_lastServerRefresh_4	string	0	""	""		
+ui_levelEra	int	0	2020	2020	0 .. 2020	
+ui_listboxIndex	int	0	0	0	-2147483648 .. 2147483647	
+ui_loadscreenTimeout	int	0	8000	8000	0 .. 2147483647	
+ui_load_index	string	0	""	""		
+ui_lobbypopup	string	0	"none"	"none"		
+ui_mapCount	int	0	31	0	0 .. 2147483647	
+ui_mapname	string	4000	"mp_array"	""		
+ui_mapPackChanged	bool	0	0	0		
+ui_menuLvlNotify	bool	80	0	0		
+ui_MOTDScrollRate	float	0	0.1	0.1	0 .. 340282300000000000000000000000000000000	
+ui_mousePitch	string	4000	"0"	"0"		
+ui_mpTheaterEnabled	string	4000	"1"	"1"		
+ui_mpWagerMatchEnabled	string	4000	"1"	"1"		
+ui_mtxid	int	0	-1	-1	-1 .. 2147483647	
+ui_multiplayer	bool	40	1	1		
+ui_netGametypeName	string	0	"dm"	""		
+ui_netSource	int	0	1	1	0 .. 3	
+ui_options_open	string	4000	"0"	"0"		
+ui_partyFull	bool	0	0	0		
+ui_party_download_bar_color	vec4	0	0.7 0.7 0.7 0.2	0.7 0.7 0.7 0.2	0 .. 1	
+ui_party_download_bar_height	int	0	14	14	0 .. 2147483647	
+ui_playercardOpen	bool	0	0	0		
+ui_playerListOpen	bool	0	0	0		
+ui_playlistPopulationRefreshTime	int	20000	1200	1200	0 .. 2147483647	
+ui_preview	string	0	""	""		
+ui_preview_map	string	0	""	""		
+ui_prevTextEntryBox	int	0	-1	-1	-1 .. 2147483647	
+ui_readingSaveDevice	bool	40	0	0		
+ui_right_ammo_width	int	0	0	0	0 .. 2147483647	
+ui_safearea	bool	0	0	0		
+ui_scrollBarWidth	float	4000	12	12	0 .. 50	
+ui_scrollByRow	int	4000	0	0	-1 .. 1	
+ui_scrollEmptySpaceHeightPercentage	float	4000	0.02	0.02	0 .. 10	
+ui_scrollFontScale	float	4000	0.4	0.4	0.2 .. 1	
+ui_scrollMinUpdateInterval	int	4000	8	8	0 .. 50	
+ui_scrollMOTDDelay	float	0	30	30	0 .. 340282300000000000000000000000000000000	
+ui_scrollMOTDYOffset	float	0	0	0	0 .. 340282300000000000000000000000000000000	
+ui_scrollMOTDYOffsetResetDelay	float	0	15	15	0 .. 340282300000000000000000000000000000000	
+ui_scrollSpeed	int	4000	0	0	-13 .. 13	
+ui_scrollTextDelay	float	0	40	40	0 .. 340282300000000000000000000000000000000	
+ui_scrollTextScrollRate	float	0	0.1	0.1	0 .. 340282300000000000000000000000000000000	
+ui_scrollTextYOffset	float	0	0	0	0 .. 340282300000000000000000000000000000000	
+ui_scrollTextYOffsetResetDelay	float	0	20	20	0 .. 340282300000000000000000000000000000000	
+ui_serverinfomessage	string	0	""	""		
+ui_serverinfomessagehostname	string	0	""	""		
+ui_serverStatusTimeOut	int	0	7000	7000	0 .. 2147483647	
+ui_showBryceMagic	bool	0	0	0		
+ui_showDLCMaps	bool	0	0	0		
+ui_showmap	string	4000	"1"	"1"		
+ui_showNewestLeaderboards	bool	20000	1	1		
+ui_smallFont	float	1	0.563	0.563	0 .. 1	
+ui_specops	bool	4000	0	0		
+ui_splitscreen	int	0	0	0	0 .. 2147483647	
+ui_SPReminderPopupInterval	int	20000	86400	86400	0 .. 2147483647	
+ui_storeButtonPressed	bool	0	0	0		
+ui_totalDLCReleased	int	20000	4	2	0 .. 2147483647	
+ui_useCustomClassInfo	string	4000	"0"	"0"		
+ui_xpscale	float	0	1	1	0 .. 3	
+unsubscriptionCooloffTimer	int	20000	60000	60000	0 .. 2147483647	
+useMapPreloading	bool	1	1	1		
+username	string	10	"Redacted"	""		
+useSvMapPreloading	bool	1	1	1		
+using_original	bool	0	0	0		
+vcs_timelimit	int	20000	120	120	0 .. 2147483647	
+vcs_WindowState	int	4000	0	0	0 .. 2	
+vc_FBM	vec4	5000	0 0 0 0	0 0 0 0	-100 .. 100	
+vc_FGM	vec4	5000	1 1 1 1	1 1 1 1	-100 .. 100	
+vc_FSM	vec4	5000	0 0 0 1	0 0 0 1	-100 .. 100	
+vc_HMB	vec4	5000	0 0 1 0	0 0 1 0	-100 .. 100	
+vc_HMG	vec4	5000	0 1 0 0	0 1 0 0	-100 .. 100	
+vc_HMR	vec4	5000	1 0 0 0	1 0 0 0	-100 .. 100	
+vc_LIB	vec4	5000	0 0 0 0	0 0 0 0	0 .. 32	
+vc_LIG	vec4	5000	1 1 1 1	1 1 1 1	0.01 .. 10	
+vc_LIW	vec4	5000	32 32 32 32	32 32 32 32	0 .. 32	
+vc_LOB	vec4	5000	0 0 0 0	0 0 0 0	0 .. 32	
+vc_LOW	vec4	5000	32 32 32 32	32 32 32 32	0 .. 32	
+vc_LUT	int	5000	0	0	-32 .. 32	
+vc_MMB	vec4	5000	0 0 1 0	0 0 1 0	-100 .. 100	
+vc_MMG	vec4	5000	0 1 0 0	0 1 0 0	-100 .. 100	
+vc_MMR	vec4	5000	1 0 0 0	1 0 0 0	-100 .. 100	
+vc_RE	vec4	5000	0.5 1 0.25 1	0.5 1 0.25 1	0 .. 1	
+vc_RGBH	vec4	5000	0 0 0 0	0 0 0 0	0 .. 32	
+vc_RGBL	vec4	5000	0 0 0 0	0 0 0 0	0 .. 32	
+vc_RS	vec4	5000	0 0.5 0 0.75	0 0.5 0 0.75	0 .. 1	
+vc_SMB	vec4	5000	0 0 1 0	0 0 1 0	-100 .. 100	
+vc_SMG	vec4	5000	0 1 0 0	0 1 0 0	-100 .. 100	
+vc_SMR	vec4	5000	1 0 0 0	1 0 0 0	-100 .. 100	
+vc_SNAP	int	5000	0	0	0 .. 32	
+vc_YH	vec4	5000	0 0 0 0	0 0 0 0	0 .. 32	
+vc_YL	vec4	5000	0 0 0 0	0 0 0 0	0 .. 32	
+vehanim_debug	bool	80	0	0		
+vehanim_enable	bool	80	1	1		
+vehGunnerSplashDamage	float	80	0.1	0.1	0 .. 340282300000000000000000000000000000000	
+vehHelicopterboundMapHeight	float	80	500	500	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+vehHelicopterboundMapLowerRightX	float	80	1000	1000	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+vehHelicopterboundMapLowerRightY	float	80	1000	1000	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+vehHelicopterboundMapUpperLeftX	float	80	-1000	-1000	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+vehHelicopterboundMapUpperLeftY	float	80	-1000	-1000	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+vehHelicopterboundsOn	bool	80	0	0		
+vehHelicopterDefaultPitch	float	5000	0	0	-50 .. 50	
+vehHelicopterFreeLook	bool	80	0	0		
+vehHelicopterHoverSpeedThreshold	float	80	400	400	0.01 .. 340282300000000000000000000000000000000	
+vehHelicopterInvertUpDown	bool	80	0	0		
+vehHelicopterLookaheadTime	float	80	1	1	0.01 .. 340282300000000000000000000000000000000	
+vehHelicopterMaxHeightLockOffset	float	4000	2000	2000	0 .. 20000	
+vehHelicopterMinHeightLockOffset	float	4000	0	0	-20000 .. 0	
+vehHelicopterPathTransitionTime	float	80	1.3	1.3	0.1 .. 10	
+vehHelicopterRightStickDeadzone	float	80	0.3	0.3	0.01 .. 1	
+vehHelicopterRotDecel	float	4000	1.3	1.3	0 .. 50	
+vehHelicopterScaleMovement	bool	80	1	1		
+vehHelicopterSoftCollisions	bool	80	0	0		
+vehHelicopterStrafeDeadzone	float	80	0.3	0.3	0.01 .. 1	
+vehHelicopterTiltFromViewangles	float	1000	3	3	0.1 .. 20	
+vehHelicopterYawAltitudeControls	enum	0	Altitude: bumper buttons     Yaw: thumbstick	Altitude: bumper buttons     Yaw: thumbstick	Altitude and yaw are both controlled by the thumbstick | Altitude: thumbstick         Yaw: bumper buttons | Altitude: bumper buttons     Yaw: thumbstick	
+vehHelicopterYawOnLeftStick	float	80	5	5	0 .. 340282300000000000000000000000000000000	
+vehicleMouseExtraTurnSpeed	float	20000	50	50	0 .. 180	
+vehicle_collision_prediction_time	float	80	0.15	0.15	0.01 .. 10	
+vehicle_damage_bouncing_betty	float	80	1.25	1.25	0 .. 340282300000000000000000000000000000000	
+vehicle_damage_bullet	float	80	0	0	0 .. 340282300000000000000000000000000000000	
+vehicle_damage_grenade	float	80	0.3	0.3	0 .. 340282300000000000000000000000000000000	
+vehicle_damage_max_shielding	float	80	0.25	0.25	0 .. 1	
+vehicle_damage_projectile	float	80	1.2	1.2	0 .. 340282300000000000000000000000000000000	
+vehicle_damage_satchel_charge	float	80	1.5	1.5	0 .. 340282300000000000000000000000000000000	
+vehicle_damage_sticky_grenade	float	80	1.35	1.35	0 .. 340282300000000000000000000000000000000	
+vehicle_damage_zone_front	float	80	1	1	0 .. 340282300000000000000000000000000000000	
+vehicle_damage_zone_rear	float	80	2	2	0 .. 340282300000000000000000000000000000000	
+vehicle_damage_zone_side	float	80	1.2	1.2	0 .. 340282300000000000000000000000000000000	
+vehicle_damage_zone_under	float	80	2.25	2.25	0 .. 340282300000000000000000000000000000000	
+vehicle_destructible_damage_bouncing_betty	float	80	1	1	0 .. 340282300000000000000000000000000000000	
+vehicle_destructible_damage_bouncing_betty_radius	float	80	13.1	13.1	0 .. 340282300000000000000000000000000000000	
+vehicle_destructible_damage_grenade	float	80	0.2	0.2	0 .. 340282300000000000000000000000000000000	
+vehicle_destructible_damage_grenade_radius	float	80	100	100	0 .. 340282300000000000000000000000000000000	
+vehicle_destructible_damage_projectile_radius	float	80	4	4	0 .. 340282300000000000000000000000000000000	
+vehicle_destructible_damage_satchel_charge	float	80	1.5	1.5	0 .. 340282300000000000000000000000000000000	
+vehicle_destructible_damage_satchel_charge_radius	float	80	21.1	21.1	0 .. 340282300000000000000000000000000000000	
+vehicle_destructible_damage_sticky_grenade	float	80	1.5	1.5	0 .. 340282300000000000000000000000000000000	
+vehicle_destructible_damage_sticky_grenade_radius	float	80	13.1	13.1	0 .. 340282300000000000000000000000000000000	
+vehicle_piece_damagesfx_threshold	float	80	10	10	0 .. 340282300000000000000000000000000000000	
+vehicle_push_during_mantle	bool	180	1	1		
+vehicle_riding	bool	1000	0	0		
+vehicle_selfCollision	bool	1000	0	0		
+vehicle_sounds_cutoff	float	1000	3000	3000	0 .. 300000	
+vehicle_switch_seat_delay	float	80	0.5	0.5	0 .. 340282300000000000000000000000000000000	
+vehicle_useRadius	float	80	256	256	0 .. 340282300000000000000000000000000000000	
+vehLocationalVehicleSeatEntry	bool	80	1	1		
+vehLockTurretToPlayerView	bool	80	0	0		
+vehNPCThrottleMultiplier	float	1000	4	4	0.01 .. 100	
+vehPlaneAssistedFlying	int	4000	0	0	0 .. 1	
+vehPlaneConventionalFlight	bool	5000	0	0		
+vehPlaneFakeLiftForce	float	80	0	0	0 .. 340282300000000000000000000000000000000	
+vehPlaneGravityForce	float	80	0	0	0 .. 340282300000000000000000000000000000000	
+vehPlaneLiftForce	float	80	0	0	0 .. 340282300000000000000000000000000000000	
+vehPlaneLowSpeed	float	80	1500	1500	0 .. 340282300000000000000000000000000000000	
+vehPlanePitchAccel	float	80	16	16	0 .. 340282300000000000000000000000000000000	
+vehPlanePlayerAvoidance	bool	5000	1	1		
+vehPlaneRollAccel	float	80	16	16	0 .. 340282300000000000000000000000000000000	
+vehPlaneRollDeadZone	float	80	0.15	0.15	0 .. 1	
+vehPlaneSpeedControl	bool	5000	0	0		
+vehPlaneTurnAssistDecayRate	float	5000	0.85	0.85	0 .. 0.99	
+vehPlaneYawFromRollScale	float	80	0.1	0.1	0 .. 340282300000000000000000000000000000000	
+vehPlaneYawSpeed	float	80	50	50	0 .. 340282300000000000000000000000000000000	
+version	string	40	"Call of Duty Multiplayer - Ship COD_T6_S MP build 1.0.44 CL(1759941) CODPCAB2 CEG Fri May 9 19:19:19 2014 win-x86 813e66d5"	""		
+vid_xpos	int	1	40	3	-4096 .. 4096	
+vid_ypos	int	1	22	22	-4096 .. 4096	
+WADTimestampUpdateInterval	int	20000	1800000	1800000	0 .. 2147483647	
+waitOnStatsTimeout	int	20000	15	15	0 .. 2147483647	
+wallmount_turret_placement_trace_maxs	vec3	20000	0 8 8	0 8 8	0 .. 340282300000000000000000000000000000000	
+wallmount_turret_placement_trace_mins	vec3	20000	0 -8 -8	0 -8 -8	-1024 .. 340282300000000000000000000000000000000	
+war_a	string	0	""	""		
+war_b	string	0	""	""		
+war_c	string	0	""	""		
+war_d	string	0	""	""		
+war_e	string	0	""	""		
+war_sb	string	0	""	""		
+waterbrush_entity	int	80	-1	-1	-1 .. 1024	
+waypointDistFade	float	80	300	300	0 .. 340282300000000000000000000000000000000	
+waypointDistScaleRangeMax	float	0	3000	3000	0 .. 340282300000000000000000000000000000000	
+waypointDistScaleRangeMin	float	0	1000	1000	0 .. 340282300000000000000000000000000000000	
+waypointDistScaleSmallest	float	0	0.8	0.8	0 .. 340282300000000000000000000000000000000	
+waypointIconHeight	float	0	36	36	0 .. 340282300000000000000000000000000000000	
+waypointIconWidth	float	0	36	36	0 .. 340282300000000000000000000000000000000	
+waypointMaxDrawDist	float	2000	512000	512000	0 .. 340282300000000000000000000000000000000	
+waypointOffscreenCornerRadius	float	0	105	105	0 .. 340282300000000000000000000000000000000	
+waypointOffscreenDistanceThresholdAlpha	float	0	30	30	0 .. 340282300000000000000000000000000000000	
+waypointOffscreenPadBottom	float	0	30	30	0 .. 340282300000000000000000000000000000000	
+waypointOffscreenPadLeft	float	0	103	103	0 .. 340282300000000000000000000000000000000	
+waypointOffscreenPadRight	float	0	52	52	0 .. 340282300000000000000000000000000000000	
+waypointOffscreenPadTop	float	0	4	4	0 .. 340282300000000000000000000000000000000	
+waypointOffscreenPointerDistance	float	0	20	30	0 .. 340282300000000000000000000000000000000	
+waypointOffscreenPointerHeight	float	0	12	12	0 .. 340282300000000000000000000000000000000	
+waypointOffscreenPointerWidth	float	0	25	25	0 .. 340282300000000000000000000000000000000	
+waypointOffscreenRoundedCorners	bool	0	1	1		
+waypointOffscreenScaleLength	float	0	500	500	0 .. 340282300000000000000000000000000000000	
+waypointOffscreenScaleSmallest	float	0	1	1	0 .. 340282300000000000000000000000000000000	
+waypointPlayerOffsetCrouch	float	80	56	56	0 .. 340282300000000000000000000000000000000	
+waypointPlayerOffsetProne	float	80	30	30	0 .. 340282300000000000000000000000000000000	
+waypointPlayerOffsetRevive	float	80	64	64	0 .. 340282300000000000000000000000000000000	
+waypointPlayerOffsetStand	float	80	74	74	0 .. 340282300000000000000000000000000000000	
+waypointSplitscreenScale	float	0	1.8	1.8	0.1 .. 340282300000000000000000000000000000000	
+waypointTimeFade	int	80	500	500	0 .. 10000	
+waypointTweakY	float	0	-17	-17	-340282300000000000000000000000000000000 .. 340282300000000000000000000000000000000	
+webmDwReadDelay	int	20000	10	10	0 .. 2147483647	
+webmDwReadTimeout	int	20000	60000	60000	0 .. 2147483647	
+webmDwWriteDelay	int	20000	10	10	0 .. 2147483647	
+webmDwWriteTimeout	int	20000	60000	60000	0 .. 2147483647	
+webm_arnr_maxframes	int	0	7	7	0 .. 2147483647	
+webm_arnr_strength	int	0	5	5	0 .. 2147483647	
+webm_arnr_type	int	0	3	3	0 .. 2147483647	
+webm_auto_kf	bool	0	0	0		
+webm_bitrate	float	0	2	2	0.25 .. 8	
+webm_buffer_high_timeout	int	0	200	200	0 .. 2147483647	
+webm_buffer_high_water_mark	float	0	0.9	0.9	0 .. 1	
+webm_buffer_low_water_mark	float	0	0.2	0.2	0 .. 1	
+webm_drop_thresh	int	0	0	0	0 .. 100	
+webm_enableautoaltref	int	0	1	1	0 .. 2147483647	
+webm_encAllowCamera	bool	20000	1	1		
+webm_encEliteRequired	bool	20000	0	0		
+webm_encIdentityVerificationRequired	bool	20000	1	1		
+webm_encRetryTime	int	20000	60	60	0 .. 2147483647	
+webm_encSendBufferTimeout	int	20000	70	70	0 .. 2147483647	
+webm_encStatus	string	0	""	""		
+webm_encStreamEnabled	bool	0	0	0		
+webm_encTwitchEnabled	bool	20000	1	1		
+webm_encUiEnabled	bool	20000	1	1		
+webm_encUiEnabledCustom	bool	20000	0	0		
+webm_encUiEnabledPublic	bool	20000	1	1		
+webm_encUiSigningIn	bool	0	0	0		
+webm_highactivitythreshold	int	20000	1000	1000	0 .. 2147483647	
+webm_hq_bandwidth	int	20000	3000000	3000000	0 .. 2147483647	
+webm_httpAuthLogin	string	0	""	""		
+webm_httpAuthMode	string	0	"youtube"	""		
+webm_httpAuthPass	string	0	""	""		
+webm_httpAuthToken	string	0	""	""		
+webm_httpUploadUrl	string	0	"http://10.150.9.121:3612/reportin"	"http://10.150.9.121:3612/reportin"		
+webm_httpUploadUrlTwitch	string	0	"https://boing.justin.tv"	"https://boing.justin.tv"		
+webm_httpUploadUrlYouTube	string	0	"http://upload.youtube.com/live_post_upload?ns=yt-post&id=trey_arch_test_000&itag=43&agent=b"	"http://upload.youtube.com/live_post_upload?ns=yt-post&id=trey_arch_test_000&itag=43&agent=b"		
+webm_kf_interval	int	0	60	60	0 .. 1000	
+webm_lag	int	0	0	0	0 .. 100	
+webm_lq_bandwidth	int	20000	1500000	1500000	0 .. 2147483647	
+webm_max_intra_bitrate	int	0	150	150	0 .. 2147483647	
+webm_mode	string	0	"cbr"	"cbr"		
+webm_profile	int	0	1	1	0 .. 10	
+webm_q_max	int	0	60	60	0 .. 63	
+webm_q_min	int	0	0	0	0 .. 63	
+webm_rc_buf_initial_sz	int	0	0	0	0 .. 2147483647	
+webm_rc_buf_optimal_sz	int	0	250	250	0 .. 2147483647	
+webm_rc_buf_sz	int	0	500	500	0 .. 2147483647	
+webm_render_auto_kf	bool	0	1	1		
+webm_render_bitrate	float	0	3	3	0.005 .. 8	
+webm_render_dont_connect_upfront	bool	20000	1	1		
+webm_render_fps	int	0	30	30	1 .. 120	
+webm_render_profile	int	0	0	0	0 .. 10	
+webm_render_q_max	int	0	60	60	0 .. 63	
+webm_render_q_min	int	0	0	0	0 .. 63	
+webm_render_realtime_scale	int	0	10	10	0 .. 2147483647	
+webm_render_send_audio_first	bool	20000	0	0		
+webm_render_threads	int	0	5	5	1 .. 60	
+webm_render_uv_step	int	0	1	1	1 .. 60	
+webm_target_fps	int	0	30	30	1 .. 60	
+webm_twitchLasterror	int	0	0	0	0 .. 2147483647	
+webm_twitchTransferChunkSize	int	0	67108864	67108864	0 .. 2147483647	
+webm_twitch_summaryRefresh	int	20000	30	30	0 .. 2147483647	
+webm_twitch_summaryUrl	string	20000	"http://api.justin.tv/api/stream/summary.json"	"http://api.justin.tv/api/stream/summary.json"		
+webm_usersStreaming	float	20000	1	1	0 .. 1	
+webm_usersWaitingToStream	float	20000	0.5	0.5	0 .. 1	
+webm_vol_game	float	0	0.25	0.25	0 .. 2	
+webm_vol_headset	float	0	1	1	0 .. 2	
+webm_youtube_max_posts_per_second	int	20000	15	15	0 .. 2147483647	
+welcome_shown	string	4000	"0"	"0"		
+wideScreen	bool	40	1	1		
+wiiuIkEnabled	bool	5400	0	0		
+wind_debug_display	bool	1080	0	0		
+wind_global_hi_altitude	float	1000	0	0	-100000 .. 100000	
+wind_global_low_altitude	float	1000	0	0	-100000 .. 100000	
+wind_global_low_strength_percent	float	1000	1	1	-20 .. 20	
+wind_global_vector	vec3	1000	1 0 0	1 0 0	-1000 .. 1000	
+wind_grass_gustinterval	float	1000	250	250	1 .. 50000	
+wind_grass_gust_distance	float	1000	2000	2000	0 .. 100000	
+wind_grass_gust_radius	float	1000	400	400	0 .. 10000	
+wind_grass_gust_speed	float	1000	1	1	0 .. 10000	
+wind_grass_gust_strength	float	1000	0.5	0.5	0 .. 1	
+wind_grass_scale	float	1000	10000	10000	1 .. 50000	
+wind_grass_tension	float	1000	0.001	0.001	0 .. 1	
+wind_leaf_scale	float	1000	176	176	0 .. 50000	
+winvoice_loopback	bool	0	0	0		
+winvoice_mic_mute	bool	0	0	0		
+winvoice_mic_reclevel	int	0	65535	65535	0 .. 65535	
+winvoice_mic_scaler	float	0	1	1	0.25 .. 2	
+winvoice_save_voice	bool	0	0	0		
+winvoice_voice_level	int	0	255	255	0 .. 255	
+xblive_clanListChanged	bool	0	0	0		
+xblive_clanmatch	bool	0	0	0		
+xblive_ec_firstupdatems	int	20000	1000	1000	0 .. 2147483647	
+xblive_ec_lastupdatems	int	20000	750	750	0 .. 2147483647	
+xblive_ec_maxprobewait	int	20000	8000	8000	0 .. 2147483647	
+xblive_ec_minpercent	int	20000	50	50	0 .. 100	
+xblive_ec_minprobes	int	20000	10	1	0 .. 2147483647	
+xblive_loggedin	bool	0	1	0		
+xblive_mappacks	int	0	0	0	0 .. 2	
+xblive_matchEndingSoon	bool	0	0	0		
+xblive_privatematch	bool	0	0	0		
+xblive_rankedmatch	bool	0	0	0		
+xblive_theater	bool	0	0	0		
+xblive_wagermatch	bool	0	0	0		
+xenon_maxVoicePacketsPerSec	int	20000	100	100	0 .. 2147483647	
+xenon_maxVoicePacketsPerSecForServer	int	20000	20	20	0 .. 2147483647	
+xPGroups	string	20000	""	""		
+YouTube_apiUrl	string	20000	"https://gdata.youtube.com"	"https://gdata.youtube.com"		
+YouTube_category	string	0	"Games"	"Games"		
+YouTube_ErrorRecordEvent	bool	20000	1	1		
+YouTube_highRefreshRate	int	20000	5	5	0 .. 1000	
+YouTube_listing	string	0	"public"	"unlisted"		
+YouTube_liveLifeCycleRefreshRate	int	20000	180	180	0 .. 1000	
+YouTube_liveStreamLeague	string	0	"none"	"none"		
+YouTube_lowRefreshRate	int	20000	30	30	0 .. 1000	
+YouTube_maxViewersForHighRefresh	int	20000	10	0	0 .. 1000	
+YouTube_minViewersForHighRefresh	int	20000	8	8	0 .. 1000	
+YouTube_minViewersToStartStream	int	20000	0	10	0 .. 1000	
+YouTube_minViewersToStream	int	20000	2	5	0 .. 1000	
+YouTube_miscRefreshRate	int	20000	10	10	0 .. 1000	
+YouTube_slateImageUrl	string	0	"http://www.treyarch.com/content/dam/activision/treyarch/master/global/reskin/bg_home_new.jpg"	"http://www.treyarch.com/content/dam/activision/treyarch/master/global/reskin/bg_home_new.jpg"		
+YouTube_slateText	string	0	""	""		
+YouTube_stateChange	string	20000	"ready=live"	"ready=live"		
+YouTube_stopStreamForPublicGame	bool	20000	0	0		
+YouTube_timeToRecoverFromLowStreamViewers	int	20000	600	600	0 .. 1000	
+YouTube_verifyUrl	string	20000	"http://www.youtube.com/verify"	"http://www.youtube.com/verify"		
+ytAuthCooloff	bool	20000	1	1		
+ytAuthCooloffTime	int	20000	5000	5000	0 .. 2147483647	
+ytForcePrivate	bool	20000	0	1		
+zero_stats_check	bool	20000	1	1		
+zombiemode_path_minz_bias	float	1000	50	50	0 .. 200	
+zombie_devgui	string	0	""	""		
+zombie_double_wide_checks	bool	5000	0	0		
+zombie_useOldPathFallback	bool	5000	0	0		

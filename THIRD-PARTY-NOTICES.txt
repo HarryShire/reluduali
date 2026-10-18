@@ -1,0 +1,81 @@
+The Reluduali Designer - third-party notices
+=============================================
+
+The Reluduali Designer (the Designer, BatchCore, RipperBridge, the theater layer and the installer) is MIT licensed,
+Copyright (c) 2026 Mycelium: see LICENSE. It uses no third-party code libraries: only Windows, the .NET Framework and
+the Microsoft Visual C++ runtime, which are Microsoft's and are not redistributed here (the C++ runtime is linked into
+RipperBridge as Microsoft's licence for it allows).
+
+The installer also carries the pieces below. Their notices travel with them.
+
+Last updated for version 0.7.0.
+
+
+-------------------------------------------------------------------------------
+The Reluduali panel for Lumit (lumit\reluduali-lumit.zip in the installer)
+  By Reluduali - https://reluduali.com
+  A panel that runs inside Lumit: reluduali.com's contest clock. Its own LICENSE
+  file is inside the zip, which holds only Reluduali's own files. Its source is
+  to be published with the Reluduali Timer.
+-------------------------------------------------------------------------------
+
+MIT License
+
+Copyright (c) 2026 Reluduali
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+-------------------------------------------------------------------------------
+The RELUDUALI lettering (theater\reluduali.svg, on the greeting)
+  By Reluduali - https://reluduali.com - the site's own lettering ("grown Alien
+  Latin"), unchanged. Reluduali's own work: no third-party licence applies.
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+The Reluduali mark (the Designer's icon and logo: three chrome bodies)
+  By Reluduali - https://reluduali.com - stills of the site's own moving mark.
+  Reluduali's own work: no third-party licence applies.
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+The colours (the Designer's palette)
+  They follow the Ableton Live theme "Eye-pleasing" by dede.zak97
+  (https://livethemes.app/theme/ff93f665-c7b5-44b5-a89c-470f3f0df90e): its
+  colour values, read from the theme, set in the Designer's own code. No file of
+  the theme is included.
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+Lumit - https://github.com/luminalmvm/Lumit
+  By luminalmvm (https://lumitlab.com), under the GNU General Public License
+  version 3. Lumit is NOT included in this release or its installer: you install
+  it yourself. It is named here because the Reluduali panel runs inside it.
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+Black Ops II and Redacted
+  Call of Duty: Black Ops II is Treyarch's and Activision's. Redacted is the
+  Redacted project's. Neither is included, and this project is not affiliated
+  with either. The Designer works with the copy of the game you already have.
+-------------------------------------------------------------------------------

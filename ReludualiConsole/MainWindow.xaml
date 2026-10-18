@@ -1,0 +1,204 @@
+<Window x:Class="ReludualiConsole.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="The Reluduali Designer" Width="1480" Height="940" MinWidth="1040" MinHeight="620"
+        Background="{StaticResource VelvetDeep}" Foreground="{StaticResource Text}"
+        FontFamily="Segoe UI" FontSize="13" UseLayoutRounding="True">
+
+  <!-- The shell (2026-10-14, Mycelium: "do some GUI Logic in how the Tabs are ordered ... make the logical ordering/placement
+       of buttons intuitive ... Give it a Beautiful Fancy New GUI"). The header holds the tether; the start screen is the
+       three stages (Mycelium, 2026-10-02); the left rail lists each stage's tools in working order. The pages are built in
+       code (MainWindow.xaml.cs, Tools) so a page that fails to build says so in its place and the rest still build. -->
+  <Grid x:Name="RootGrid" Background="{StaticResource VelvetDeep}">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+
+    <!-- ============================================================ the header: logo, where you are, the tether -->
+    <Border Grid.Row="0" Padding="14,8,12,8" Background="{StaticResource VelvetRail}">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- the Reluduali mark (Mycelium 2026-10-17, with a picture of it: "Update the Main Reluduali .exe Logo and Icons in the
+             UI with this logo"): Reluduali's own dithered chrome, drawn pixel for pixel (Ui.Mark) -->
+        <Button x:Name="HomeButton" Grid.Column="0" Style="{StaticResource QuietButton}" Padding="4,0,10,0" Click="Home_Click"
+                ToolTip="The start screen: the three stages (Ctrl+Home)">
+          <StackPanel Orientation="Horizontal">
+            <Image Source="/Assets/mark.png" Width="32" Height="32" Margin="0,0,10,0" VerticalAlignment="Center"
+                   RenderOptions.BitmapScalingMode="NearestNeighbor" SnapsToDevicePixels="True"/>
+            <StackPanel VerticalAlignment="Center">
+              <!-- Mycelium 2026-10-17: "Rename the Title name to ... - you can still use 'Console' in the scripts and things",
+                   then: "Go Ahead with the Rename. "Designer" - apoligies for typo." -->
+              <TextBlock Text="The Reluduali Designer" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource Chrome}"/>
+              <TextBlock x:Name="TitleName" Text="" FontSize="11" Foreground="{StaticResource Dim}" Margin="0,-2,0,0"/>
+            </StackPanel>
+          </StackPanel>
+        </Button>
+
+        <!-- where you are: the stage and the tool -->
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0,0,0">
+          <Border Width="1" Height="26" Background="{StaticResource Line}" Margin="0,0,18,0"/>
+          <TextBlock x:Name="CrumbStage" Text="" FontSize="13" Foreground="{StaticResource Dim}" VerticalAlignment="Center"/>
+          <TextBlock x:Name="CrumbSep" Text="  ›  " FontSize="13" Foreground="{StaticResource Dim}" VerticalAlignment="Center" Visibility="Collapsed"/>
+          <TextBlock x:Name="CrumbTool" Text="" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Text}" VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- the tether: what the console is connected to -->
+        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+          <Border Style="{StaticResource Pill}" ToolTip="The game: Redacted's t6mpv43.exe">
+            <StackPanel Orientation="Horizontal">
+              <Ellipse x:Name="GameDot" Width="8" Height="8" Fill="{StaticResource Bad}" Margin="0,0,7,0" VerticalAlignment="Center"/>
+              <TextBlock x:Name="GameText" Text="Redacted: looking" FontSize="12" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Border>
+          <Border Style="{StaticResource Pill}" ToolTip="RipperBridge, the plugin in the game the console talks through">
+            <StackPanel Orientation="Horizontal">
+              <Ellipse x:Name="BridgeDot" Width="8" Height="8" Fill="{StaticResource Bad}" Margin="0,0,7,0" VerticalAlignment="Center"/>
+              <TextBlock x:Name="BridgeText" Text="RipperBridge: looking" FontSize="12" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="6,0,0,0">
+          <!-- the layout (2026-10-14, Mycelium: "the Console instead becomes a Workspace"): the Console as it was, the game in a
+               slot beside the page, or the game big with the page floating over it -->
+          <Border CornerRadius="3" BorderBrush="{StaticResource RimSoft}" BorderThickness="1" Background="{StaticResource Inset}" Margin="0,0,12,0" Padding="2">
+            <StackPanel Orientation="Horizontal">
+              <ToggleButton x:Name="LayoutClassic" Style="{StaticResource QuietToggle}" Click="Layout_Click" Tag="classic" Padding="8,3"
+                            ToolTip="Classic: the Designer on its own, the game in its own window">
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="&#xE8FD;" FontFamily="{StaticResource IconFont}" FontSize="13" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                  <TextBlock Text="Classic" VerticalAlignment="Center"/>
+                </StackPanel>
+              </ToggleButton>
+              <ToggleButton x:Name="LayoutWorkspace" Style="{StaticResource QuietToggle}" Click="Layout_Click" Tag="workspace" Padding="8,3"
+                            ToolTip="Workspace: the game in the Designer, the page beside it (or under it)">
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="&#xE7F4;" FontFamily="{StaticResource IconFont}" FontSize="13" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                  <TextBlock Text="Workspace" VerticalAlignment="Center"/>
+                </StackPanel>
+              </ToggleButton>
+              <ToggleButton x:Name="LayoutOverlay" Style="{StaticResource QuietToggle}" Click="Layout_Click" Tag="overlay" Padding="8,3"
+                            ToolTip="Overlay: the game big, the page floating over it - see-through, dragged anywhere">
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="&#xE81E;" FontFamily="{StaticResource IconFont}" FontSize="13" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                  <TextBlock Text="Overlay" VerticalAlignment="Center"/>
+                </StackPanel>
+              </ToggleButton>
+            </StackPanel>
+          </Border>
+          <Button x:Name="ContestButton" Style="{StaticResource QuietButton}" Click="Contest_Click" Margin="0,0,2,0"
+                  ToolTip="reluduali.com's contest timer and the Lumit folder">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="&#xE916;" FontFamily="{StaticResource IconFont}" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+              <TextBlock x:Name="ContestText" Text="Contest" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          <!-- Mycelium 2026-10-17: "make sure the console has links to Reluduali.com" -->
+          <Button x:Name="SiteButton" Style="{StaticResource QuietButton}" Click="Site_Click" Margin="0,0,2,0"
+                  ToolTip="reluduali.com in your browser: contests, friends, films">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="&#xE774;" FontFamily="{StaticResource IconFont}" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+              <TextBlock Text="reluduali.com" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          <Button x:Name="HelpButton" Style="{StaticResource QuietButton}" Click="Help_Click" Margin="0,0,8,0"
+                  ToolTip="How each tool works (F1)">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="&#xE897;" FontFamily="{StaticResource IconFont}" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+              <TextBlock Text="Help" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          <Button x:Name="StartGameButton" Click="StartGame_Click" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" Visibility="Collapsed"
+                  ToolTip="Start Redacted (t6mpv43.exe in the game folder on SETUP, with SETUP's start options). The Designer takes it in once its window is up.">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="&#xE768;" FontFamily="{StaticResource IconFont}" FontSize="13" VerticalAlignment="Center" Margin="0,0,7,0"/>
+              <TextBlock Text="Start Redacted" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          <Button x:Name="ReattachButton" Click="Reattach_Click"
+                  ToolTip="Drop the tether to the game and make it again: after a game restart, or whenever something looks stuck.">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" FontSize="13" VerticalAlignment="Center" Margin="0,0,7,0"/>
+              <TextBlock Text="Re-attach" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
+    <!-- the header's lower rim: the chrome's glint -->
+    <Border Grid.Row="0" Height="1" VerticalAlignment="Bottom" Background="{StaticResource RimLine}" x:Name="HeaderRim"/>
+
+    <!-- ============================================================ a notice (a caught error, a result) -->
+    <Border Grid.Row="1" x:Name="NoticeBar" Visibility="Collapsed" Margin="12,8,12,0" CornerRadius="2" Padding="12,7,6,7"
+            Background="#33FF6482" BorderBrush="#66FF6482" BorderThickness="1">
+      <DockPanel>
+        <Button DockPanel.Dock="Right" Style="{StaticResource QuietButton}" Click="NoticeClose_Click" ToolTip="Hide" Padding="6,0">
+          <TextBlock Text="&#xE711;" FontFamily="{StaticResource IconFont}" FontSize="11"/>
+        </Button>
+        <TextBlock x:Name="NoticeText" TextWrapping="Wrap" VerticalAlignment="Center"/>
+      </DockPanel>
+    </Border>
+
+    <!-- ============================================================ the body: the start screen, or the rail and a page -->
+    <Grid Grid.Row="2">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition x:Name="RailColumn" Width="236"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+
+      <!-- the rail: the three stages, each with its tools -->
+      <Border x:Name="Rail" Grid.Column="0" Background="{StaticResource VelvetRail}" BorderBrush="{StaticResource RimSoft}" BorderThickness="0,0,1,0">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel x:Name="RailPanel" Margin="0,10,0,14"/>
+        </ScrollViewer>
+      </Border>
+
+      <!-- the work area: the page, and in the Workspace layouts the game's slot beside it (MainWindow.ApplyLayout) -->
+      <Grid x:Name="WorkArea" Grid.Column="1" Background="{StaticResource PageBack}">
+      <Border x:Name="GameSlot" Visibility="Collapsed" Margin="12,12,6,12" CornerRadius="3" BorderThickness="1"
+              BorderBrush="{StaticResource RimSoft}" Background="{StaticResource ViewBack}"/>
+      <GridSplitter x:Name="WorkSplit" Visibility="Collapsed" Background="Transparent"/>
+      <!-- a page: its title, a line on what it is for, the page itself -->
+      <Grid x:Name="PageArea" Background="{StaticResource PageBack}">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid Margin="26,18,24,6">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+          </Grid.ColumnDefinitions>
+          <Border x:Name="PageIconBox" Width="40" Height="40" CornerRadius="3" Margin="0,0,14,0" VerticalAlignment="Center"
+                  Background="{StaticResource CardBack}" BorderBrush="{StaticResource RimSoft}" BorderThickness="1">
+            <TextBlock x:Name="PageIcon" FontFamily="{StaticResource IconFont}" FontSize="19" Foreground="{StaticResource Accent}"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
+          <StackPanel Grid.Column="1" VerticalAlignment="Center">
+            <TextBlock x:Name="PageTitle" FontSize="22" FontWeight="SemiBold" Foreground="{StaticResource Chrome}"/>
+            <TextBlock x:Name="PageBlurb" FontSize="13" Foreground="{StaticResource Dim}" TextWrapping="Wrap" Margin="0,1,0,0"/>
+          </StackPanel>
+        </Grid>
+        <ContentControl x:Name="PageHost" Grid.Row="1" Margin="14,4,14,10" Focusable="False"/>
+      </Grid>
+      </Grid>
+
+      <!-- the start screen: three stages of production (Mycelium, 2026-10-02); each opens its own tools.
+           "Principal Vegaography" is the name of the artform - not a typo. No glow behind the mark: it read as fog
+           (Mycelium 2026-10-17: "make the background way less foggy looking"). -->
+      <Grid x:Name="StagesPanel" Grid.Column="0" Grid.ColumnSpan="2" Background="Transparent">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel x:Name="HomePanel" Margin="40,34,40,30" MaxWidth="1320"/>
+        </ScrollViewer>
+      </Grid>
+    </Grid>
+  </Grid>
+</Window>

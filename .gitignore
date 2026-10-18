@@ -1,0 +1,13 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+__pycache__/
+RipperBridge/*.dll
+RipperBridge/*.Red32n
+RipperBridge/*.obj
+RipperBridge/*.exp
+RipperBridge/*.lib
+ReludualiSetup/payload.zip
+release/

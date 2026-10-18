@@ -1,0 +1,14 @@
+<Application x:Class="ReludualiConsole.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             StartupUri="MainWindow.xaml"
+             DispatcherUnhandledException="OnUiException">
+  <Application.Resources>
+    <!-- the look: Theme.xaml (ChromePurpV6 with more purple, chrome rims; 2026-10-14) -->
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Theme.xaml"/>
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+</Application>
