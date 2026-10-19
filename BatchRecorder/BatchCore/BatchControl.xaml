@@ -86,10 +86,12 @@
     </Grid>
 
     <!-- ============================================ how they record -->
-    <local:CardBorder Grid.Row="1" Style="{DynamicResource Card}" Padding="14,10,14,4" Margin="0,0,0,10">
+    <!-- the Designer puts its POV / CINE global recording above this card (Host), and hides the rows it takes over -->
+    <StackPanel x:Name="RecordingSlot" Grid.Row="1">
+    <local:CardBorder x:Name="RecordingCard" Style="{DynamicResource Card}" Padding="14,10,14,4" Margin="0,0,0,10">
       <StackPanel>
-        <TextBlock Text="Recording" FontWeight="SemiBold" FontFamily="{DynamicResource TitleFont}" FontSize="14.5" Margin="0,0,0,8"/>
-        <WrapPanel Orientation="Horizontal">
+        <TextBlock x:Name="RecordingTitle" Text="Recording" FontWeight="SemiBold" FontFamily="{DynamicResource TitleFont}" FontSize="14.5" Margin="0,0,0,8"/>
+        <WrapPanel x:Name="TimingRow" Orientation="Horizontal">
           <TextBlock Text="fps" VerticalAlignment="Center" Opacity="0.75" Margin="0,0,0,6"/>
           <TextBox x:Name="FpsBox" Text="1000" Width="64" Margin="8,0,18,6">
           </TextBox>
@@ -108,7 +110,7 @@
           <CheckBox x:Name="NoHudBox" Content="No HUD (hides the feed)" Margin="0,0,14,6" VerticalAlignment="Center"
                     ToolTip="Sends cg_draw2d 0: no kill feed, no +100. For cinematics. Off: the CODCAST panel's own settings decide."/>
         </WrapPanel>
-        <WrapPanel Orientation="Horizontal">
+        <WrapPanel x:Name="PassesRow" Orientation="Horizontal">
           <TextBlock Text="Passes" VerticalAlignment="Center" Opacity="0.75" Margin="0,0,10,6"/>
           <CheckBox x:Name="DepthBox" Content="Depth" IsChecked="False" Margin="0,0,4,6" VerticalAlignment="Center">
           </CheckBox>
@@ -121,7 +123,13 @@
                     ToolTip="Reluduali recorder: the take again with only the players, their guns and the view hands, on black ('&lt;take&gt; - players'); with Depth ticked, its depth is the players' matte."/>
           <CheckBox x:Name="PlateBox" Content="Clean plate" IsChecked="False" Margin="0,0,12,6" VerticalAlignment="Center"
                     ToolTip="Reluduali recorder: a second video beside each take, '&lt;take&gt; - plate', the scene before bloom, the colour grade and the HUD (the gun stays). Same codec as the take."/>
-          <ComboBox x:Name="CodecBox" Width="230" Margin="0,0,14,6" VerticalAlignment="Center" SelectedIndex="0">
+        </WrapPanel>
+        <WrapPanel x:Name="OutputRow" Orientation="Horizontal">
+          <!-- 2026-10-18 (Mycelium: "There's no point in clicking video no pngs because clicking on the codec already implies
+               that ... they could select pngs from this drop-down"): no Video box; a PNG sequence is one of the choices. -->
+          <TextBlock Text="codec" VerticalAlignment="Center" Opacity="0.75" Margin="0,0,8,6"/>
+          <ComboBox x:Name="CodecBox" Width="230" Margin="0,0,14,6" VerticalAlignment="Center" SelectedIndex="0"
+                    ToolTip="What each take is written as: a video in one of these codecs, or a PNG per frame in a folder named after the take.">
             <!-- Measured 2026-09-29 on 537 real frames at 3050x1668 (0126): DNxHR HQ 55 fps and
                  2.15 MB/frame; ProRes HQ 20 fps (slower than capture); CineForm refuses 3050
                  wide; the MF encoders exist on the host GPU but not in the sandbox. -->
@@ -133,6 +141,7 @@
             <ComboBoxItem Content="ProRes 4444 (.mov)" Tag="mov|-c:v prores_ks -profile:v 4 -pix_fmt yuv444p10le -vendor apl0"/>
             <ComboBoxItem Content="Ut Video RGB lossless (.avi)" Tag="avi|-c:v utvideo -pix_fmt gbrp -pred median"/>
             <ComboBoxItem Content="HEVC on the GPU (.mp4)" Tag="mp4|-c:v hevc_mf -rate_control quality -quality 95 -hw_encoding 1 -pix_fmt nv12"/>
+            <ComboBoxItem Content="PNG sequence (no video)" Tag="png|-c:v png -pix_fmt rgb24 -start_number 0"/>
           </ComboBox>
           <TextBlock Text="ffmpeg" VerticalAlignment="Center" Opacity="0.75" Margin="0,0,0,6"/>
           <TextBox x:Name="FfmpegBox" Width="280" Margin="8,0,0,6" VerticalAlignment="Center"
@@ -140,9 +149,11 @@
         </WrapPanel>
       </StackPanel>
     </local:CardBorder>
+    </StackPanel>
 
     <!-- ============================================ run: the switches, then the buttons; the clock's zero beside them -->
-    <local:CardBorder Grid.Row="2" Style="{DynamicResource Card}" Padding="14,10,14,4" Margin="0,0,0,10">
+    <StackPanel x:Name="RunSlot" Grid.Row="2">
+    <local:CardBorder x:Name="RunCard" Style="{DynamicResource Card}" Padding="14,10,14,4" Margin="0,0,0,10">
       <WrapPanel Orientation="Horizontal">
         <Button x:Name="AllButton" Content="Run all" Padding="18,5" Margin="0,0,8,6" Click="RunAll_Click" Style="{DynamicResource PrimaryButton}"
                 ToolTip="Record every take in the list, one after the other"/>
@@ -159,13 +170,14 @@
         <Button Content="Calibrate" Padding="10,3" Margin="0,0,0,6" Click="Calibrate_Click"/>
       </WrapPanel>
     </local:CardBorder>
+    </StackPanel>
 
     <!-- ============================================ the takes and the log -->
-    <Grid Grid.Row="3">
+    <Grid x:Name="TakesArea" Grid.Row="3">
       <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="320"/><ColumnDefinition Width="*"/>
+        <ColumnDefinition x:Name="TakesColumn" Width="320"/><ColumnDefinition x:Name="LogColumn" Width="*"/>
       </Grid.ColumnDefinitions>
-      <ListBox x:Name="TakesBox"/>
+      <Border x:Name="TakesSlot"><ListBox x:Name="TakesBox"/></Border>
       <TextBox Grid.Column="1" x:Name="LogBox" Margin="10,0,0,0" IsReadOnly="True" VerticalContentAlignment="Top"
                AcceptsReturn="True" VerticalScrollBarVisibility="Auto" FontFamily="Cascadia Mono, Consolas" FontSize="11.5"/>
     </Grid>
@@ -183,8 +195,10 @@
                 ToolTip="Reads the spectate roster out of the game, in selectedPlayerIndex order."/>
         <TextBox x:Name="PovBox" Width="140" Margin="0,0,6,6" ToolTip="A gamertag, as it appears in the take list."/>
         <Button Content="Go to POV" Padding="10,3" Margin="0,0,18,6" Click="Pov_Click"/>
-        <Button Content="Set CODCAST" Padding="10,3" Margin="0,0,0,6" Click="Codcast_Click"
-                ToolTip="Writes bit 2 of the demo-mode byte. Redacted only - never retail. Unproven: watch the screen, not the flag."/>
+        <Button Content="Set CODCAST" Padding="10,3" Margin="0,0,6,6" Click="Codcast_Click" Tag="on"
+                ToolTip="The film in FILM CODCAST mode (bit 2 of the demo-mode byte). Redacted only."/>
+        <Button Content="Set regular theater" Padding="10,3" Margin="0,0,0,6" Click="Codcast_Click" Tag="off"
+                ToolTip="The film in the regular theater: FREE CAMERA, Edit Camera and the dolly. Redacted only."/>
       </WrapPanel>
     </Expander>
 

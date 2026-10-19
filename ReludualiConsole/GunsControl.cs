@@ -54,6 +54,11 @@ namespace ReludualiConsole
             row.Children.Add(live);
             row.Children.Add(Btn("Back to the game's", (s, e) => Restore()));
             row.Children.Add(Ui.Gap());
+            // 2026-10-18 (Mycelium, 38:49: he wanted to paint a gun and could not): the Camo Editor, served by the Designer itself
+            var paint = Ui.Primary(Btn("Paint a camo", (s, e) => _status.Text = CamoEditorControl.Open(null)));
+            paint.ToolTip = "The Camo Editor in your browser: pick a gun, paint it flat or on the gun in 3D, Save, then Send to the game";
+            row.Children.Add(paint);
+            row.Children.Add(Ui.Gap());
             row.Children.Add(Btn("Refresh", (s, e) => Refresh()));
             row.Children.Add(Btn("Open store", (s, e) => { try { Process.Start(Places()[0]); } catch (Exception ex) { _status.Text = ex.Message; } }));
             Content = Ui.Page(Ui.Card("Chrome and camo builds", "Folders with an iwi\\ inside. Install one, or take ours out to get the game's own camos back; restart the game after either. The installer never overwrites what it did not place.",

@@ -51,15 +51,15 @@ namespace ReludualiConsole
 
         private static readonly string[][] StageNames =
         {
-            new[] { "pre", "Pre-Production", "this PC" },
+            new[] { "pre", "Pre-Production", "the song and its tap markers" },
             new[] { "principal", "Principal Vegaography", "the game: films, looks, cameras, recording" },
             new[] { "post", "Post-Production", "3D in Blender" },
         };
 
         // A stage with no tools in this edition (Post-Production): its card and its place in the rail say so, and it opens
         // nothing.
-        private const string LaterCard = "Post-Production (3D in Blender) comes in a later version.";
-        private const string LaterRail = "3D in Blender comes in a later version.";
+        private static string LaterCard(string stage) { return stage == "pre" ? "Pre-Production (the song and its tap markers) comes in a later version." : "Post-Production (3D in Blender) comes in a later version."; }
+        private static string LaterRail(string stage) { return stage == "pre" ? "Tap markers come in a later version." : "3D in Blender comes in a later version."; }
         private bool StageIsLater(string stage) { return !_tools.Any(t => t.Stage == stage); }
 
         public MainWindow()
@@ -70,7 +70,9 @@ namespace ReludualiConsole
             App.ShowError = msg => Notice("Something in the window failed and was caught (the console keeps running): " + msg + "  Details: " + App.LogPath);
 
             // the tools, in working order. The BATCH page is built first: the CAM QUEUE runs its nights through it.
-            Add("pre", null, "setup", "Setup", Glyph.Setting, "Where the game and the stores are on this PC, and what it has", () => new SetupControl());
+            // Settings: not inside Pre-Production any more, a cog in the header at all times (2026-10-18, Mycelium: "there needs to
+            // be an actual cog at all times somewhere on the UI ... it doesn't make sense for the settings to be inside there")
+            Add("aside", null, "setup", "Settings", Glyph.Setting, "Where the game and the stores are on this PC, how the Designer looks, its keyboard shortcuts, updates", () => new SetupControl());
             Add("principal", "Film", "demos", "Demos", Glyph.Film, "Find a film, load it into the theater, play, bookmark", () => new DemosControl());
             Add("principal", "Film", "theater", "Theater", Glyph.Theater, "Live passes for the edit: no HUD, no gun, FOV, blur, a green sky", Panels.Theater);
             Add("principal", "Look", "look", "Look", Glyph.Palette, "Per-map looks, exposure and colour, live", () => new LookControl());
@@ -79,16 +81,21 @@ namespace ReludualiConsole
             Add("principal", "Look", "ssao", "SSAO", Glyph.Contrast, "Ambient occlusion: the soft dark in corners and under things", Panels.Ssao);
             Add("principal", "Look", "dof", "DOF", Glyph.Eye, "Depth of field, near and far, live", Panels.Dof);
             Add("principal", "Look", "sky", "Sky", Glyph.Moon, "Install a sky set, or go back to the maps' own skies", () => new SkyControl());
-            Add("principal", "Control", "cfg", "CFG", Glyph.Command, "Any setting or command, with completion; CFG files", () => new CfgControl());
+            // 2026-10-18 (Mycelium: "Go ahead with the webview2 and open asset tool suggestions"): the Camo Editor in the Designer
+            Add("principal", "Dress", "camo", "Camo Editor", Glyph.Edit, "Paint a gun's camo or a sky, on the picture or on the gun in 3D, and send it to the game", () => new CamoEditorControl());
+            Add("principal", "Control", "cfg", "CFG", Glyph.Command, "Your Global CFG, every setting in one place; any command, with completion; CFG files", () => new CfgControl());
             Add("principal", "Control", "custom", "Custom", Glyph.Sliders, "Your own sliders on any setting, with keys and MIDI", () => new CustomControl());
-            Add("principal", "Shoot", "camqueue", "Cam Queue", Glyph.Camera, "Your camera paths and POV takes, queued for the night, and the 3D views", () => new CamQueueControl());
-            Add("principal", "Shoot", "batch", "Batch", Glyph.Record, "Record a list of takes by itself", () =>
+            // 2026-10-18 (Mycelium: "In the cam queue, you do your cinematics. In the POV view ... you do your POVs ... And then in the
+            // batch queue, you could then record them all at once"): one queue, a tab for each kind of take, the Batch to record
+            Add("principal", "Shoot", "povqueue", "POV Queue", Glyph.Person, "Your POV takes: mark POV in and out on a player's view, queued for the night", () => new CamQueueControl("pov"));
+            Add("principal", "Shoot", "camqueue", "Cam Queue", Glyph.Camera, "Your cinematics: camera paths from your markers, queued for the night, and the 3D views", () => new CamQueueControl("cine"));
+            Add("principal", "Shoot", "batch", "Batch", Glyph.Record, "Record every queued take: how each one records, its look, and the night", () =>
             {
                 // the batch page's own colours are for a host with no look of its own: here the theme's
                 var batch = new BatchControl();
                 batch.Resources.Clear();
                 batch.Foreground = Ui.Brush("Text");
-                return batch;
+                return BatchPage.Around(batch);
             });
             Add("aside", null, "help", "Help", Glyph.Help, "How each tool works, for everyone testing it", () => new HelpControl());
             Add("aside", null, "contest", "Contest", Glyph.Stopwatch, "reluduali.com's contest timer, and the Lumit folder", () => new ContestControl());
@@ -104,7 +111,7 @@ namespace ReludualiConsole
             InitWorkspace();
             // the playback engine (2026-10-17): a Reluduali recording gets the sliders' moves written for its every frame,
             // and RipperBridge applies them on those frames (exact moves); the live replay waits meanwhile
-            BatchEngine.MovesTrack = (s, e, st, f) => KnobPanel.BakeMoves(s, e, st, f);
+            BatchEngine.MovesTrack = (k, s, e, st, f) => KnobPanel.BakeMoves(k, s, e, st, f);
             BatchEngine.MovesRecording = on => KnobPanel.ExactRecording = on;
 
             if (!App.Tour)
@@ -181,13 +188,14 @@ namespace ReludualiConsole
                     System.Windows.Automation.AutomationProperties.SetAutomationId(rb, "Rail_" + t.Key);
                     Tool me = t;
                     rb.Checked += (s, e) => { if (_current != me) ShowTool(me.Key); };
+                    rb.Click += (s, e) => { if (_current == me && _layout == WorkLayout.Overlay) { _floatShown = true; PageShown(); } };   // the tool already picked, its panel closed
                     string cannot = Unfinished.ToolWhy(t.Key);          // a page whose tool this install does not carry: greyed, saying why
                     if (cannot != null) Unfinished.Grey(rb, cannot);
                     t.Rail = rb;
                     items.Children.Add(rb);
                 }
                 if (StageIsLater(stage))
-                    items.Children.Add(new TextBlock { Text = LaterRail, FontSize = 11.5, FontStyle = FontStyles.Italic, Foreground = Ui.Brush("Dim"),
+                    items.Children.Add(new TextBlock { Text = LaterRail(stage), FontSize = 11.5, FontStyle = FontStyles.Italic, Foreground = Ui.Brush("Dim"),
                                                        TextWrapping = TextWrapping.Wrap, Margin = new Thickness(21, 0, 12, 0) });
                 _stageItems[stage] = items;
                 RailPanel.Children.Add(items);
@@ -207,7 +215,7 @@ namespace ReludualiConsole
             row.Children.Add(badge); row.Children.Add(text);
             var b = new Border { Child = row, Padding = new Thickness(14, 9, 10, 7), Margin = new Thickness(6, 4, 8, 0), CornerRadius = new CornerRadius(2), Background = Brushes.Transparent, Cursor = Cursors.Hand,
                                  ToolTip = StageNames.First(x => x[0] == stage)[2], Tag = text };
-            if (StageIsLater(stage)) { b.Cursor = null; b.ToolTip = LaterCard; _stageHeads[stage] = b; return b; }    // nothing to open yet
+            if (StageIsLater(stage)) { b.Cursor = null; b.ToolTip = LaterCard(stage); _stageHeads[stage] = b; return b; }    // nothing to open yet
             b.MouseEnter += (s, e) => b.Background = Ui.Brush("RailOver");
             b.MouseLeave += (s, e) => b.Background = Brushes.Transparent;
             b.MouseLeftButtonUp += (s, e) => OpenStage(stage);
@@ -241,7 +249,9 @@ namespace ReludualiConsole
             ShowRailFor(_stage);
             foreach (Tool o in _tools) if (o.Rail != null && o != t && o.Rail.IsChecked == true) o.Rail.IsChecked = false;
             if (t.Rail != null && t.Rail.IsChecked != true) t.Rail.IsChecked = true;
-            if (_layout == WorkLayout.Overlay) PageShown();
+            // a page asked for always shows, the floating panel too when it was closed (2026-10-18, Mycelium: "make sure when
+            // someone clicks setup ... even if panel has it closed, it should pop up")
+            if (_layout == WorkLayout.Overlay) { _floatShown = true; PageShown(); }
             else
             {
                 if (_float != null && _float.Page == t.Page) _float.Page = null;
@@ -286,8 +296,12 @@ namespace ReludualiConsole
 
         public IEnumerable<string> ToolKeys { get { return _tools.Select(t => t.Key); } }
 
+        /// <summary>A tool's page, for the picture tour.</summary>
+        public object PageForTour(string key) { Tool t = _tools.FirstOrDefault(x => x.Key == key); return t == null ? null : t.Page; }
+
         private void Home_Click(object sender, RoutedEventArgs e) { ShowHome(); }
         private void Help_Click(object sender, RoutedEventArgs e) { ShowTool("help"); }
+        private void Settings_Click(object sender, RoutedEventArgs e) { ShowTool("setup"); }
         private void Contest_Click(object sender, RoutedEventArgs e) { ShowTool("contest"); }
         private void Account_Click(object sender, RoutedEventArgs e) { ShowTool("account"); }
 
@@ -373,7 +387,7 @@ namespace ReludualiConsole
             if (StageIsLater(stage))
             {
                 // a stage that comes in a later version: its card says so, quieter than the others, and opens nothing
-                p.Children.Add(new TextBlock { Text = LaterCard, FontSize = 13.5, FontStyle = FontStyles.Italic, Foreground = Ui.Brush("AccentPale"), TextWrapping = TextWrapping.Wrap });
+                p.Children.Add(new TextBlock { Text = LaterCard(stage), FontSize = 13.5, FontStyle = FontStyles.Italic, Foreground = Ui.Brush("AccentPale"), TextWrapping = TextWrapping.Wrap });
                 return new PrintCard { Child = p, Margin = new Thickness(10, 0, 10, 0), Padding = new Thickness(22, 20, 22, 22), CornerRadius = new CornerRadius(3), Opacity = 0.7 };
             }
             var chips = new WrapPanel();

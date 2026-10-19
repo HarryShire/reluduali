@@ -118,6 +118,14 @@
               <TextBlock Text="reluduali.com" VerticalAlignment="Center"/>
             </StackPanel>
           </Button>
+          <!-- 2026-10-18 (Mycelium: "there needs to be an actual cog at all times somewhere on the UI"): Settings, always here -->
+          <Button x:Name="SettingsButton" Style="{StaticResource QuietButton}" Click="Settings_Click" Margin="0,0,2,0"
+                  ToolTip="Settings: where the game is, how the Designer looks, keyboard shortcuts, updates">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="&#xE713;" FontFamily="{StaticResource IconFont}" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+              <TextBlock Text="Settings" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
           <Button x:Name="HelpButton" Style="{StaticResource QuietButton}" Click="Help_Click" Margin="0,0,8,0"
                   ToolTip="How each tool works (F1)">
             <StackPanel Orientation="Horizontal">

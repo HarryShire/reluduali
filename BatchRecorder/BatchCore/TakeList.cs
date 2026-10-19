@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace BatchRecorder
@@ -27,6 +28,7 @@ namespace BatchRecorder
         public string Name = "";       // the path's own name: its clip is <out>\<folder>\<name>\<name>.<ext>
         public string Source = "";     // where the row came from: markers, blender, generator, pov
         public string CfgPath = "";    // a CFG file sent INSTEAD of the CFG box before this take
+        public string LookPath = "";   // a look (a global look or any CFG) sent AFTER the CFG, so it has the last word (2026-10-18)
         public int Fps;                // 0 = the tab's
         public int TickIn = -1;        // exact demo ticks: when both are set they replace clock_in/clock_out, and the
         public int TickOut = -1;       // take needs no zero (a camera track's own ticks, or POV in/out marked live)
@@ -34,6 +36,15 @@ namespace BatchRecorder
         public int AfterMs = -1;
         public int Hud = -1;           // -1 = the tab's No HUD box; 0 = hidden; 1 = shown
         public int Codcast = -1;       // -1 = the tab's Require CODCAST; 0 = the regular theater (cinematics); 1 = CODCAST
+        // how it records, per take (2026-10-18: RecordingSettings): -1 = the tab's box, 0 off, 1 on
+        public int Depth = -1, Plate = -1, NoPlayers = -1, PlayersOnly = -1;
+        public int DepthDist = -1;     // game units; -1 = the tab's
+        public string Codec = "";      // a name in the codec list; "" = the tab's
+        public string Preset = "";     // the row's batch preset (Presets\BATCH), if it names one
+        public string Keys = "";       // its keyframes, every parameter (2026-10-18): <list>\keys\<name>.keys.json, when it has one
+        /// <summary>Where each recording setting came from: "own", "preset NAME", "look NAME", "POV global" / "CINE global";
+        /// a key not in here is the Batch tab's own box.</summary>
+        public readonly Dictionary<string, string> From = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         // the file names of a queued take (Naming, 2026-10-16): set when the run starts and when the take first names its files
         public int KindIndex = 1;      // its place among the same frag's takes of its kind (CINE03 = the third cinematic)
         public string FileBase;        // the name its files take, decided once (the take number is the first one free)
@@ -49,8 +60,10 @@ namespace BatchRecorder
             string span = HasTicks
                 ? "ticks " + TickIn + "-" + TickOut + " (" + ((TickOut - TickIn) / 1000.0).ToString("0.00", CultureInfo.InvariantCulture) + " s)"
                 : Clock(ClockIn) + "-" + Clock(ClockOut);
-            return "take " + Number + "  " + (IsCine ? "CINE" : "POV") + (Name.Length > 0 ? "  " + Name : "") + "  " + Folder + "  " + span;
+            return "take " + Number + "  " + (IsCine ? "CINE" : "POV") + (Name.Length > 0 ? "  " + Name : "") + "  " + Folder + "  " + span + LookLabel;
         }
+
+        private string LookLabel { get { return string.IsNullOrEmpty(LookPath) ? "" : "   look: " + Path.GetFileNameWithoutExtension(LookPath); } }
 
         public static string Clock(int s) { return (s / 60) + ":" + (s % 60).ToString("00"); }
     }
@@ -68,7 +81,7 @@ namespace BatchRecorder
     public static class TakeList
     {
         /// <summary>The CAM QUEUE's header: the original seven, then its own columns.</summary>
-        public const string Header = "take,folder,pov,clock_in,clock_out,note,campath,kind,name,source,cfg,fps,tick_in,tick_out,demo,before,after,hud,codcast";
+        public const string Header = "take,folder,pov,clock_in,clock_out,note,campath,kind,name,source,cfg,fps,tick_in,tick_out,demo,before,after,hud,codcast,look,depth,depthdist,plate,noplayers,playersonly,codec,preset";
 
         /// <summary>A queue folder's defaults per kind, beside its CSV (see <see cref="Load"/>).</summary>
         public const string DefaultsFile = "queue.txt";
@@ -89,7 +102,9 @@ namespace BatchRecorder
             int cKind = IndexOf(head, "kind"), cName = IndexOf(head, "name"), cSource = IndexOf(head, "source");
             int cCfg = IndexOf(head, "cfg"), cFps = IndexOf(head, "fps"), cTin = IndexOf(head, "tick_in"), cTout = IndexOf(head, "tick_out");
             int cDemo = IndexOf(head, "demo"), cBefore = IndexOf(head, "before"), cAfter = IndexOf(head, "after"), cHud = IndexOf(head, "hud");
-            int cCodcast = IndexOf(head, "codcast"), cOutDir = IndexOf(head, "outdir");
+            int cCodcast = IndexOf(head, "codcast"), cOutDir = IndexOf(head, "outdir"), cLook = IndexOf(head, "look");
+            int cPreset = IndexOf(head, "preset");
+            var cRec = RecordingSettings.Keys.ToDictionary(k => k, k => IndexOf(head, k), StringComparer.OrdinalIgnoreCase);
             if (cFolder < 0 || cIn < 0 || cOut < 0) { error = "The take list needs folder, clock_in and clock_out columns."; return takes; }
 
             string listDir = Path.GetDirectoryName(Path.GetFullPath(csvPath));
@@ -129,14 +144,24 @@ namespace BatchRecorder
                     AfterMs = ParseMs(Get(f, cAfter)),
                     Hud = ParseHud(Get(f, cHud)),
                     Codcast = ParseHud(Get(f, cCodcast)),
-                    OutDir = Get(f, cOutDir)
+                    OutDir = Get(f, cOutDir),
+                    LookPath = Get(f, cLook),
+                    Preset = Get(f, cPreset)
                 };
+                // the row's own recording settings, as written (fps, before ... the columns above read them too)
+                var own = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var kv in cRec) { string v = Get(f, kv.Value); if (v.Length > 0) own[kv.Key] = v; }
                 if (t.Kind != "pov" && t.Kind != "cine") t.Kind = "";
                 if (t.CamPath.Length > 0 && !Path.IsPathRooted(t.CamPath))      // relative to the list
                     t.CamPath = Path.GetFullPath(Path.Combine(listDir, t.CamPath));
                 if (t.CfgPath.Length > 0 && !Path.IsPathRooted(t.CfgPath))
                     t.CfgPath = Path.GetFullPath(Path.Combine(listDir, t.CfgPath));
-                ApplyDefaults(t, defaults, listDir);
+                if (t.LookPath.Length > 0 && !Path.IsPathRooted(t.LookPath))
+                    t.LookPath = Path.GetFullPath(Path.Combine(listDir, t.LookPath));
+                ApplyDefaults(t, defaults, listDir, own);
+                // its keyframes travel with it (Mycelium 10-18: "all that keyframe data is saved and ready for the batch")
+                string keys = KeysFile(listDir, t.Name);
+                if (keys != null && File.Exists(keys)) t.Keys = keys;
 
                 // An explicit demo file wins; else the folder whose only .demo it is (the original rule).
                 string demo = Get(f, cDemo);
@@ -156,6 +181,16 @@ namespace BatchRecorder
         /// cine_fps, pov_before / pov_after / cine_before / cine_after (seconds), pov_hud / cine_hud (show, hide, tab),
         /// pov_codcast / cine_codcast (on, off, tab: the film mode).
         /// </summary>
+        /// <summary>A take's keyframes file (the Designer's timeline writes it): keys\&lt;its name&gt;.keys.json beside the list,
+        /// the name made safe for a file name. Null without a name.</summary>
+        public static string KeysFile(string listDir, string name)
+        {
+            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrEmpty(listDir)) return null;
+            var sb = new System.Text.StringBuilder();
+            foreach (char c in name.Trim()) sb.Append(Array.IndexOf(Path.GetInvalidFileNameChars(), c) >= 0 ? '_' : c);
+            return Path.Combine(listDir, "keys", sb + ".keys.json");
+        }
+
         public static Dictionary<string, string> ReadDefaults(string path)
         {
             var d = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -173,18 +208,58 @@ namespace BatchRecorder
             return d;
         }
 
-        private static void ApplyDefaults(Take t, Dictionary<string, string> d, string listDir)
+        /// <summary>A take's CFG and look from its kind when it has none of its own, then every recording setting from the first
+        /// place that has it (RecordingSettings: own, the row's batch preset, its look's RECORDING part, its kind's global).
+        /// Where each came from is kept in Take.From.</summary>
+        private static void ApplyDefaults(Take t, Dictionary<string, string> d, string listDir, Dictionary<string, string> own = null)
         {
-            if (d.Count == 0) return;
             string k = t.IsCine ? "cine_" : "pov_";
             string v;
             if (t.CfgPath.Length == 0 && d.TryGetValue(k + "cfg", out v) && v.Length > 0)
                 t.CfgPath = Path.IsPathRooted(v) ? v : Path.GetFullPath(Path.Combine(listDir, v));
-            if (t.Fps <= 0 && d.TryGetValue(k + "fps", out v)) t.Fps = Math.Max(0, ParseInt(v));
-            if (t.BeforeMs < 0 && d.TryGetValue(k + "before", out v)) t.BeforeMs = ParseMs(v);
-            if (t.AfterMs < 0 && d.TryGetValue(k + "after", out v)) t.AfterMs = ParseMs(v);
-            if (t.Hud < 0 && d.TryGetValue(k + "hud", out v)) t.Hud = ParseHud(v);
-            if (t.Codcast < 0 && d.TryGetValue(k + "codcast", out v)) t.Codcast = ParseHud(v);
+            if (t.LookPath.Length == 0 && d.TryGetValue(k + "look", out v) && v.Length > 0)
+                t.LookPath = Path.IsPathRooted(v) ? v : Path.GetFullPath(Path.Combine(listDir, v));
+            if (t.Preset.Length == 0 && d.TryGetValue(k + "preset", out v) && v.Length > 0) t.Preset = v;     // the kind's batch preset, if it names one
+
+            own = own ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            t.From.Clear();
+            foreach (string key in RecordingSettings.Keys) if (own.ContainsKey(key) && Set(t, key, own[key])) t.From[key] = "own";
+            var kind = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var kv in d) if (kv.Key.StartsWith(k, StringComparison.OrdinalIgnoreCase)) kind[kv.Key.Substring(k.Length)] = kv.Value;
+            var layers = new List<KeyValuePair<string, Dictionary<string, string>>>
+            {
+                new KeyValuePair<string, Dictionary<string, string>>("preset " + t.Preset, RecordingSettings.ReadPreset(t.Preset)),
+                new KeyValuePair<string, Dictionary<string, string>>("look " + Path.GetFileNameWithoutExtension(t.LookPath ?? ""), RecordingSettings.FromLook(t.LookPath)),
+                new KeyValuePair<string, Dictionary<string, string>>(t.IsCine ? "CINE global" : "POV global", kind),
+            };
+            foreach (string key in RecordingSettings.Keys)
+            {
+                if (t.From.ContainsKey(key)) continue;
+                foreach (var layer in layers)
+                    if (layer.Value.TryGetValue(key, out v) && Set(t, key, v)) { t.From[key] = layer.Key; break; }
+            }
+        }
+
+        /// <summary>One recording setting onto the take; false when the value says "the tab's" (empty, "tab") or does not read.</summary>
+        private static bool Set(Take t, string key, string v)
+        {
+            v = (v ?? "").Trim();
+            if (v.Length == 0 || v.Equals("tab", StringComparison.OrdinalIgnoreCase)) return false;
+            switch (key.ToLowerInvariant())
+            {
+                case "fps": { int x = ParseInt(v); if (x <= 0) return false; t.Fps = x; return true; }
+                case "before": { int x = ParseMs(v); if (x < 0) return false; t.BeforeMs = x; return true; }
+                case "after": { int x = ParseMs(v); if (x < 0) return false; t.AfterMs = x; return true; }
+                case "hud": { int x = ParseHud(v); if (x < 0) return false; t.Hud = x; return true; }
+                case "codcast": { int x = ParseHud(v); if (x < 0) return false; t.Codcast = x; return true; }
+                case "depth": { int x = ParseHud(v); if (x < 0) return false; t.Depth = x; return true; }
+                case "plate": { int x = ParseHud(v); if (x < 0) return false; t.Plate = x; return true; }
+                case "noplayers": { int x = ParseHud(v); if (x < 0) return false; t.NoPlayers = x; return true; }
+                case "playersonly": { int x = ParseHud(v); if (x < 0) return false; t.PlayersOnly = x; return true; }
+                case "depthdist": { int x = ParseInt(v); if (x <= 0) return false; t.DepthDist = x; return true; }
+                case "codec": t.Codec = v; return true;
+                default: return false;
+            }
         }
 
         /// <summary>"2:07" -> 127. Also accepts plain seconds.</summary>

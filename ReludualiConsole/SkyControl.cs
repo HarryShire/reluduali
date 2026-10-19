@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -36,6 +37,13 @@ namespace ReludualiConsole
             row.Children.Add(Ui.Gap());
             row.Children.Add(Btn("Refresh", (s, e) => Refresh()));
             row.Children.Add(Btn("Open store", (s, e) => { try { Process.Start(Store); } catch (Exception ex) { _status.Text = ex.Message; } }));
+            row.Children.Add(Ui.Gap());
+            // 2026-10-18 (Mycelium, 39:21: "is it any different? Why can't I just paint on the skybox as well?"): a sky of the
+            // picked set opened in the Camo Editor, the same painter; Save, then Send to the game swaps it in live
+            var paint = Btn("Paint a sky...", (s, e) => PaintSky((Button)s));
+            paint.ToolTip = "One of the picked set's sky images in the Camo Editor (the guns' painter): paint it, Save, then Send to the game";
+            row.Children.Add(paint);
+            row.Children.Add(Btn("New set from my painted skies", (s, e) => SetFromPainted()));
             Content = Ui.Page(Ui.Card("Sky sets", "Folders of sky IWIs in the store. Install one, or go back to the maps' own skies; restart the game after either. Nothing is deleted: what was there is moved aside.",
                                       _sets, row, _status, _where));
             Refresh();
@@ -46,6 +54,52 @@ namespace ReludualiConsole
             var b = new Button { Content = text, Margin = new Thickness(0, 0, 8, 6) };
             b.Click += click;
             return b;
+        }
+
+        /// <summary>The skies painted in the Camo Editor (each one's newest save: Documents\Reluduali\camo\&lt;sky&gt;\&lt;stamp&gt;\&lt;sky&gt;.iwi, a
+        /// cube of six faces) copied into a new set in the store, so Install set puts them in the game (sandbox 0743: a painted
+        /// sky as a loose .iwi in data\images is drawn as the map's sky).</summary>
+        private void SetFromPainted()
+        {
+            string camo = CamoServer.OutFolder;
+            var picked = new List<string>();
+            if (Directory.Exists(camo))
+                foreach (string sky in Directory.GetDirectories(camo))
+                {
+                    string name = Path.GetFileName(sky);
+                    if (!(name.ToLowerInvariant().Contains("sky") || name.ToLowerInvariant().EndsWith("_ft"))) continue;
+                    string newest = Directory.GetDirectories(sky).Where(d => System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(d), @"^\d{8}-\d{6}$"))
+                                             .OrderByDescending(d => Path.GetFileName(d)).Select(d => Path.Combine(d, name + ".iwi")).FirstOrDefault(File.Exists);
+                    if (newest != null) picked.Add(newest);
+                }
+            if (picked.Count == 0) { _status.Text = "No painted skies yet: Paint a sky..., then Save in the editor."; return; }
+            string set = Path.Combine(Store, "Painted skies " + DateTime.Now.ToString("yyyy-MM-dd HHmm"));
+            try
+            {
+                Directory.CreateDirectory(set);
+                foreach (string f in picked) File.Copy(f, Path.Combine(set, Path.GetFileName(f)), false);
+            }
+            catch (Exception ex) { _status.Text = "Could not make the set: " + ex.Message; return; }
+            Refresh(true);
+            _status.Text = "A new set, \"" + Path.GetFileName(set) + "\", with " + picked.Count + " painted sk" + (picked.Count == 1 ? "y" : "ies") + ": pick it and Install set, then restart the game.";
+        }
+
+        private void PaintSky(Button from)
+        {
+            var item = _sets.SelectedItem as ListBoxItem;
+            if (item == null) { _status.Text = "Pick a sky set first: its images open in the painter."; return; }
+            string[] files = SkyFiles((string)item.Tag);
+            if (files.Length == 0) { _status.Text = "That set has no sky images."; return; }
+            if (files.Length == 1) { _status.Text = CamoEditorControl.Open(files[0]); return; }
+            var menu = new ContextMenu { PlacementTarget = from };
+            foreach (string f in files.OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
+            {
+                string file = f;
+                var mi = new MenuItem { Header = Path.GetFileName(f).Replace("_", "__") };
+                mi.Click += (s, e) => _status.Text = CamoEditorControl.Open(file);
+                menu.Items.Add(mi);
+            }
+            menu.IsOpen = true;
         }
 
         private static string[] SkyFiles(string dir)

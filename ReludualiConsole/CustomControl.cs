@@ -41,8 +41,12 @@ namespace ReludualiConsole
         CustomSlider _learning;
         static string FilePath { get { return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Presets", "CUSTOM", "sliders.json"); } }
 
+        /// <summary>The page, for the other pages' "Add as custom slider" (every page is built when the Designer starts).</summary>
+        public static CustomControl Instance { get; private set; }
+
         public CustomControl()
         {
+            Instance = this;
             Foreground = (Brush)Application.Current.FindResource("Text");
             var top = new WrapPanel();
             top.Children.Add(Ui.Primary(Btn("New slider...", (s, e) => NewSlider())));
@@ -107,23 +111,77 @@ namespace ReludualiConsole
             }
         }
 
+        /// <summary>New slider: the game's number settings in a list to search and pick from (2026-10-18, Mycelium: "we should just
+        /// bring it straight from this"), the name typed by hand still taken ("for the weirdos who know the commands").</summary>
         void NewSlider()
         {
-            string name = Ask.Text(Window.GetWindow(this), "New slider", "The setting (dvar) it drives, e.g. r_exposureValue:", "");
+            string name = PickSetting(Window.GetWindow(this));
             if (string.IsNullOrWhiteSpace(name)) return;
-            GameName g = GameName.Find(name.Trim());
-            if (g == null || g.IsCommand) { _status.Text = "The game has no number setting called '" + name.Trim() + "'. The CFG tab completes names."; return; }
-            if (_sliders.Any(c => c.Dvar.Equals(g.Name, StringComparison.OrdinalIgnoreCase))) { _status.Text = g.Name + " has a slider already."; return; }
-            if (!(g.Type == "float" || g.Type == "int" || g.Type == "bool")) { _status.Text = g.Name + " is a " + g.Type + ", not one number: a slider drives one number."; return; }
-            double min = 0, max = g.Type == "bool" ? 1 : 1, def;
+            _status.Text = AddSetting(name.Trim(), null, double.NaN, double.NaN, double.NaN);
+        }
+
+        /// <summary>A slider on a setting, with its label and range if given (NaN: the game's own). The result in words.</summary>
+        public string AddSetting(string dvar, string label, double min, double max, double value)
+        {
+            GameName g = GameName.Find(dvar);
+            if (g == null || g.IsCommand) return "The game has no number setting called '" + dvar + "'. The CFG tab completes names.";
+            if (_sliders.Any(c => c.Dvar.Equals(g.Name, StringComparison.OrdinalIgnoreCase))) return g.Name + " has a slider already, on Custom.";
+            if (!(g.Type == "float" || g.Type == "int" || g.Type == "bool")) return g.Name + " is a " + g.Type + ", not one number: a slider drives one number.";
+            double gmin = 0, gmax = 1, def;
             string[] dom = (g.Domain ?? "").Split(new[] { " .. " }, StringSplitOptions.None);
-            if (dom.Length == 2) { double a, b; if (double.TryParse(dom[0], NumberStyles.Float, CultureInfo.InvariantCulture, out a)) min = a; if (double.TryParse(dom[1], NumberStyles.Float, CultureInfo.InvariantCulture, out b)) max = b; }
-            if (max > 100000) max = Math.Max(1000, Math.Abs(min) + 1000);      // "0 .. 3.4e38": a usable slider instead
-            if (min < -100000) min = -max;
+            if (dom.Length == 2) { double a, b; if (double.TryParse(dom[0], NumberStyles.Float, CultureInfo.InvariantCulture, out a)) gmin = a; if (double.TryParse(dom[1], NumberStyles.Float, CultureInfo.InvariantCulture, out b)) gmax = b; }
+            if (gmax > 100000) gmax = Math.Max(1000, Math.Abs(gmin) + 1000);      // "0 .. 3.4e38": a usable slider instead
+            if (gmin < -100000) gmin = -gmax;
             double.TryParse(g.Default, NumberStyles.Float, CultureInfo.InvariantCulture, out def);
-            _sliders.Add(new CustomSlider { Label = g.Name, Dvar = g.Name, Min = min, Max = max, Value = def });
+            var c2 = new CustomSlider { Label = string.IsNullOrWhiteSpace(label) ? g.Name : label, Dvar = g.Name,
+                                        Min = double.IsNaN(min) ? gmin : min, Max = double.IsNaN(max) ? gmax : max, Value = double.IsNaN(value) ? def : value };
+            _sliders.Add(c2);
             Save(); Rebuild();
-            _status.Text = "Added " + g.Name + " (" + min.ToString(CultureInfo.InvariantCulture) + " to " + max.ToString(CultureInfo.InvariantCulture) + ", the game's range). Typed values beyond it work too.";
+            return "Added " + c2.Label + " (" + g.Name + ", " + c2.Min.ToString(CultureInfo.InvariantCulture) + " to " + c2.Max.ToString(CultureInfo.InvariantCulture) + ") to Custom: give it keys or a MIDI fader there.";
+        }
+
+        /// <summary>The game's number settings, searched as typed; Enter or Add takes the picked one, or the name typed.</summary>
+        static string PickSetting(Window owner)
+        {
+            var w = new Window { Title = "New slider", Width = 560, Height = 520, Owner = owner, WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                                 Background = (Brush)Application.Current.FindResource("Back"), Foreground = (Brush)Application.Current.FindResource("Text") };
+            var search = new TextBox { Margin = new Thickness(0, 0, 0, 8), VerticalContentAlignment = VerticalAlignment.Center, ToolTip = "Part of a name (fov, exposure, dof, fog...), or a whole name you know" };
+            var list = new ListBox { FontFamily = new FontFamily("Consolas") };
+            var info = new TextBlock { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 8), Opacity = 0.8, MinHeight = 34 };
+            var numbers = GameName.All.Where(n => !n.IsCommand && (n.Type == "float" || n.Type == "int" || n.Type == "bool")).ToList();
+            Action fill = () =>
+            {
+                string q = search.Text.Trim();
+                list.Items.Clear();
+                IEnumerable<GameName> hits = q.Length == 0 ? (IEnumerable<GameName>)numbers : numbers.Where(n => n.Name.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0 || n.Description.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0)
+                                                                                   .OrderBy(n => n.Name.StartsWith(q, StringComparison.OrdinalIgnoreCase) ? 0 : 1).ThenBy(n => n.Name, StringComparer.OrdinalIgnoreCase);
+                foreach (GameName n in hits.Take(400)) list.Items.Add(new ListBoxItem { Content = n.Name + "   " + n.Type + (n.Domain.Length > 0 ? "  " + n.Domain : ""), Tag = n.Name, ToolTip = n.Info });
+                if (list.Items.Count > 0) list.SelectedIndex = 0;
+            };
+            list.SelectionChanged += (s, e) => { var it = list.SelectedItem as ListBoxItem; GameName g = it == null ? null : GameName.Find((string)it.Tag); info.Text = g == null ? "" : g.Info; };
+            string result = null;
+            Action take = () =>
+            {
+                var it = list.SelectedItem as ListBoxItem;
+                string typed = search.Text.Trim();
+                result = GameName.Find(typed) != null ? typed : it != null ? (string)it.Tag : typed;
+                w.Close();
+            };
+            search.TextChanged += (s, e) => fill();
+            search.KeyDown += (s, e) => { if (e.Key == Key.Enter) take(); else if (e.Key == Key.Down && list.Items.Count > 0) { list.Focus(); } };
+            list.MouseDoubleClick += (s, e) => take();
+            list.KeyDown += (s, e) => { if (e.Key == Key.Enter) take(); };
+            var add = new Button { Content = "Add", IsDefault = false, Padding = new Thickness(16, 3, 16, 3), HorizontalAlignment = HorizontalAlignment.Right };
+            add.Click += (s, e) => take();
+            var root = new DockPanel { Margin = new Thickness(12) };
+            var head = new TextBlock { Text = "Search the game's settings, or type a name you know:", Margin = new Thickness(0, 0, 0, 6) };
+            DockPanel.SetDock(head, Dock.Top); DockPanel.SetDock(search, Dock.Top); DockPanel.SetDock(add, Dock.Bottom); DockPanel.SetDock(info, Dock.Bottom);
+            root.Children.Add(head); root.Children.Add(search); root.Children.Add(add); root.Children.Add(info); root.Children.Add(list);
+            w.Content = root;
+            fill();
+            w.Loaded += (s, e) => search.Focus();
+            w.ShowDialog();
+            return result;
         }
 
         void SetKeys(CustomSlider c)

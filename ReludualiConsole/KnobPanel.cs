@@ -132,6 +132,27 @@ namespace ReludualiConsole
 
         public Knob Find(string label) { return _rows.OfType<Knob>().FirstOrDefault(k => k.Label == label); }
 
+        /// <summary>A page's slider by the page's name and the slider's label, or null.</summary>
+        public static Knob FindKnob(string page, string label)
+        {
+            KnobPanel p;
+            lock (All) p = All.FirstOrDefault(x => string.Equals(x._name, page, StringComparison.OrdinalIgnoreCase));
+            return p == null ? null : p.Find(label);
+        }
+
+        /// <summary>A slider of a page set from code and sent live, not recorded as a move (the take keys' live play). False
+        /// when no page or slider has that name.</summary>
+        public static bool SetLive(string page, string label, double[] v)
+        {
+            KnobPanel p;
+            lock (All) p = All.FirstOrDefault(x => x._name == page);
+            Knob k = p == null ? null : p.Find(label);
+            if (k == null) return false;
+            p._applying = true;
+            try { p.Set(k, v); } finally { p._applying = false; }
+            return true;
+        }
+
         public KnobPanel Colour(string label, string line, string read, double[] values, double max, string tip = null)
         {
             _rows.Add(new Knob { Label = label, Line = line, ReadDvar = read, Values = (double[])values.Clone(), Min = new double[] { 0, 0, 0 },
@@ -152,6 +173,15 @@ namespace ReludualiConsole
             _rows.Add(new Switch { Label = label, On = on, Off = off, ReadDvar = read, Tip = tip });
             return this;
         }
+
+        /// <summary>The switch added last turns on by itself when any slider of the page moves by hand (DOF: the game ignores
+        /// the values until its tweak is on, 2026-10-18).</summary>
+        public KnobPanel SwitchedOnByMoves()
+        {
+            _onByMoves = _rows.LastOrDefault() as Switch;
+            return this;
+        }
+        private Switch _onByMoves;
 
         /// <summary>Anything else the tab wants under the sliders (buttons of its own).</summary>
         public KnobPanel Below(UIElement e) { _extra.Children.Add(e); return this; }
@@ -182,6 +212,8 @@ namespace ReludualiConsole
             top.Children.Add(new TextBlock { Text = "Preset", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 6), Foreground = Ui.Brush("Dim") });
             top.Children.Add(_presets);
             top.Children.Add(Ui.Primary(Btn("Load", (s, e) => LoadPreset(), "Send the picked preset to the game")));
+            // Save beside Save as (2026-10-18, Mycelium: "There should be a save as, but also a save as well")
+            top.Children.Add(Btn("Save", (s, e) => SaveOver(), "These sliders over the picked preset (Save as... when none is picked)"));
             top.Children.Add(Btn("Save as...", (s, e) => SavePreset(), "These sliders as a preset of your own"));
             top.Children.Add(Ui.Gap());
             top.Children.Add(Btn("Open file...", (s, e) => Import(), "A .cfg file"));
@@ -259,6 +291,9 @@ namespace ReludualiConsole
             moves.Children.Add(Btn("Save moves...", (s, e) => SaveMoves()));
             moves.Children.Add(Btn("Load moves...", (s, e) => LoadMoves()));
             moves.Children.Add(Btn("Clear moves", (s, e) => { _tracks.Clear(); ShowMoves(); }));
+            // 2026-10-18: the moves as the picked take's own keyframes, which the batch records with it (TakeKeys)
+            moves.Children.Add(Btn("Give them to the take", (s, e) => { _status.Text = TakeKeys.FromMoves(TakeKeys.Target, _name, _tracks.ToList()); },
+                "These moves become keyframes of the take picked (on the timeline, or on the Cam Queue / POV Queue): they show under its lane, and the batch records them with that take"));
             _movesInfo.Margin = new Thickness(4, 0, 0, 6);
             moves.Children.Add(_movesInfo);
             var movesCard = Ui.Card("Moves", "Record your slider moves against the film's own clock; Play moves replays them on the same ticks - while you watch, and while the batch records.", moves);
@@ -298,6 +333,8 @@ namespace ReludualiConsole
                     Paint(k);
                     if (_quiet) return;
                     if (!_applying) Touched(k);
+                    // a hand on a slider of a page that needs its switch on (DOF): on it goes, sent before the value
+                    if (!_applying && _onByMoves != null && _onByMoves.Box != null && _onByMoves.Box.IsChecked != true) _onByMoves.Box.IsChecked = true;
                     _dirty.Add(k);
                     Kick();
                 };
@@ -311,6 +348,7 @@ namespace ReludualiConsole
                 box.KeyDown += (o, e) => { if (e.Key == Key.Enter) typed(); };
                 box.LostKeyboardFocus += (o, e) => typed();
                 k.Sliders[i] = s; k.Boxes[i] = box;
+                s.ContextMenu = box.ContextMenu = SliderMenu(k, at);              // Custom too: its sliders take keyframes (not "add as custom")
                 if (line is Grid) { Grid.SetColumn(box, 1); s.MinWidth = 120; ((Grid)line).Width = double.NaN; }
                 line.Children.Add(s); line.Children.Add(box);
             }
@@ -325,6 +363,47 @@ namespace ReludualiConsole
                 line.Children.Add(k.Swatch);
                 Paint(k);
             }
+        }
+
+        /// <summary>A slider's right-click (2026-10-18, Mycelium: "every time I see a slider, I should just be able to right-click ...
+        /// add custom slider"): the same setting on the Custom page, where it takes keys and a MIDI fader.</summary>
+        private ContextMenu SliderMenu(Knob k, int at)
+        {
+            var menu = new ContextMenu();
+            // 2026-10-18 (Mycelium: "every single parameter can be keyframed"): a key on the picked take, at the film's time now
+            var key = new MenuItem { Header = "Keyframe on the picked take" };
+            menu.Opened += (s, e) =>
+            {
+                string name = TakeKeys.TargetName;
+                key.Header = name == null ? "Keyframe: pick a take first (on the timeline or a queue page)" : "Keyframe on \"" + name + "\" at the film's time now";
+                key.IsEnabled = name != null;
+            };
+            key.Click += (s, e) =>
+            {
+                int tick = -1;
+                try { string st = BridgeClient.Ask("stats", 500, 1); if (st != null && !st.Contains("theater 0x00000000")) tick = (int)BridgeClient.Field(st, "tick"); } catch { }
+                _status.Text = TakeKeys.Add(TakeKeys.Target, _name, k, tick);
+            };
+            menu.Items.Add(key);
+            if (_name == "CUSTOM") return menu;
+            menu.Items.Add(new Separator());
+            var add = new MenuItem { Header = "Add as custom slider" };
+            string dvar = null, why = null;
+            string[] words = (k.Line ?? "").Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (k.FogField >= 0 || k.Line.StartsWith("bridge", StringComparison.OrdinalIgnoreCase)) why = "this one is the Designer's own (the fog record), not a game setting";
+            else if (k.Line.Contains(";")) why = "this slider sets more than one setting at once";
+            else if (words.Length == 2 && words[1] == "{" + at + "}") dvar = words[0];
+            else if (words.Length > 2 && k.Values.Length > 1) why = "a custom slider drives one number; this setting takes " + k.Values.Length;
+            else why = "this slider is not one game setting";
+            if (dvar == null) { add.IsEnabled = false; add.ToolTip = why; menu.Items.Add(new MenuItem { Header = "Add as custom slider: " + why, IsEnabled = false }); return menu; }
+            add.Header = "Add as custom slider (" + dvar + ")";
+            add.Click += (s, e) =>
+            {
+                if (CustomControl.Instance == null) { _status.Text = "The Custom page did not build."; return; }
+                _status.Text = CustomControl.Instance.AddSetting(dvar, k.Label, k.Min[at], k.Max[at], k.Values[at]);
+            };
+            menu.Items.Add(add);
+            return menu;
         }
 
         private static double Clamp(Knob k, int i, double v) { return Math.Max(k.Min[i], Math.Min(k.Max[i], v)); }
@@ -389,7 +468,7 @@ namespace ReludualiConsole
         // since the batch steps the same film clock. Both on = a second pass: knobs touched now are recorded over (keys
         // between this pass's touches are replaced), untouched ones play. Knobs only; switches are not recorded.
 
-        internal sealed class MoveKey { public int Tick; public double[] V; }
+        public sealed class MoveKey { public int Tick; public double[] V; }
         private readonly Dictionary<Knob, List<MoveKey>> _tracks = new Dictionary<Knob, List<MoveKey>>();
         internal Dictionary<Knob, List<MoveKey>> Tracks { get { return _tracks; } }
         internal string PanelName { get { return _name; } }
@@ -473,9 +552,14 @@ namespace ReludualiConsole
         /// tick, resolved the way a live move is sent (a command, a fog-record write, a bridge command). RipperBridge runs a
         /// tick's events when the recorder makes that frame, so a move lands on its own frame. Null when nothing plays.
         /// </summary>
-        public static string BakeMoves(int start, int end, int step, string file)
+        public static string BakeMoves(string takeKeys, int start, int end, int step, string file)
         {
             var work = new List<Tuple<string, bool, List<MoveKey>>>();       // a slider's line, whole numbers, its keys
+            // the take's own keyframes (2026-10-18, TakeKeys): they win over a page's moves for the same slider
+            if (!string.IsNullOrEmpty(takeKeys) && File.Exists(takeKeys))
+                foreach (KeyParam p in TakeKeys.Read(takeKeys))
+                    if (p.Keys.Count > 0) work.Add(Tuple.Create(p.Line, p.Whole, p.Keys));
+            var taken = new HashSet<string>(work.Select(x => x.Item1));
             Application.Current.Dispatcher.Invoke(new Action(() =>
             {
                 List<KnobPanel> pages;
@@ -483,7 +567,7 @@ namespace ReludualiConsole
                 foreach (KnobPanel p in pages)
                     if (p.Playing)
                         foreach (var kv in p._tracks)
-                            if (kv.Value.Count > 0)
+                            if (kv.Value.Count > 0 && !taken.Contains(kv.Key.Line))
                                 work.Add(Tuple.Create(kv.Key.Line, kv.Key.Whole, kv.Value.Select(x => new MoveKey { Tick = x.Tick, V = (double[])x.V.Clone() }).ToList()));
             }));
             if (work.Count == 0 || step <= 0 || end < start) return null;
@@ -812,6 +896,19 @@ namespace ReludualiConsole
             SendFile(Path.Combine(PresetFolder, f));
         }
 
+        private void SaveOver()
+        {
+            string f = _presets.SelectedItem as string;
+            if (f == null) { SavePreset(); return; }
+            try
+            {
+                string path = Path.Combine(PresetFolder, f);
+                File.WriteAllText(path, AsCfg(), new UTF8Encoding(false));
+                _status.Text = "Saved over " + f + ".";
+            }
+            catch (Exception ex) { App.Note("saving a preset", ex); _status.Text = "Could not save: " + ex.Message; }
+        }
+
         private void SavePreset()
         {
             string name = Ask.Text(Window.GetWindow(this), "Save " + _name + " preset", "Name:", "");
@@ -839,6 +936,27 @@ namespace ReludualiConsole
         private static readonly List<KnobPanel> All = new List<KnobPanel>();
         private static string _globalPicked;
         private static event Action GlobalsChanged;
+
+        // ---- for the CFG page's Global CFG view (2026-10-18) ----
+        public static string GlobalsFolder { get { return GlobalFolder; } }
+        /// <summary>The Global CFG every page shows (null: none picked); set, every page follows.</summary>
+        public static string PickedGlobal
+        {
+            get { return _globalPicked; }
+            set { _globalPicked = value; if (GlobalsChanged != null) GlobalsChanged(); }
+        }
+        public static event Action PickedGlobalChanged { add { GlobalsChanged += value; } remove { GlobalsChanged -= value; } }
+        public static Dictionary<string, string> ReadGlobalFile(string file) { return ReadGlobal(file); }
+        public static void WriteGlobalFile(string file, Dictionary<string, string> sections) { WriteGlobal(file, sections); if (GlobalsChanged != null) GlobalsChanged(); }
+        /// <summary>Sends the picked Global CFG to every page it holds (Load everywhere), from any page that is there.</summary>
+        public static string LoadPickedEverywhere()
+        {
+            KnobPanel first;
+            lock (All) first = All.FirstOrDefault();
+            if (first == null) return "no look pages";
+            first.LoadGlobal();
+            return first._status.Text;
+        }
         private Action _onGlobals;
         private ComboBox _globals;
 
@@ -856,7 +974,9 @@ namespace ReludualiConsole
         private UIElement GlobalBar()
         {
             var bar = new WrapPanel { Margin = new Thickness(0, 0, 0, 6) };
-            bar.Children.Add(new TextBlock { Text = "Global look", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 6), Foreground = Ui.Brush("Dim"),
+            // the words (2026-10-18, Mycelium: "Send SSAO to global CFG. Because that just makes more sense ... less vague than send
+            // this page to it")
+            bar.Children.Add(new TextBlock { Text = "Global CFG", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 6), Foreground = Ui.Brush("Dim"),
                                              ToolTip = "One look for every page: Look, Fog, Sun, SSAO, DOF, Sky, Theater and Custom in one preset" });
             _globals = new ComboBox { MinWidth = 210, Margin = new Thickness(0, 0, 8, 6), ToolTip = "Your global looks (Presets\\GLOBAL beside the Designer)" };
             _globals.SelectionChanged += (s, e) =>
@@ -868,8 +988,8 @@ namespace ReludualiConsole
             };
             bar.Children.Add(_globals);
             bar.Children.Add(Ui.Primary(Btn("Load everywhere", (s, e) => LoadGlobal(), "Send the picked global look to every page it holds")));
-            bar.Children.Add(Btn("Save this page to it", (s, e) => SaveToGlobal(_globalPicked), "Put this page's sliders into the picked global look (its old " + _name + " part is replaced)"));
-            bar.Children.Add(Btn("New global look...", (s, e) => NewGlobal(), "A new global look from every page you have opened"));
+            bar.Children.Add(Btn("Send " + _name + " to Global CFG", (s, e) => SaveToGlobal(_globalPicked), "Put this page's sliders into the picked Global CFG (its old " + _name + " part is replaced)"));
+            bar.Children.Add(Btn("New Global CFG...", (s, e) => NewGlobal(), "A new Global CFG from every page you have opened"));
             _onGlobals = () => Dispatcher.BeginInvoke(new Action(ListGlobals));
             GlobalsChanged += _onGlobals;
             ListGlobals();
@@ -920,7 +1040,7 @@ namespace ReludualiConsole
 
         private void SaveToGlobal(string name)
         {
-            if (name == null) { _status.Text = "Pick a global look first, or make one with New global look."; return; }
+            if (name == null) { _status.Text = "Pick a Global CFG first, or make one with New Global CFG."; return; }
             try
             {
                 string file = Path.Combine(GlobalFolder, name + ".cfg");
@@ -992,7 +1112,7 @@ namespace ReludualiConsole
                 _globalPicked = name;
                 if (GlobalsChanged != null) GlobalsChanged();
                 _status.Text = "Made the global look \"" + name + "\" from " + string.Join(", ", opened.Select(p => p._name)) + "."
-                             + (notYet.Count > 0 ? " Not in it (not opened yet): " + string.Join(", ", notYet) + ". Open one and press Save this page to it." : "");
+                             + (notYet.Count > 0 ? " Not in it (not opened yet): " + string.Join(", ", notYet) + ". Open one and press Send ... to Global CFG." : "");
             }
             catch (Exception ex) { App.Note("making a global look", ex); _status.Text = "Could not save: " + ex.Message; }
         }
@@ -1004,7 +1124,8 @@ namespace ReludualiConsole
             List<KnobPanel> pages;
             lock (All) pages = All.ToList();
             var plan = sections.Select(kv => new { Page = pages.FirstOrDefault(p => string.Equals(p._name, kv.Key, StringComparison.OrdinalIgnoreCase)), Name = kv.Key, Text = kv.Value }).ToList();
-            string missing = string.Join(", ", plan.Where(x => x.Page == null).Select(x => x.Name));
+            // its RECORDING part is the batch's (how its takes record), not a page's
+            string missing = string.Join(", ", plan.Where(x => x.Page == null && !x.Name.Equals(RecordingSettings.Section, StringComparison.OrdinalIgnoreCase)).Select(x => x.Name));
             _status.Text = "Loading the global look \"" + _globalPicked + "\"...";
             string look = _globalPicked;
             ThreadPool.QueueUserWorkItem(_ =>

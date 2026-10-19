@@ -5,10 +5,12 @@ Written with an External Cortex, courtesy of Anthropic.
 Moviemaking for Black Ops II on Redacted: your films, their look, your cameras and the recording, in one window,
 with the game sitting inside it.
 
-**Version 0.7.2.** New since 0.7.1: the Batch finds ffmpeg by itself (an empty ffmpeg box no longer fails every take).
-Since 0.7.0: the Reluduali Theater launch no longer stops on an "[EXE_UI_ERROR]" box; a second Theater launch while
-the Designer is open works; a **Sign in** button with an **Account** page; **Share to reluduali.com** for your looks,
-presets, CFGs and camos; an update notifier.
+**Version 0.7.8.** New since 0.7.2: the **Camo Editor** inside the Designer (Dress > Camo Editor): paint a gun's camo
+on its picture or on the gun in 3D, or a sky, and send it to the running game; the Designer fetches what it needs on
+first use and says when something is missing. The timeline has a **loop bracket** the game keeps playing, POV in/out
+markers on their own lane, snapping and zoom; keyframes per take; the game's own camera views reached from any state;
+a cinematic looped in the game's Dolly Camera; the Batch page with a Looks shelf, a Global CFG per take, depth per
+take and PNG sequences.
 
 - [What it does](#what-it-does)
 - [Download](#download)
@@ -52,9 +54,9 @@ The full guide, tool by tool, is in **[docs/GUIDE.md](docs/GUIDE.md)**.
 
 ## Download
 
-Get **ReludualiSetup-0.7.2.exe** (or **ReludualiSetup-0.7.2-maps.exe**, with the 31 maps' 3D shapes included) from the
-[latest release](https://github.com/HarryShire/reluduali/releases/latest), or from
+Get **ReludualiSetup-0.7.8.exe** (or **ReludualiSetup-0.7.8-maps.exe**, with the 31 maps' 3D shapes included) from
 [reluduali.com](https://reluduali.com). One file: the Designer, its game plugin and the Reluduali panel for Lumit.
+This repository holds the source; the installers are on the site, not in GitHub releases.
 
 ## Requirements
 
@@ -70,7 +72,7 @@ Get **ReludualiSetup-0.7.2.exe** (or **ReludualiSetup-0.7.2-maps.exe**, with the
 ## Install
 
 1. **Close the game.**
-2. Run **ReludualiSetup-0.7.2.exe** (or the -maps one). It installs for your Windows user only: nothing needs an administrator.
+2. Run **ReludualiSetup-0.7.8.exe** (or the -maps one). It installs for your Windows user only: nothing needs an administrator.
 3. Check the choices:
    - **Redacted's folder**: the one with `t6mpv43.exe`. It is filled in when Redacted is in Steam's usual folder;
      otherwise type it or press **Choose...**.

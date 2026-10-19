@@ -5725,16 +5725,19 @@ static int ImgBlockBytes(DXGI_FORMAT f)
     }
 }
 
-// a DDS file's 2D texture: format, size, mips, and each mip's bytes (pointers into the file's own buffer)
+// a DDS file's 2D texture: format, size, mips, and each mip's bytes (pointers into the file's own buffer). dev53: a cube
+// map too (caps2 0x200 with all six faces 0xFC00, or a DX10 header's TEXTURECUBE): six faces, each its mips, face after
+// face, as D3D numbers the subresources (mip + face x mips) - a map's sky (2026-10-18, the Camo Editor's "Paint a sky")
 static bool ImgLoadDds(const BYTE *b, size_t size, D3D11_TEXTURE2D_DESC *d, D3D11_SUBRESOURCE_DATA *sub, int subCap, char *why, size_t cap)
 {
     if (size < 128 || memcmp(b, "DDS ", 4)) { strcpy_s(why, cap, "not a DDS file"); return false; }
-    DWORD h = *(DWORD *)(b + 12), w = *(DWORD *)(b + 16), mips = *(DWORD *)(b + 28);
+    DWORD h = *(DWORD *)(b + 12), w = *(DWORD *)(b + 16), mips = *(DWORD *)(b + 28), caps2 = *(DWORD *)(b + 112);
+    bool cube = (caps2 & 0x200) && (caps2 & 0xFC00) == 0xFC00;
     DWORD pff = *(DWORD *)(b + 80), four = *(DWORD *)(b + 84), bits = *(DWORD *)(b + 88), rm = *(DWORD *)(b + 92), bm = *(DWORD *)(b + 100);
     size_t at = 128;
     DXGI_FORMAT f = DXGI_FORMAT_UNKNOWN;
     if (pff & 4) {                                             // a FourCC
-        if (four == MAKEFOURCC('D', 'X', '1', '0')) { if (size < 148) { strcpy_s(why, cap, "a short DX10 header"); return false; } f = (DXGI_FORMAT)*(DWORD *)(b + 128); at = 148; }
+        if (four == MAKEFOURCC('D', 'X', '1', '0')) { if (size < 148) { strcpy_s(why, cap, "a short DX10 header"); return false; } f = (DXGI_FORMAT)*(DWORD *)(b + 128); at = 148; if (*(DWORD *)(b + 136) & 0x4) cube = true; }
         else if (four == MAKEFOURCC('D', 'X', 'T', '1')) f = DXGI_FORMAT_BC1_UNORM;
         else if (four == MAKEFOURCC('D', 'X', 'T', '3')) f = DXGI_FORMAT_BC2_UNORM;
         else if (four == MAKEFOURCC('D', 'X', 'T', '5')) f = DXGI_FORMAT_BC3_UNORM;
@@ -5744,19 +5747,25 @@ static bool ImgLoadDds(const BYTE *b, size_t size, D3D11_TEXTURE2D_DESC *d, D3D1
     else if (bits == 32) f = rm == 0x000000FF ? DXGI_FORMAT_R8G8B8A8_UNORM : bm == 0x000000FF ? DXGI_FORMAT_B8G8R8A8_UNORM : DXGI_FORMAT_UNKNOWN;
     if (f == DXGI_FORMAT_UNKNOWN) { _snprintf_s(why, cap, _TRUNCATE, "a DDS format this build does not read (fourcc %08lX, %lu bits)", four, bits); return false; }
     if (!mips) mips = 1;
-    if ((int)mips > subCap) mips = subCap;
+    UINT faces = cube ? 6 : 1;
+    if (cube && w != h) { strcpy_s(why, cap, "a cube map's faces must be square"); return false; }
+    if ((int)(mips * faces) > subCap) { if (cube) { strcpy_s(why, cap, "a cube map with more mips than this build takes"); return false; } mips = subCap; }
     int block = ImgBlockBytes(f), bpp = block ? 0 : 4;
-    UINT mw = w, mh = h;
-    for (UINT m = 0; m < mips; m++) {
-        UINT pitch = block ? max(1u, (mw + 3) / 4) * block : mw * bpp, rows = block ? max(1u, (mh + 3) / 4) : mh;
-        if (at + (size_t)pitch * rows > size) { _snprintf_s(why, cap, _TRUNCATE, "the DDS ends inside mip %u", m); return false; }
-        sub[m].pSysMem = b + at; sub[m].SysMemPitch = pitch; sub[m].SysMemSlicePitch = pitch * rows;
-        at += (size_t)pitch * rows;
-        mw = max(1u, mw / 2); mh = max(1u, mh / 2);
+    for (UINT face = 0; face < faces; face++) {
+        UINT mw = w, mh = h;
+        for (UINT m = 0; m < mips; m++) {
+            UINT pitch = block ? max(1u, (mw + 3) / 4) * block : mw * bpp, rows = block ? max(1u, (mh + 3) / 4) : mh;
+            if (at + (size_t)pitch * rows > size) { _snprintf_s(why, cap, _TRUNCATE, "the DDS ends inside mip %u%s", m, cube ? " of a face" : ""); return false; }
+            D3D11_SUBRESOURCE_DATA &s = sub[face * mips + m];
+            s.pSysMem = b + at; s.SysMemPitch = pitch; s.SysMemSlicePitch = pitch * rows;
+            at += (size_t)pitch * rows;
+            mw = max(1u, mw / 2); mh = max(1u, mh / 2);
+        }
     }
     memset(d, 0, sizeof(*d));
-    d->Width = w; d->Height = h; d->MipLevels = mips; d->ArraySize = 1; d->Format = f; d->SampleDesc.Count = 1;
+    d->Width = w; d->Height = h; d->MipLevels = mips; d->ArraySize = faces; d->Format = f; d->SampleDesc.Count = 1;
     d->Usage = D3D11_USAGE_IMMUTABLE; d->BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    if (cube) d->MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
     return true;
 }
 
@@ -5771,9 +5780,18 @@ static void ImgSwapCmd(const char *name, const char *file, char *out, size_t cap
     bool read = b && fread(b, 1, size, f) == (size_t)size;
     fclose(f);
     if (!read) { free(b); _snprintf_s(out, cap, _TRUNCATE, "error cannot read %s", file); return; }
-    D3D11_TEXTURE2D_DESC d; D3D11_SUBRESOURCE_DATA sub[16]; char why[200];
-    if (!ImgLoadDds(b, size, &d, sub, 16, why, sizeof(why))) { free(b); _snprintf_s(out, cap, _TRUNCATE, "error %s: %s", file, why); return; }
+    D3D11_TEXTURE2D_DESC d; D3D11_SUBRESOURCE_DATA sub[96]; char why[200];
+    if (!ImgLoadDds(b, size, &d, sub, 96, why, sizeof(why))) { free(b); _snprintf_s(out, cap, _TRUNCATE, "error %s: %s", file, why); return; }
     ID3D11ShaderResourceView *theirs = *(ID3D11ShaderResourceView **)rec;
+    // dev53: a cube image (a sky) takes only a cube, and a flat one only a flat one: the game's shader samples it as it is
+    D3D11_SHADER_RESOURCE_VIEW_DESC tv = {}; bool seen = false;
+    __try { theirs->GetDesc(&tv); seen = true; } __except (EXCEPTION_EXECUTE_HANDLER) { seen = false; }
+    bool theirsCube = seen && tv.ViewDimension == D3D11_SRV_DIMENSION_TEXTURECUBE, oursCube = (d.MiscFlags & D3D11_RESOURCE_MISC_TEXTURECUBE) != 0;
+    if (seen && theirsCube != oursCube) {
+        free(b);
+        _snprintf_s(out, cap, _TRUNCATE, "error \"%s\" is %s, and %s is %s: nothing swapped", name, theirsCube ? "a cube map (a sky: six faces)" : "a flat picture", file, oursCube ? "a cube map" : "a flat picture");
+        return;
+    }
     ID3D11Device *dev = NULL;
     __try { theirs->GetDevice(&dev); } __except (EXCEPTION_EXECUTE_HANDLER) { dev = NULL; }
     if (!dev) { free(b); _snprintf_s(out, cap, _TRUNCATE, "error the image's view has no device"); return; }
@@ -5799,8 +5817,8 @@ static void ImgSwapCmd(const char *name, const char *file, char *out, size_t cap
     InterlockedExchangePointer((void **)rec, mine);            // the next frame draws with it
     g_imgSwaps[i].mine = mine;
     if (was) { Sleep(100); was->Release(); was->Release(); }   // an earlier swap of ours (and the game's ref on it), after the frame that may still use it
-    Log("img: %s swapped (record %p) for %s, %ux%u format %u %u mips", name, rec, file, d.Width, d.Height, (UINT)d.Format, d.MipLevels);
-    _snprintf_s(out, cap, _TRUNCATE, "ok %s now draws %s (%ux%u, format %u, %u mips); \"img restore %s\" puts the game's back", name, file, d.Width, d.Height, (UINT)d.Format, d.MipLevels, name);
+    Log("img: %s swapped (record %p) for %s, %ux%u format %u %u mips%s", name, rec, file, d.Width, d.Height, (UINT)d.Format, d.MipLevels, d.ArraySize == 6 ? ", a cube" : "");
+    _snprintf_s(out, cap, _TRUNCATE, "ok %s now draws %s (%ux%u%s, format %u, %u mips); \"img restore %s\" puts the game's back", name, file, d.Width, d.Height, d.ArraySize == 6 ? " x 6 faces" : "", (UINT)d.Format, d.MipLevels, name);
 }
 
 static void ImgRestore(const char *name, char *out, size_t cap)

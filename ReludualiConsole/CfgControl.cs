@@ -154,7 +154,12 @@ namespace ReludualiConsole
             boxPanel.Children.Add(boxButtons);
             boxPanel.Children.Add(_box);
             root.Children.Add(boxPanel);
-            Content = root;
+            // 2026-10-18 (Mycelium: "redesign the CFG feature to just include the global CFG"): the Global CFG first, all of it in
+            // one place; the console line, the timescale and CFG files on their own tab
+            Content = new Border { Margin = new Thickness(12, 0, 12, 0), Child = Ui.Tabs(Tuple.Create("Global CFG", (UIElement)new GlobalCfgView { Margin = new Thickness(0, 4, 0, 0) }), Tuple.Create("Commands and CFG files", (UIElement)root)) };
+
+
+
 
             _pop.Child = _list;
             _pop.PlacementTarget = _cmd;
@@ -316,9 +321,8 @@ namespace ReludualiConsole
 
         private void AddFolder()
         {
-            var dlg = new Microsoft.Win32.OpenFileDialog { Title = "Pick any file in the folder to add", Filter = "CFG (*.cfg)|*.cfg|All files|*.*" };
-            if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;
-            string folder = Path.GetDirectoryName(dlg.FileName);
+            string folder = FolderPicker.Pick(Window.GetWindow(this), "A folder of CFGs to add to the library");
+            if (folder == null) return;
             try { File.AppendAllText(Folders, folder + Environment.NewLine); ListLibrary(); _status.Text = "Added " + folder; }
             catch (Exception ex) { _status.Text = "Could not add: " + ex.Message; }
         }

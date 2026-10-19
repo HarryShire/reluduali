@@ -103,6 +103,19 @@ namespace ReludualiConsole
                 }
                 File.AppendAllText(Path.Combine(outDir, "camqueue.txt"), "\r\n" + log);
                 CamQueueControl.Instance.TourPipe("view default");
+                // the same queue on the POV Queue and on the Batch page (2026-10-18): its POV takes; every take, a take picked,
+                // the page scrolled down to the take list
+                win.ShowTool("povqueue");
+                Pump(600);
+                Shot(root, outDir, (n++).ToString("00") + "-povqueue-queue", w, h);
+                win.ShowTool("batch");
+                Pump(1200);
+                Shot(root, outDir, (n++).ToString("00") + "-batch-queue", w, h);
+                var grid = Find<DataGrid>(root);
+                if (grid != null && grid.Items.Count > 0) { grid.SelectedIndex = Math.Min(1, grid.Items.Count - 1); Pump(500); }
+                var sv = Find<ScrollViewer>(win.PageForTour("batch") as DependencyObject);
+                if (sv != null) { sv.ScrollToEnd(); Pump(600); }
+                Shot(root, outDir, (n++).ToString("00") + "-batch-takes", w, h);
             }
             // the workspace layouts (no game in the tour: the slot shows where it goes)
             win.ShowTool("fog");
@@ -117,6 +130,15 @@ namespace ReludualiConsole
             Glyphs(outDir);
             host.Dispose();
             return 0;
+        }
+
+        /// <summary>The first element of a type in a visual tree (itself included), or null.</summary>
+        static T Find<T>(DependencyObject d) where T : DependencyObject
+        {
+            if (d == null) return null;
+            if (d is T) return (T)d;
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++) { T f = Find<T>(VisualTreeHelper.GetChild(d, i)); if (f != null) return f; }
+            return null;
         }
 
         /// <summary>Lets the dispatcher run for a while: layout, Loaded, work posted back from other threads.</summary>

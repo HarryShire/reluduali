@@ -284,6 +284,13 @@ namespace ReludualiConsole
                     Fov = d.ContainsKey("fov") ? Convert.ToDouble(d["fov"], CultureInfo.InvariantCulture) : 65
                 };
                 if (d.ContainsKey("look")) { m.LX = at("look", 0); m.LY = at("look", 1); m.LZ = at("look", 2); }
+                // the raw 96 bytes as read, so a file written again (the timeline's moves) keeps the words not decoded yet
+                string raw = d.ContainsKey("raw") && d["raw"] != null ? d["raw"].ToString() : "";
+                if (raw.Length == CamPaths.MarkerStride * 2)
+                {
+                    m.Raw = new byte[CamPaths.MarkerStride];
+                    for (int k = 0; k < m.Raw.Length; k++) m.Raw[k] = Convert.ToByte(raw.Substring(k * 2, 2), 16);
+                }
                 if (d.ContainsKey("pitch") && d.ContainsKey("yaw"))
                 {
                     m.Pitch = Convert.ToDouble(d["pitch"], CultureInfo.InvariantCulture);

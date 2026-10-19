@@ -170,7 +170,11 @@ namespace ReludualiConsole
         {
             var p = new KnobPanel("DOF", "Depth of field from these values. The game ignores the values until the tweak is on: the switch " +
                                          "turns on both (r_dof_enable and r_dof_tweak).", "dof");
+            // 2026-10-18 (Mycelium: "The doff doesn't work ... Oh, so it has to have depth of field with these values on"): a slider
+            // moved turns the switch on by itself; "where's the blur amount?": the bias, first and named for what it does
             p.Toggle("Depth of field with these values", "r_dof_enable 1; r_dof_tweak 1", "r_dof_tweak 0", "r_dof_tweak")
+             .SwitchedOnByMoves()
+             .Add("Blur amount", "r_dof_bias {0}", "r_dof_bias", V(0.5), V(0.1), V(3), null, "How strongly the blur grows away from the sharp distance (r_dof_bias): higher is blurrier")
              .Heading("Near")
              .Add("Near blur", "r_dof_nearBlur {0}", "r_dof_nearBlur", V(6), V(4), V(10))
              .Add("Near start", "r_dof_nearStart {0}", "r_dof_nearStart", V(10), V(0), V(1000))
@@ -183,7 +187,6 @@ namespace ReludualiConsole
              .Add("Gun start", "r_dof_viewModelStart {0}", "r_dof_viewModelStart", V(2), V(0), V(128))
              .Add("Gun end", "r_dof_viewModelEnd {0}", "r_dof_viewModelEnd", V(8), V(0), V(128))
              .Heading("Quality")
-             .Add("Bias", "r_dof_bias {0}", "r_dof_bias", V(0.5), V(0.1), V(3))
              .Whole("HDR depth of field", "r_dofHDR {0}", "r_dofHDR", 0, 0, 2);
             return p;
         }

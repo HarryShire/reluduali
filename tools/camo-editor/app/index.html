@@ -1,0 +1,2647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Camo Editor</title>
+<!--
+  The Camo Editor (prototype 0.2, 2026-10-17). Mycelium: "Live camo swap works. - So essentially we can fork/steal an
+  isolated version of Myejos photo editor and make a camo editor within the console itself?" Then: "the Inbuilt
+  Console Viewer should be paintable itself and render at a pretty decent quality, rotate, zoom, pan, etc. Add
+  additional tools the photo editor is lacking like blending modes, spray paint, texture paint randomizer brushes,
+  isolating sections to avoid painting in them (Green Scotch Tape Icon - Temp). New Layer Buttons, Logical Additions
+  and Conclusions and things People would reach for from this as well as a way to upload their designs to their
+  Reluduali Website Account".
+
+  A gun's image opens as the bottom layer, locked: the game's own picture is never painted on (a stroke on it starts
+  a paint layer above it). Layers move, scale, fade, blend (16 modes), hide, reorder, take a colour adjustment, merge,
+  duplicate, tile; every step undoes. That is Myejo's editor at heart: its document is app/layers.js and its layered
+  save app/psd.js, both taken unchanged (FORKED-FROM.md); this page is ours.
+
+  PAINTING, on the flat picture or on the gun in 3D, with the same brushes (app/paint.js): Brush (soft to hard),
+  Spray (a can's dots), Randomizer (stamps thrown with jittered size, turn, hue, lightness, opacity), Eraser, Fill a
+  part, Eyedropper. On the gun the brush is projected onto the picture (app/view3d.js), so it lands where it is seen.
+  TAPE (the green tape, temporary): painted on, peeled off, or a whole part taped (or every part but one: Isolate) by a
+  click on it. Paint never lands under tape. Tape is never saved into the game's files.
+
+  A game texture's alpha is data, not transparency (a camo's mask or gloss), so the picture is edited opaque and its
+  own alpha put back on save; "Alpha" shows it. It saves as a .dds with every mip (what RipperBridge's img swap reads)
+  and an .iwi carrying the replaced image's header (what a build installs), plus a .psd that keeps the layers. Publish
+-->
+<style>
+  :root {
+    /* The Console's own (ReludualiConsole\Theme.xaml, his ChromePurpV6 spec), so the page sits in it unchanged. */
+    --back: #130E14; --panel: #1E1720; --raised: #2B212E; --inset: #171119; --line: #4B3950;
+    --text: #DDD3EC; --dim: #9D96A8; --chrome: #F7F2FF; --accent: #C573FF; --accent-pale: #E9C9FF;
+    --accent-deep: #A020F0; --good: #5FDDA0; --bad: #FF6482; --warn: #F2C35A; --selected: #3A2148;
+    --tape: #5AD84F;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--back); color: var(--text); font: 13px/1.4 "Segoe UI", system-ui, sans-serif;
+    display: grid; grid-template-rows: auto auto 1fr auto; overflow: hidden;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button {
+    background: var(--raised); border: 1px solid var(--line); border-radius: 4px; padding: 4px 12px; cursor: pointer;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-pale); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--accent-deep); border-color: var(--accent-deep); color: var(--chrome); }
+  button.primary:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: var(--back); }
+  input[type=text], input:not([type]), input[type=number], textarea, select {
+    background: var(--inset); border: 1px solid var(--line); border-radius: 4px; padding: 3px 6px; min-width: 0;
+  }
+  input[type=range] { accent-color: var(--accent); }
+  input:focus, select:focus, textarea:focus, button:focus-visible { outline: 1px solid var(--accent); outline-offset: 0; }
+  [hidden] { display: none !important; }
+
+  .top {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 7px 10px;
+    background: var(--panel); border-bottom: 1px solid var(--line);
+  }
+  .brand { letter-spacing: .14em; color: var(--chrome); margin-right: 4px; font-size: 12px; }
+  #path { flex: 1 1 220px; font-family: "Cascadia Mono", Consolas, monospace; font-size: 12px; }
+  .seg { display: inline-flex; }
+  .seg button { border-radius: 0; padding: 4px 9px; }
+  .seg button:first-child { border-radius: 4px 0 0 4px; }
+  .seg button:last-child { border-radius: 0 4px 4px 0; }
+  .seg button + button { border-left: 0; }
+  .seg button[aria-pressed=true] { background: var(--selected); border-color: var(--accent); color: var(--chrome); }
+  .img { display: inline-flex; gap: 6px; align-items: center; color: var(--dim); }
+  #imgname { width: 250px; font-family: "Cascadia Mono", Consolas, monospace; font-size: 12px; color: var(--chrome); }
+  #model { max-width: 230px; }
+
+  /* the tool's options, under the bar */
+  .opts {
+    display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; padding: 5px 10px; min-height: 36px;
+    background: var(--inset); border-bottom: 1px solid var(--line); color: var(--dim); font-size: 12px;
+  }
+  .opts label { display: inline-flex; gap: 6px; align-items: center; white-space: nowrap; }
+  .opts input[type=range] { width: 90px; }
+  .opts output { color: var(--text); min-width: 30px; }
+  .opts .tname { color: var(--chrome); font-weight: 600; letter-spacing: .04em; }
+  .opts input[type=color] { width: 30px; height: 22px; padding: 0; border: 1px solid var(--line); background: none; border-radius: 3px; }
+  .swatches { display: inline-flex; gap: 3px; }
+  .swatches i { width: 14px; height: 14px; border-radius: 2px; border: 1px solid var(--line); cursor: pointer; }
+
+  .work { display: flex; min-height: 0; }
+  .rail {
+    flex: none; width: 44px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0;
+    background: var(--panel); border-right: 1px solid var(--line);
+  }
+  .rail button { width: 34px; height: 34px; padding: 0; display: grid; place-items: center; color: var(--dim); }
+  .rail button[aria-pressed=true] { background: var(--selected); border-color: var(--accent); color: var(--chrome); }
+  .rail hr { width: 26px; border: 0; border-top: 1px solid var(--line); margin: 3px 0; }
+  .rail .tape { color: var(--tape); }
+
+  .stage {
+    position: relative; flex: 1; overflow: hidden; background: var(--inset); outline: none; touch-action: none;
+    user-select: none; min-width: 120px;
+  }
+  .stage.panning, .stage.panning * { cursor: grab !important; }
+  .stage.painting { cursor: none; }
+  .doc {
+    position: absolute; left: 0; top: 0; transform-origin: 0 0; overflow: hidden; pointer-events: none;
+    isolation: isolate; background: repeating-conic-gradient(#2b2b2b 0 25%, #202020 0 50%) 0 0 / 16px 16px;
+  }
+  .doc.pixels canvas, canvas.over.pixels { image-rendering: pixelated; }
+  .doc canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  canvas.over { position: absolute; left: 0; top: 0; transform-origin: 0 0; pointer-events: none; }
+  canvas.tapeview { opacity: .55; }
+  .sel { position: absolute; border: 1px solid var(--accent); box-shadow: 0 0 0 1px rgba(0,0,0,.5); pointer-events: none; }
+  .sel i { position: absolute; width: 9px; height: 9px; background: var(--back); border: 1px solid var(--accent); pointer-events: auto; }
+  .sel [data-h=nw] { left: -5px; top: -5px; cursor: nwse-resize; }
+  .sel [data-h=ne] { right: -5px; top: -5px; cursor: nesw-resize; }
+  .sel [data-h=sw] { left: -5px; bottom: -5px; cursor: nesw-resize; }
+  .sel [data-h=se] { right: -5px; bottom: -5px; cursor: nwse-resize; }
+  .cursor {
+    position: absolute; border: 1px solid rgba(255,255,255,.85); border-radius: 50%; pointer-events: none;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.6); transform: translate(-50%, -50%); z-index: 5;
+  }
+  .cursor.tapecur { border-color: var(--tape); }
+  .empty {
+    position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: 6px; color: var(--dim);
+    padding: 24px;
+  }
+  .empty b { color: var(--chrome); font-weight: 600; font-size: 15px; }
+  .drop {
+    position: absolute; inset: 12px; display: grid; place-items: center; pointer-events: none;
+    border: 2px dashed var(--accent); border-radius: 6px; color: var(--accent-pale);
+    background: color-mix(in srgb, var(--back) 55%, transparent);
+  }
+  .drop span { background: var(--panel); padding: 6px 14px; border-radius: 4px; }
+  canvas.uv { position: absolute; left: 0; top: 0; pointer-events: none; }
+
+  .v3d { position: relative; flex: 0 0 42%; min-width: 240px; border-left: 1px solid var(--line); background: #130e14; overflow: hidden; }
+  .work.only3d .stage { display: none; }
+  .work.only3d .v3d { flex: 1; }
+  .work.only2d .v3d { display: none; }
+  .v3d canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+  .v3d.orbit canvas { cursor: grab; }
+  .v3d.painting canvas { cursor: none; }
+  .v3dnote { position: absolute; left: 8px; bottom: 6px; right: 8px; color: var(--dim); font-size: 11px; pointer-events: none; }
+  .v3dtools { position: absolute; right: 8px; top: 8px; display: flex; gap: 4px; }
+  .v3dtools button { padding: 2px 8px; font-size: 12px; background: color-mix(in srgb, var(--raised) 85%, transparent); }
+
+  .layers {
+    width: 290px; flex: none; display: flex; flex-direction: column; background: var(--panel);
+    border-left: 1px solid var(--line); min-height: 0;
+  }
+  .lh { display: flex; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid var(--line);
+        color: var(--dim); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+  .lbtns { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  .lbtns button { padding: 2px 7px; font-size: 12px; }
+  .ll { flex: 1; overflow: auto; min-height: 0; }
+  .lnone { padding: 10px; color: var(--dim); }
+  .layer {
+    display: grid; grid-template-columns: 20px 56px minmax(0, 1fr) 20px 20px; align-items: center;
+    column-gap: 6px; row-gap: 3px; padding: 7px 10px; border-bottom: 1px solid var(--line);
+  }
+  .layer.on { background: var(--selected); }
+  .layer.off .ln, .layer.off .lt { opacity: .45; }
+  .layer.dropabove { box-shadow: inset 0 2px 0 var(--accent); }
+  .layer.dropbelow { box-shadow: inset 0 -2px 0 var(--accent); }
+  .layer button { display: grid; place-items: center; padding: 0; border: 0; background: none; color: var(--dim); }
+  .layer button:hover { color: var(--accent); }
+  .layer button.on { color: var(--chrome); }
+  .lt { width: 56px; height: 40px; display: grid; place-items: center; background: var(--inset); border-radius: 2px; overflow: hidden; }
+  .ln { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lrow2 { grid-column: 2 / -1; display: flex; gap: 6px; align-items: center; }
+  .lrow2 select { padding: 1px 2px; font-size: 12px; }
+  .lrow2 input[type=range] { flex: 1; min-width: 0; }
+  .lov { width: 34px; text-align: right; color: var(--dim); font-size: 12px; }
+  .adj { border-top: 1px solid var(--line); padding: 6px 10px; display: grid; grid-template-columns: auto 1fr 40px; gap: 3px 8px; align-items: center; font-size: 12px; color: var(--dim); }
+  .adj b { grid-column: 1 / -1; color: var(--text); font-weight: 600; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+  .adj output { text-align: right; }
+  .lf { margin: 0; padding: 8px 10px; color: var(--dim); font-size: 12px; border-top: 1px solid var(--line); }
+
+  .bar {
+    display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; padding: 6px 10px; min-height: 32px;
+    background: var(--panel); border-top: 1px solid var(--line); color: var(--dim); font-size: 12px;
+  }
+  .bar .name { color: var(--chrome); }
+  .bar .dirty { color: var(--warn); }
+  .bar .bad { color: var(--bad); }
+  .bar .good { color: var(--good); }
+  .bar code { font-family: "Cascadia Mono", Consolas, monospace; color: var(--text); user-select: text; }
+  .bar button { padding: 1px 8px; font-size: 12px; }
+  .bar .hint { margin-left: auto; }
+
+  /* menus, pop-ups, toasts, the welcome screen, the colour picker, the history */
+  .menuwrap { position: relative; display: inline-block; }
+  .pop {
+    position: absolute; top: calc(100% + 4px); left: 0; z-index: 30; min-width: 280px; display: flex; flex-direction: column;
+    gap: 4px; padding: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.45);
+  }
+  .pop > button { text-align: left; }
+  .pop .prow { display: flex; gap: 4px; }
+  .pop .prow input { flex: 1; font-family: "Cascadia Mono", Consolas, monospace; font-size: 12px; }
+  .pop h4 { margin: 6px 2px 0; color: var(--dim); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; }
+  .recent { display: flex; flex-direction: column; gap: 2px; }
+  .recent button { text-align: left; background: none; border-color: transparent; padding: 3px 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .recent button small { color: var(--dim); margin-left: 6px; }
+  .top .sep { width: 1px; align-self: stretch; background: var(--line); margin: 2px 4px; }
+  .top .grow { flex: 1 1 0; }
+  .ibtn { padding: 3px 7px; display: inline-grid; place-items: center; }
+  #toasts { position: fixed; right: 14px; bottom: 44px; display: flex; flex-direction: column; gap: 8px; z-index: 50; max-width: min(460px, 90vw); }
+  .toast {
+    background: var(--raised); border: 1px solid var(--line); border-left: 3px solid var(--good); border-radius: 6px;
+    padding: 9px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.4); display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    animation: toastin .18s ease-out;
+  }
+  .toast.bad { border-left-color: var(--bad); }
+  .toast.info { border-left-color: var(--accent); }
+  .toast span { flex: 1 1 200px; }
+  .toast button { padding: 2px 10px; }
+  @keyframes toastin { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .welcome { width: min(980px, 96%); max-height: 100%; overflow: auto; text-align: left; padding: 8px; }
+  .welcome h2 { margin: 0 0 4px; color: var(--chrome); font-weight: 600; font-size: 20px; }
+  .welcome .lead { margin: 0 0 12px; color: var(--dim); }
+  .welcome .wrow { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+  .welcome .wrow input { flex: 1 1 260px; }
+  .gungrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .gun {
+    display: flex; flex-direction: column; gap: 4px; padding: 6px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--panel); cursor: pointer; text-align: left; color: var(--text);
+  }
+  .gun:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .gun img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; background: var(--inset); }
+  .gun b { font-weight: 600; text-transform: capitalize; font-size: 12px; }
+  .gun small { color: var(--dim); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .welcome .foot { color: var(--dim); margin-top: 12px; }
+  .chipbtn { width: 30px; height: 22px; padding: 0; border-radius: 4px; border: 1px solid var(--line-strong, var(--line)); }
+  .cpop { position: fixed; z-index: 40; width: 244px; padding: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,.45); display: flex; flex-direction: column; gap: 8px; }
+  .cpop canvas { width: 222px; height: 150px; border-radius: 4px; cursor: crosshair; }
+  .cpop input[type=range] { width: 222px; }
+  .cpop .hue { -webkit-appearance: none; appearance: none; height: 12px; border-radius: 6px; background: linear-gradient(90deg, red, yellow, lime, cyan, blue, magenta, red); }
+  .cpop .crow { display: flex; gap: 6px; align-items: center; }
+  .cpop .crow input { width: 90px; font-family: "Cascadia Mono", Consolas, monospace; }
+  .cpop .swatches { flex-wrap: wrap; width: 222px; }
+  .cpop .swatches i { width: 18px; height: 18px; }
+  .ctx { position: fixed; z-index: 45; min-width: 170px; padding: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.45); display: flex; flex-direction: column; }
+  .ctx button { background: none; border: 0; text-align: left; padding: 5px 10px; border-radius: 4px; }
+  .ctx button:hover:not(:disabled) { background: var(--selected); color: var(--chrome); }
+  .ctx hr { border: 0; border-top: 1px solid var(--line); margin: 3px 0; width: 100%; }
+  .ptabs { display: flex; border-bottom: 1px solid var(--line); }
+  .ptabs button { flex: 1; border: 0; border-radius: 0; background: none; padding: 7px; color: var(--dim); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+  .ptabs button[aria-pressed=true] { color: var(--chrome); box-shadow: inset 0 -2px 0 var(--accent); }
+  .pane { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .hist { flex: 1; overflow: auto; padding: 4px 0; }
+  .hist button { display: block; width: 100%; text-align: left; border: 0; border-radius: 0; background: none; padding: 5px 12px; color: var(--text); }
+  .hist button:hover { background: var(--selected); }
+  .hist button.now { color: var(--chrome); box-shadow: inset 3px 0 0 var(--accent); }
+  .hist button.later { color: var(--dim); opacity: .6; }
+  .guide { position: absolute; height: 2px; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.6); transform-origin: 0 50%; pointer-events: none; z-index: 6; }
+  .guide::after { content: ""; position: absolute; right: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: #fff; }
+  .v3dtools { flex-wrap: wrap; justify-content: flex-end; max-width: calc(100% - 16px); }
+  .v3dtools select { padding: 1px 4px; font-size: 12px; background: color-mix(in srgb, var(--raised) 85%, transparent); }
+  .v3dtools .seg button { padding: 2px 7px; }
+  .keys { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 4px 12px; font-size: 12px; }
+  .keys kbd { background: var(--raised); border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; font-family: "Cascadia Mono", Consolas, monospace; color: var(--chrome); justify-self: start; }
+  .autosaved { color: var(--dim); }
+
+  dialog {
+    background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px;
+    width: min(560px, 92vw);
+  }
+  dialog::backdrop { background: rgba(10, 6, 12, .6); }
+  dialog h3 { margin: 0 0 4px; color: var(--chrome); }
+  dialog .row { display: grid; grid-template-columns: 110px 1fr; gap: 8px; align-items: center; margin: 8px 0; }
+  dialog textarea { min-height: 64px; resize: vertical; }
+  dialog .note { color: var(--dim); font-size: 12px; }
+  dialog .btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; flex-wrap: wrap; }
+  dialog .pics { display: flex; gap: 6px; margin-top: 8px; }
+  dialog .pics img { width: 120px; height: 80px; object-fit: cover; border: 1px solid var(--line); border-radius: 3px; background: var(--inset); }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <b class="brand">CAMO EDITOR</b>
+  <div class="menuwrap">
+    <button type="button" id="openmenu" title="Open a gun's image (Ctrl+O)">Open ▾</button>
+    <div class="pop" id="openpop" hidden>
+      <button type="button" id="guns">Pick a gun…</button>
+      <button type="button" id="open">A file on this PC…</button>
+      <h4>A path</h4>
+      <div class="prow"><input id="path" spellcheck="false" autocomplete="off" placeholder="the full path of an .iwi, .dds, .png or .psd"><button type="button" id="openpath">Open</button></div>
+      <h4>Recent</h4>
+      <div class="recent" id="recent"></div>
+    </div>
+  </div>
+  <div class="menuwrap">
+    <button type="button" id="addmenu" disabled title="Add a layer">Add ▾</button>
+    <div class="pop" id="addpop" hidden>
+      <button type="button" id="addlayer">An empty layer (Ctrl+Shift+N)</button>
+      <button type="button" id="add">A picture…</button>
+      <button type="button" id="addpattern">A camo pattern, tiled…</button>
+      <button type="button" id="addtext">Text… (W)</button>
+    </div>
+  </div>
+  <span class="sep"></span>
+  <button type="button" id="undo" class="ibtn" disabled title="Undo (Ctrl+Z)"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5L3 9l4 4"/><path d="M3 9h9a5 5 0 0 1 0 10h-2"/></svg></button>
+  <button type="button" id="redo" class="ibtn" disabled title="Redo (Ctrl+Y)"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5l4 4-4 4"/><path d="M17 9H8a5 5 0 0 0 0 10h2"/></svg></button>
+  <span class="sep"></span>
+  <span class="seg" role="group" aria-label="Views">
+    <button type="button" data-layout="2d" aria-pressed="false" title="The flat picture only">2D</button><button type="button" data-layout="both" aria-pressed="true" title="The picture and the gun side by side">Both</button><button type="button" data-layout="3d" aria-pressed="false" title="The gun only: paint it big">3D</button>
+  </span>
+  <span class="seg" role="group" aria-label="Show">
+    <button type="button" data-view="colour" aria-pressed="true" title="The picture">Colour</button><button type="button" data-view="alpha" aria-pressed="false" title="The image's own alpha, kept as it was: white is 255">Alpha</button><button type="button" id="uvbtn" aria-pressed="true" disabled title="The gun's UV layout over the picture: where each pixel lands on the model">UV</button>
+  </span>
+  <select id="model" disabled title="The model the UV layout and the 3D view are of"><option>no model</option></select>
+  <span class="grow"></span>
+  <label class="img" title="The game's name for this image: the live swap and the build's .iwi use it">Game image <input id="imgname" spellcheck="false" autocomplete="off" disabled></label>
+  <button type="button" id="save" class="primary" disabled title="Ctrl+S: a .dds for the running game, an .iwi for a build, a .psd that keeps the layers">Save DDS + IWI</button>
+  <button type="button" id="publish" disabled title="A design's package for your Reluduali account: your layers, a preview, the gun from three sides">Publish…</button>
+  <button type="button" id="helpbtn" class="ibtn" title="Shortcuts (?)">?</button>
+</header>
+
+<div class="opts" id="opts"></div>
+
+<div class="work" id="work">
+  <nav class="rail" id="rail" aria-label="Tools"></nav>
+  <div class="stage" id="stage" tabindex="-1">
+    <div class="doc" id="doc" hidden></div>
+    <canvas class="over tapeview" id="tapeview" hidden></canvas>
+    <canvas class="uv" id="uv" hidden></canvas>
+    <canvas class="over" id="alphaview" hidden></canvas>
+    <div class="sel" id="sel" hidden><i data-h="nw"></i><i data-h="ne"></i><i data-h="sw"></i><i data-h="se"></i></div>
+    <div class="cursor" id="cursor2d" hidden></div>
+    <div class="guide" id="guide2d" hidden></div>
+    <div class="empty" id="empty">
+      <div class="welcome">
+        <h2>Pick a gun to paint</h2>
+        <p class="lead">Its image opens with the gun in 3D beside it. Or drag in an .iwi from a camo build, a .dds, a .png, or a .psd saved here.</p>
+        <div class="wrow"><input id="gunsearch" placeholder="Search: dsr, ak47, smg, sniper…" spellcheck="false" autocomplete="off"><button type="button" id="welcomeopen">A file on this PC…</button></div>
+        <div class="gungrid" id="gungrid"><span class="lead">Looking for the guns in the dumps…</span></div>
+        <div class="foot" id="welcomerecent"></div>
+      </div>
+    </div>
+    <div class="drop" id="drop" hidden><span id="droptext">Drop to open</span></div>
+  </div>
+  <div class="v3d" id="v3dbox" hidden>
+    <canvas id="v3d"></canvas>
+    <div class="cursor" id="cursor3d" hidden></div>
+    <div class="guide" id="guide3d" hidden></div>
+    <div class="v3dtools">
+      <button type="button" id="frame3d" title="Frame the gun (F)">Frame</button>
+      <span class="seg">
+        <button type="button" data-side="left" title="From the left">L</button><button type="button" data-side="right" title="From the right">R</button><button type="button" data-side="top" title="From above">Top</button><button type="button" data-side="front" title="Down the barrel">Front</button>
+      </span>
+      <select id="look3d" title="Lighting"><option value="studio">Studio</option><option value="daylight">Daylight</option><option value="game">Game-like</option></select>
+      <select id="bg3d" title="Background"><option value="dark">Dark</option><option value="grey">Grey</option><option value="light">Light</option></select>
+      <button type="button" id="wire3d" aria-pressed="false" title="The triangles' edges">Wire</button>
+      <button type="button" id="dim3d" title="Dim the parts that do not wear this image">Dim others</button>
+      <button type="button" id="bright3d" title="Exposure">Light ×1.0</button>
+    </div>
+    <div class="v3dnote" id="v3dnote"></div>
+  </div>
+  <aside class="layers" aria-label="Layers and history">
+    <div class="ptabs"><button type="button" data-ptab="layers" aria-pressed="true">Layers</button><button type="button" data-ptab="history" aria-pressed="false">History</button></div>
+    <div class="pane" id="layers"></div>
+    <div class="pane" id="histpane" hidden><div class="hist" id="hist"></div></div>
+  </aside>
+</div>
+
+<footer class="bar" id="bar"></footer>
+<input type="file" id="openfile" accept=".iwi,.dds,.png,.jpg,.jpeg,.webp,.psd" hidden>
+<input type="file" id="addfile" accept=".iwi,.dds,.png,.jpg,.jpeg,.webp" multiple hidden>
+<input type="file" id="stampfile" accept=".png,.jpg,.jpeg,.webp,.iwi,.dds" hidden>
+
+<div id="toasts" aria-live="polite"></div>
+<div class="ctx" id="ctx" hidden></div>
+<div class="cpop" id="cpop" hidden>
+  <canvas id="sv" width="444" height="300"></canvas>
+  <input type="range" class="hue" id="hue" min="0" max="360" step="1" aria-label="Hue">
+  <div class="crow"><button type="button" class="chipbtn" id="chip" disabled></button><input id="hex" maxlength="7" spellcheck="false" aria-label="Colour as #rrggbb"><button type="button" id="cpick" title="Take a colour from the picture or the gun (I)">Pick</button></div>
+  <div class="swatches" id="cswatches"></div>
+</div>
+
+<dialog id="gundlg">
+  <h3>Pick a gun</h3>
+  <div class="welcome" style="width:100%"><div class="wrow"><input id="gunsearch2" placeholder="Search…" spellcheck="false" autocomplete="off"></div><div class="gungrid" id="gungrid2"></div></div>
+  <div class="btns"><button type="button" data-close>Close</button></div>
+</dialog>
+
+<dialog id="patdlg">
+  <h3>A camo pattern, tiled across the image</h3>
+  <p class="note">The game's own patterns, from the dumps. It goes in as a new layer: set its blend mode and opacity, and tape what it must not cover.</p>
+  <div class="row"><label for="patscale">Size</label><span><input type="range" id="patscale" min="0.25" max="4" step="0.25" value="1"> <output id="patscalev">×1</output></span></div>
+  <div class="gungrid" id="patgrid" style="max-height:52vh;overflow:auto"></div>
+  <div class="btns"><button type="button" data-close>Close</button></div>
+</dialog>
+
+<dialog id="textdlg">
+  <h3>Text</h3>
+  <div class="row"><label for="ttext">Text</label><input id="ttext" maxlength="80" data-tdraft="text"></div>
+  <div class="row"><label for="tfont">Font</label><select id="tfont" data-tdraft="font"><option>Impact</option><option>Arial Black</option><option>Segoe UI</option><option>Bahnschrift</option><option>Consolas</option><option>Georgia</option><option>Stencil</option></select></div>
+  <div class="row"><label for="tsize">Size</label><span><input id="tsize" type="number" min="6" max="600" value="64" style="width:80px" data-tdraft="size"> px</span></div>
+  <div class="row"><span>Style</span><span><label><input type="checkbox" id="tbold" data-tdraft="bold"> Bold</label> <label><input type="checkbox" id="titalic" data-tdraft="italic"> Italic</label> <label>Outline <input id="toutline" type="number" min="0" max="40" value="0" style="width:60px" data-tdraft="outline"> px</label></span></div>
+  <div class="row"><span>Turn</span><span><select id="tturn" data-tdraft="turn"><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select> <label><input type="checkbox" id="tmirror" data-tdraft="mirror"> Mirror</label></span></div>
+  <p class="note">A part's UVs can lie turned or mirrored: if the words read wrong on the gun, turn or mirror them. The text is a layer of its own: move and scale it with Move.</p>
+  <div class="btns"><button type="button" id="tok" class="primary">Place it</button><button type="button" data-close>Cancel</button></div>
+</dialog>
+
+<dialog id="helpdlg">
+  <h3>Shortcuts</h3>
+  <div class="keys">
+    <kbd>V</kbd><span>Move, scale</span><kbd>B</kbd><span>Brush</span>
+    <kbd>A</kbd><span>Spray</span><kbd>R</kbd><span>Randomizer</span>
+    <kbd>E</kbd><span>Eraser</span><kbd>D</kbd><span>Gradient</span>
+    <kbd>G</kbd><span>Fill a part</span><kbd>W</kbd><span>Text</span>
+    <kbd>I</kbd><span>Eyedropper (or Alt+click)</span><kbd>T</kbd><span>Tape</span>
+    <kbd>[ ]</kbd><span>Brush size</span><kbd>M</kbd><span>Mirror on the gun</span>
+    <kbd>\</kbd><span>Hold: the game's own picture</span><kbd>F</kbd><span>Frame the gun</span>
+    <kbd>0 / 1</kbd><span>Fit / actual size</span><kbd>Space</kbd><span>Hold and drag: pan</span>
+    <kbd>Ctrl+Z / Y</kbd><span>Undo / redo</span><kbd>Ctrl+S</kbd><span>Save</span>
+    <kbd>Ctrl+O</kbd><span>Open</span><kbd>Ctrl+Shift+N</kbd><span>New layer</span>
+    <kbd>Right-drag</kbd><span>Turn the gun (painting tools)</span><kbd>Middle-drag</kbd><span>Pan the gun</span>
+  </div>
+  <div class="btns"><button type="button" data-close>Close</button></div>
+</dialog>
+
+<dialog id="pubdlg">
+  <h3>Publish a design</h3>
+  <p class="note">For your Reluduali account: others can see it, like it, keep it as a favourite, download it and use it,
+    free or for Butter. The package holds <b>your layers only</b>, never the game's picture: whoever uses it rebuilds it
+    on their own copy of the game's image.</p>
+  <div class="row"><label for="pubtitle">Title</label><input id="pubtitle" data-draft="title" maxlength="80"></div>
+  <div class="row"><label for="pubdesc">Description</label><textarea id="pubdesc" data-draft="desc" maxlength="2000"></textarea></div>
+  <div class="row"><label for="pubtags">Tags</label><input id="pubtags" data-draft="tags" placeholder="dsr50, red, fractal"></div>
+  <div class="row"><label for="pubprice">Price</label><span><input id="pubprice" data-draft="price" type="number" min="0" max="100000" step="5" value="0" style="width:90px"> Butter (0 = free)</span></div>
+  <div class="row"><span></span><label><input type="checkbox" id="pubremix" data-draft="remix" checked> Others may remix it (their design names yours)</label></div>
+  <div class="pics" id="pubpics"></div>
+  <p class="note" id="pubsay"></p>
+  <div class="btns">
+    <button type="button" id="pubmake" class="primary">Make the package</button>
+    <button type="button" id="pubup" disabled title="Waits for reluduali.com to take designs">Upload to Reluduali</button>
+    <button type="button" id="pubclose">Close</button>
+  </div>
+</dialog>
+
+<script type="module">
+import * as Lyr from './layers.js';
+import { writePsd, readPsd, BLEND } from './psd.js';
+import { readTexture, kindOf, writeDds, writeIwi, mipChain, writeIwiCube, writeDdsCube } from './texture.js';
+import { createView3d } from './view3d.js';
+import { buildIslands, trianglesAt, raycast, pictureAt, fillTriangles } from './islands.js';
+import { dab, along, spacingOf, random, STAMPS, hexToRgb, rgbToHex } from './paint.js';
+
+const VERSION = '0.3';
+const $ = (id) => document.getElementById(id);
+const $stage = $('stage'), $doc = $('doc'), $alpha = $('alphaview'), $sel = $('sel'), $empty = $('empty');
+const $drop = $('drop'), $layers = $('layers'), $bar = $('bar'), $path = $('path'), $imgname = $('imgname');
+const $tapeview = $('tapeview'), $uv = $('uv'), $v3dbox = $('v3dbox'), $model = $('model'), $opts = $('opts');
+const $cur2 = $('cursor2d'), $cur3 = $('cursor3d'), $v3d = $('v3d'), $work = $('work');
+const BLENDS = Object.values(BLEND);
+/** A hidden layer of this name in a .psd saved here is the texture's alpha, and carries the .iwi header. */
+const ALPHA_LAYER = 'texture alpha';
+const IMAGE_NAME = /^[A-Za-z0-9~&_.\-]{1,120}$/;
+const TAPE_RGB = [90, 216, 79];
+const ICON = (d, extra = '') => `<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" ${extra}>${d}</svg>`;
+const EYE = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>';
+const EYE_SHUT = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M1 8s2.6-4.6 7-4.6S15 8 15 8s-2.6 4.6-7 4.6S1 8 1 8z" fill="none" stroke="currentColor" stroke-width="1.3" opacity=".45"/><path d="M2.5 13.5l11-11" stroke="currentColor" stroke-width="1.3"/></svg>';
+const LOCK = '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
+const LOCK_OPEN = '<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" opacity=".5"><rect x="3" y="7" width="10" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M5 7V5a3 3 0 0 1 5.6-1.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
+
+// ---- the tools ------------------------------------------------------------------------------------
+// Each painting tool keeps its own brush (kept for next time in this browser); the colour is shared.
+const TOOLS = [
+  { id: 'move', key: 'v', name: 'Move', tip: 'Move and scale layers; drag the gun to turn it (V)',
+    icon: ICON('<path d="M10 2v16M2 10h16M10 2l-2.5 2.5M10 2l2.5 2.5M10 18l-2.5-2.5M10 18l2.5-2.5M2 10l2.5-2.5M2 10l2.5 2.5M18 10l-2.5-2.5M18 10l-2.5 2.5"/>') },
+  { id: 'brush', key: 'b', name: 'Brush', tip: 'Paint, soft or hard (B)',
+    icon: ICON('<path d="M14.5 2.5l3 3-8 8-3-3z"/><path d="M6.5 10.5c-2 0-3.5 1.5-3.5 3.5 0 1.2-.5 2.2-1.5 3 3 .5 6.5-.5 7.5-3.5"/>') },
+  { id: 'spray', key: 'a', name: 'Spray', tip: 'Spray paint: a can\'s dots (A)',
+    icon: ICON('<rect x="3" y="8" width="7" height="10" rx="1.5"/><path d="M5 8V5h3v3M8 5h2"/><circle cx="14" cy="4" r=".6" fill="currentColor"/><circle cx="16.5" cy="6" r=".6" fill="currentColor"/><circle cx="14.5" cy="8" r=".6" fill="currentColor"/><circle cx="17" cy="9.5" r=".6" fill="currentColor"/><circle cx="13" cy="6" r=".6" fill="currentColor"/>') },
+  { id: 'scatter', key: 'r', name: 'Randomizer', tip: 'Randomizer brush: stamps thrown with random size, turn, colour (R)',
+    icon: ICON('<path d="M5 4l1 2 2 .3-1.5 1.4.4 2.1L5 8.8 3.1 9.8l.4-2.1L2 6.3 4 6z"/><circle cx="14" cy="5" r="2"/><path d="M11 13l3-2 3 2-1 3.5h-4z"/><circle cx="6" cy="15" r="1.3"/>') },
+  { id: 'eraser', key: 'e', name: 'Eraser', tip: 'Take paint away, with any brush\'s shape (E)',
+    icon: ICON('<path d="M3 13l8-8 5 5-6 6H6z"/><path d="M8 8l5 5M6 16h11"/>') },
+  { id: 'gradient', key: 'd', name: 'Gradient', tip: 'Drag a gradient, the colour fading out, on the picture or across the gun (D)',
+    icon: ICON('<rect x="3" y="3" width="14" height="14" rx="2"/><path d="M3 17L17 3" stroke-dasharray="2 2"/><rect x="3" y="3" width="7" height="14" fill="currentColor" fill-opacity=".35" stroke="none"/>') },
+  { id: 'fill', key: 'g', name: 'Fill part', tip: 'Fill a whole part of the gun (a UV island) with the colour (G)',
+    icon: ICON('<path d="M4 9l6-6 6 6-6 6z"/><path d="M16 12c1 1.6 1.5 2.6 1.5 3.3a1.5 1.5 0 0 1-3 0c0-.7.5-1.7 1.5-3.3z"/>') },
+  { id: 'text', key: 'w', name: 'Text', tip: 'Words or a name: click where they go, on the picture or the gun (W)',
+    icon: ICON('<path d="M4 5V3.5h12V5M10 3.5v13M7.5 16.5h5"/>') },
+  { id: 'pick', key: 'i', name: 'Eyedropper', tip: 'Take a colour from the picture or the gun (I, or Alt+click with any brush)',
+    icon: ICON('<path d="M13 3l4 4-2 2-4-4z"/><path d="M11.5 6.5L4 14v2h2l7.5-7.5"/>') },
+  { id: 'tape', key: 't', name: 'Tape', tip: 'Masking tape: what is taped is never painted. Tape a part with a click, or paint tape on (T)', cls: 'tape',
+    icon: ICON('<rect x="2.5" y="6" width="15" height="8" rx="1.2" fill="currentColor" fill-opacity=".25"/><path d="M2.5 6l1.2 1.3L2.5 8.6l1.2 1.4-1.2 1.3 1.2 1.4-1.2 1.3M17.5 6l-1.2 1.3 1.2 1.3-1.2 1.4 1.2 1.3-1.2 1.4 1.2 1.3"/>') },
+];
+const DEFAULTS = {
+  brush: { kind: 'round', size: 40, flow: 0.8, hardness: 0.6, spacing: 0.15 },
+  spray: { kind: 'spray', size: 80, flow: 0.7, density: 40, dot: 2 },
+  scatter: { kind: 'scatter', size: 60, flow: 0.9, count: 3, scatter: 0.8, stamp: 'splats', sizeJitter: 0.5, rotJitter: 1, hueJitter: 0.08, valJitter: 0.25, alphaJitter: 0.2, spacing: 0.5 },
+  eraser: { kind: 'round', size: 50, flow: 1, hardness: 0.5, spacing: 0.15, density: 40, dot: 2, count: 3, scatter: 0.8, stamp: 'splats', sizeJitter: 0.5, rotJitter: 1, hueJitter: 0, valJitter: 0, alphaJitter: 0.2 },
+  fill: { flow: 1 },
+  gradient: { kind: 'linear', flow: 1 },
+  tape: { kind: 'round', size: 40, flow: 1, hardness: 0.95, spacing: 0.1, mode: 'part' },
+};
+const keep = (k, v) => { try { localStorage.setItem(k, v); } catch { /* a private window: kept for this visit */ } };
+const kept = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+const brushes = (() => {
+  let saved = {};
+  try { saved = JSON.parse(kept('camo.brushes') ?? '{}') ?? {}; } catch { saved = {}; }
+  return Object.fromEntries(Object.entries(DEFAULTS).map(([k, v]) => [k, { ...v, ...(saved[k] ?? {}) }]));
+})();
+let colour = kept('camo.colour') ?? '#c0242b';
+let recent = (() => { try { return JSON.parse(kept('camo.recent') ?? '[]'); } catch { return []; } })();
+let tool = 'move';
+let stampPicture = null;            // the Randomizer's own picture stamp
+let seed = Date.now() >>> 0;
+let mirror = kept('camo.mirror') === '1';   // painting on the gun lands on its other side too
+let comparing = false;                       // the \ key held: the game's own picture only
+const saveBrushes = () => keep('camo.brushes', JSON.stringify(brushes));
+
+// ---- the document --------------------------------------------------------------------------------
+let doc = null;                     // layers.js's document
+const els = new Map();              // a layer's id -> the canvas it is drawn from
+const thumbs = new Map();
+const adj = new Map();              // a layer's id -> { hue, sat, light } (degrees, %, %)
+let tex = null;                     // { image, what, alpha (w*h bytes), header (an .iwi's first 64 bytes, or null), baseSha }
+const view = { x: 0, y: 0, s: 1 };
+let mode = 'colour';
+let spaceHeld = false;
+let say = null;                     // { text, kind } the bar shows until the next change
+let saved = null;                   // { dds, iwi, psd } paths of the last save
+let busy = false;
+let paintSeq = 0;
+// The undo history: layers.js keeps the layers' places; pixels, tape and adjustments are kept here, all in one order.
+const past = [], future = [];
+const HISTORY = 60;
+// The tape: a canvas the picture's size, green where taped.
+const tapeCanvas = document.createElement('canvas');
+const tapeCtx = tapeCanvas.getContext('2d', { willReadFrequently: true });
+let tapeAny = false;
+let showTape = true;
+// A stroke's own canvas, the picture's size: a stroke's dabs land here first, then (tape taken out) on the layer.
+const scratch = document.createElement('canvas');
+const scratchCtx = scratch.getContext('2d', { willReadFrequently: true });
+
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const extOf = (n) => (/\.[^.\\/]+$/.exec(n)?.[0] ?? '').toLowerCase();
+const baseName = (n) => n.split(/[\\/]/).pop().replace(/\.[^.]+$/, '');
+
+// The path box keeps what is typed, as it is typed (pages-save-every-keystroke).
+$path.value = kept('camo.path') ?? '';
+$path.addEventListener('input', () => keep('camo.path', $path.value));
+$imgname.addEventListener('input', () => { if (tex) tex.image = $imgname.value.trim(); drawBar(); });
+
+function tell(text, bad = false) { say = { text, kind: bad ? 'bad' : 'good' }; drawBar(); if (bad) toast(text, 'bad'); }
+
+// ---- opening ----------------------------------------------------------------------------------
+
+function canvasOf(rgba, w, h) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  c.getContext('2d', { willReadFrequently: true }).putImageData(new ImageData(new Uint8ClampedArray(rgba.buffer, rgba.byteOffset, rgba.length), w, h), 0, 0);
+  return c;
+}
+function blankCanvas(w, h) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  c.getContext('2d', { willReadFrequently: true });
+  return c;
+}
+const ctxOf = (c) => c.getContext('2d', { willReadFrequently: true });
+const opaque = (rgba) => { const o = new Uint8Array(rgba); for (let i = 3; i < o.length; i += 4) o[i] = 255; return o; };
+const alphaOf = (rgba) => { const a = new Uint8Array(rgba.length / 4); for (let i = 0; i < a.length; i++) a[i] = rgba[i * 4 + 3]; return a; };
+const hex = (b) => [...b].map((x) => x.toString(16).padStart(2, '0')).join('');
+const unhex = (s) => new Uint8Array(s.match(/../g).map((x) => parseInt(x, 16)));
+
+/** A picture the browser draws (.png .jpg .webp), as RGBA. Colour as it is in the file, not managed. */
+async function browserPixels(bytes) {
+  const bmp = await createImageBitmap(new Blob([bytes]), { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
+  const c = new OffscreenCanvas(bmp.width, bmp.height);
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(bmp, 0, 0);
+  const w = bmp.width, h = bmp.height;
+  bmp.close();
+  return { w, h, rgba: new Uint8Array(g.getImageData(0, 0, w, h).data.buffer) };
+}
+
+function confirmDrop() {
+  return !doc?.dirty || confirm('This edit has not been saved. Open another picture anyway?');
+}
+
+async function openBytes(fileName, bytes) {
+  if (!confirmDrop()) return;
+  try {
+    if (extOf(fileName) === '.psd') { openPsd(fileName, bytes); return; }
+    if (kindOf(bytes)) {
+      const r = readTexture(bytes);
+      if (!r.ok) { tell(`${fileName}: ${r.why}`, true); return; }
+      begin({
+        image: baseName(fileName), w: r.width, h: r.height, rgba: r.mips[0], header: r.header ?? null, cube: r.cube ?? 0,
+        what: r.cube ? `a sky (a cube map: its six ${r.cube} x ${r.cube} faces unfolded; they fold back on save)`
+                     : `${r.kind === 'iwi' ? `.iwi${r.format ? ` (${r.format})` : ''}` : `.dds (${r.format})`}, ${r.mips.length} mip${r.mips.length === 1 ? '' : 's'}`,
+      });
+      return;
+    }
+    const p = await browserPixels(bytes);
+    begin({ image: baseName(fileName), w: p.w, h: p.h, rgba: p.rgba, header: null, what: extOf(fileName) || 'picture' });
+  } catch (e) { tell(`${fileName}: it could not be read (${e.message})`, true); }
+}
+
+function openPsd(fileName, bytes) {
+  const r = readPsd(bytes, { composite: true });
+  if (!r.ok) { tell(`${fileName}: ${r.why}`, true); return; }
+  // Our own hidden alpha layer comes back as the alpha, with the .iwi header it carries; the rest are layers.
+  const ai = r.layers.findIndex((P) => !P.visible && P.name.startsWith(ALPHA_LAYER) && P.width === r.width && P.height === r.height);
+  let alpha = null, header = null;
+  if (ai >= 0) {
+    const P = r.layers.splice(ai, 1)[0];
+    alpha = new Uint8Array(r.width * r.height);
+    for (let i = 0; i < alpha.length; i++) alpha[i] = P.rgba[i * 4];
+    const m = /iwi ([0-9a-f]{64})/.exec(P.name);
+    if (m) { header = new Uint8Array(64); header.set(unhex(m[1])); }   // the size table is written anew
+  }
+  const layers = r.layers.length ? r.layers : [{ name: baseName(fileName), left: 0, top: 0, width: r.width, height: r.height, rgba: r.composite, opacity: 1, visible: true, blend: 'normal' }];
+  // a sky saved here: 4 faces wide, 3 high, its .iwi header's side a quarter of the width
+  const side = header ? header[6] | header[7] << 8 : 0;
+  const cube = side && r.width === side * 4 && r.height === side * 3 ? side : 0;
+  begin({
+    image: baseName(fileName), w: r.width, h: r.height, rgba: null, header, alpha, layers, cube,
+    what: `.psd, ${layers.length} layer${layers.length === 1 ? '' : 's'}${alpha ? '' : ' (no alpha of its own: 255 everywhere)'}`,
+  });
+}
+
+function begin({ image, w, h, rgba, header, what, alpha = null, layers = null, cube = 0 }) {
+  leave();
+  doc = Lyr.newDoc(w, h);
+  tex = { image, what, header, cube, alpha: alpha ?? (rgba ? alphaOf(rgba) : new Uint8Array(w * h).fill(255)), baseSha: null };
+  if (layers) {
+    for (const P of layers) {
+      const L = Lyr.addLayer(doc, { name: P.name, w: P.width, h: P.height, x: P.left, y: P.top, opacity: P.opacity, visible: P.visible, blend: P.blend });
+      els.set(L.id, canvasOf(P.rgba, P.width, P.height));
+    }
+    const b = doc.layers[0];
+    if (b.x === 0 && b.y === 0 && b.w === w && b.h === h) b.locked = true;
+  } else {
+    // The base, opaque: its alpha is data and is kept in tex.alpha (see the note at the top).
+    const L = Lyr.addLayer(doc, { name: image, w, h, locked: true });
+    els.set(L.id, canvasOf(opaque(rgba), w, h));
+  }
+  doc.sel = null;
+  doc.dirty = false;
+  saved = null;
+  say = null;
+  past.length = 0; future.length = 0;
+  scratch.width = w; scratch.height = h;
+  tapeCanvas.width = w; tapeCanvas.height = h;
+  tapeAny = false;
+  $tapeview.width = w; $tapeview.height = h;
+  $imgname.value = image;
+  $imgname.disabled = false;
+  for (const id of ['addmenu', 'save', 'publish']) $(id).disabled = false;
+  drawAlpha();
+  $doc.style.width = `${w}px`; $doc.style.height = `${h}px`;
+  $tapeview.style.width = `${w}px`; $tapeview.style.height = `${h}px`;
+  $doc.hidden = false;
+  $empty.hidden = true;
+  fitted = false;
+  fit();
+  drawTape();
+  afterChange();
+  $stage.focus({ preventScroll: true });
+  autosaveSeq = 0; autosavedSeq = 0;
+  findModels(image);
+  if (!restoring) offerAutosave(image);
+  restoring = false;
+}
+
+function leave() {
+  doc = null; tex = null;
+  mesh = null; uvTris = null; editPos = null; isl = null;
+  $uv.hidden = true;
+  els.clear(); thumbs.clear(); adj.clear();
+  $doc.replaceChildren();
+  $sel.hidden = true;
+}
+
+function drawAlpha() {
+  const w = doc.width, h = doc.height;
+  const g = new Uint8Array(w * h * 4);
+  for (let i = 0; i < w * h; i++) { const a = tex.alpha[i]; g[i * 4] = g[i * 4 + 1] = g[i * 4 + 2] = a; g[i * 4 + 3] = 255; }
+  $alpha.width = w; $alpha.height = h;
+  $alpha.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(g.buffer), w, h), 0, 0);
+  $alpha.style.width = `${w}px`; $alpha.style.height = `${h}px`;
+  $alpha.hidden = mode !== 'alpha';
+}
+
+async function openPath() {
+  const p = $path.value.trim().replace(/^"|"$/g, '');
+  if (!p) { tell('Paste the full path of an .iwi, .dds, .png or .psd first.', true); return; }
+  let r;
+  try { r = await fetch(`/api/file?path=${encodeURIComponent(p)}`); } catch { tell('The editor\'s server did not answer (is serve.py running?)', true); return; }
+  if (!r.ok) { tell(`${p}: ${(await r.json().catch(() => null))?.error ?? `refused (${r.status})`}`, true); return; }
+  await openBytes(p, new Uint8Array(await r.arrayBuffer()));
+  if (doc) addRecent(p);
+  closeMenus();
+}
+
+// ---- pictures added as layers -------------------------------------------------------------------
+
+async function pictureCanvas(fileName, bytes) {
+  if (kindOf(bytes)) {
+    const r = readTexture(bytes);
+    if (!r.ok) throw new Error(r.why);
+    // Another game texture's alpha is its data too (a mask, a gloss), so it goes in whole, opaque.
+    return { c: canvasOf(opaque(r.mips[0]), r.width, r.height), w: r.width, h: r.height };
+  }
+  const p = await browserPixels(bytes);
+  return { c: canvasOf(p.rgba, p.w, p.h), w: p.w, h: p.h };
+}
+
+async function addPicture(fileName, bytes, at = null) {
+  if (!doc) return;
+  let p;
+  try { p = await pictureCanvas(fileName, bytes); } catch (e) { tell(`${fileName}: it could not be read (${e.message})`, true); return; }
+  if (!doc) return;
+  const place = Lyr.placeDropped(doc, p.w, p.h, at);
+  step(() => {
+    const L = Lyr.addLayer(doc, { name: baseName(fileName), w: p.w, h: p.h, ...place });
+    els.set(L.id, p.c);
+  }, 'Add a picture');
+}
+
+// ---- the history: one order for every kind of step -----------------------------------------------
+
+function record(entry) {
+  entry.label ??= 'Change';
+  autosaveSeq++;
+  past.push(entry);
+  if (past.length > HISTORY) past.shift();
+  future.length = 0;
+  doc.dirty = true;
+  say = null;
+}
+/** Close a step of layers.js's: kept in the one history when it changed anything. */
+function commitDoc(before, label = 'Change') {
+  if (!Lyr.commit(doc, before)) return false;
+  record({ t: 'doc', label });
+  return true;
+}
+/** One step: what `change` does to the layers' places can be undone. */
+function step(change, label = 'Change') {
+  const before = Lyr.snapshot(doc);
+  change();
+  commitDoc(before, label);
+  afterChange();
+}
+
+function undoEntry(e, back) {
+  if (e.t === 'doc') { if (back) Lyr.undo(doc); else Lyr.redo(doc); }
+  else if (e.t === 'px') {
+    const c = els.get(e.id);
+    if (back && !e.after) e.after = ctxOf(c).getImageData(0, 0, c.width, c.height);
+    ctxOf(c).putImageData(back ? e.before : e.after, 0, 0);
+    thumbs.delete(e.id);
+  } else if (e.t === 'tape') {
+    if (back && !e.after) e.after = tapeCtx.getImageData(0, 0, tapeCanvas.width, tapeCanvas.height);
+    tapeCtx.putImageData(back ? e.before : e.after, 0, 0);
+    tapeAny = true;
+    drawTape();
+  } else if (e.t === 'adj') {
+    adj.set(e.id, { ...(back ? e.before : e.after) });
+  } else if (e.t === 'canvas') {
+    els.set(e.id, back ? e.before : e.after);
+    thumbs.delete(e.id);
+  } else if (e.t === 'group') {
+    for (const x of (back ? [...e.items].reverse() : e.items)) undoEntry(x, back);
+  }
+}
+function undo() {
+  const e = past.pop();
+  if (!e) return;
+  undoEntry(e, true);
+  future.push(e);
+  doc.dirty = true;
+  afterChange();
+}
+function redo() {
+  const e = future.pop();
+  if (!e) return;
+  undoEntry(e, false);
+  past.push(e);
+  doc.dirty = true;
+  afterChange();
+}
+
+// ---- drawing ------------------------------------------------------------------------------------
+
+const filterOf = (id) => {
+  const a = adj.get(id);
+  if (!a || (!a.hue && a.sat === 100 && a.light === 100)) return '';
+  return `hue-rotate(${a.hue}deg) saturate(${a.sat}%) brightness(${a.light}%)`;
+};
+
+function renderView() {
+  if (!doc) return;
+  const t = `translate(${view.x}px, ${view.y}px) scale(${view.s})`;
+  for (const el of [$doc, $alpha, $tapeview]) el.style.transform = t;
+  $doc.classList.toggle('pixels', view.s >= 2);
+  $alpha.classList.toggle('pixels', view.s >= 2);
+  $tapeview.classList.toggle('pixels', view.s >= 2);
+  drawUV();
+  drawSel();
+}
+
+function renderDoc() {
+  if (!doc) return;
+  const want = doc.layers.map((L) => els.get(L.id));
+  for (const c of [...$doc.children]) if (!want.includes(c)) c.remove();
+  doc.layers.forEach((L, i) => {
+    const el = els.get(L.id);
+    if ($doc.children[i] !== el) $doc.insertBefore(el, $doc.children[i] ?? null);
+    el.style.width = `${L.w}px`;
+    el.style.height = `${L.h}px`;
+    el.style.transform = `translate(${L.x}px, ${L.y}px) scale(${L.s})`;
+    el.style.opacity = String(L.opacity);
+    el.style.display = L.visible && (!comparing || i === 0) ? '' : 'none';
+    el.style.mixBlendMode = L.blend === 'normal' ? '' : L.blend;
+    el.style.filter = filterOf(L.id);
+  });
+  scheduleLive();
+}
+
+function drawSel() {
+  const L = doc && Lyr.layerOf(doc, doc.sel);
+  if (!L || !L.visible || mode === 'alpha' || tool !== 'move') { $sel.hidden = true; return; }
+  const b = Lyr.boxOf(L);
+  $sel.hidden = false;
+  $sel.style.left = `${view.x + b.x * view.s}px`;
+  $sel.style.top = `${view.y + b.y * view.s}px`;
+  $sel.style.width = `${b.w * view.s}px`;
+  $sel.style.height = `${b.h * view.s}px`;
+  for (const i of $sel.children) i.hidden = L.locked;
+}
+
+function afterChange() {
+  renderDoc();
+  renderView();
+  drawLayers();
+  drawHistory();
+  drawBar();
+  $('undo').disabled = !past.length;
+  $('redo').disabled = !future.length;
+}
+
+/** All the layers as they show, into `g` (the picture's pixels). `skipBase` leaves the game's picture out. */
+function composeInto(g, { skipBase = false } = {}) {
+  for (const L of doc.layers) {
+    if (!L.visible || (skipBase && L === doc.layers[0]) || (comparing && L !== doc.layers[0])) continue;
+    g.globalAlpha = L.opacity;
+    g.globalCompositeOperation = L.blend === 'normal' ? 'source-over' : L.blend;
+    g.filter = filterOf(L.id) || 'none';
+    g.drawImage(els.get(L.id), L.x, L.y, L.w * L.s, L.h * L.s);
+  }
+  g.globalAlpha = 1;
+  g.globalCompositeOperation = 'source-over';
+  g.filter = 'none';
+}
+
+// ---- the view: fit, zoom about the pointer, pan -------------------------------------------------
+
+let fitted = false;   // fitted to a stage that had a size (one opened while the page was hidden fits when it shows)
+new ResizeObserver(() => { if (doc && !fitted) fit(); else if (doc) renderView(); }).observe($stage);
+
+function fit() {
+  const r = $stage.getBoundingClientRect();
+  fitted = r.width > 80 && r.height > 80;
+  view.s = fitted ? Math.min((r.width - 40) / doc.width, (r.height - 40) / doc.height, 4) : 0.25;
+  view.x = Math.round((r.width - doc.width * view.s) / 2);
+  view.y = Math.round((r.height - doc.height * view.s) / 2);
+  renderView();
+  drawBar();
+}
+
+function zoomAt(px, py, s) {
+  s = Math.min(32, Math.max(0.05, s));
+  view.x = px - (px - view.x) * (s / view.s);
+  view.y = py - (py - view.y) * (s / view.s);
+  view.s = s;
+  renderView();
+  drawBar();
+  moveCursor2d();
+}
+
+$stage.addEventListener('wheel', (e) => {
+  if (!doc) return;
+  e.preventDefault();
+  const r = $stage.getBoundingClientRect();
+  zoomAt(e.clientX - r.left, e.clientY - r.top, view.s * Math.pow(1.0015, -e.deltaY));
+}, { passive: false });
+
+const toDoc = (px, py) => ({ x: (px - view.x) / view.s, y: (py - view.y) / view.s });
+
+function follow(el, e, onMove, onUp) {
+  el.setPointerCapture(e.pointerId);
+  const up = (u) => {
+    el.removeEventListener('pointermove', onMove);
+    el.removeEventListener('pointerup', up);
+    el.removeEventListener('pointercancel', up);
+    onUp(u);
+  };
+  el.addEventListener('pointermove', onMove);
+  el.addEventListener('pointerup', up);
+  el.addEventListener('pointercancel', up);
+}
+
+const PAINTS = new Set(['brush', 'spray', 'scatter', 'eraser']);
+const painting = () => PAINTS.has(tool) || (tool === 'tape' && (brushes.tape.mode === 'paint' || brushes.tape.mode === 'peel'));
+
+$stage.addEventListener('pointerdown', (e) => {
+  if (!doc) return;
+  e.preventDefault();                          // a drag is never a text selection
+  $stage.focus({ preventScroll: true });
+  const r = $stage.getBoundingClientRect();
+  const p = toDoc(e.clientX - r.left, e.clientY - r.top);
+  if (e.button === 1 || spaceHeld || e.button === 2) { startPan(e); return; }
+  if (e.button !== 0) return;
+  if (mode === 'alpha') { startPan(e); return; }
+  if (e.altKey && (painting() || tool === 'fill')) { pickAt(p); return; }
+  if (tool === 'move') {
+    const corner = e.target.closest?.('[data-h]')?.dataset.h;
+    const held = corner ? null : Lyr.hitTest(doc, p.x, p.y);
+    if (corner) startScale(e, corner);
+    else if (held) startMove(e, held);
+    else startPan(e);
+    return;
+  }
+  if (tool === 'pick') { pickAt(p); return; }
+  if (tool === 'fill') { fillPartAt(p, e.shiftKey); return; }
+  if (tool === 'text') { placeText(p); return; }
+  if (tool === 'gradient') { startGradient('2d', p, e); return; }
+  if (tool === 'tape' && (brushes.tape.mode === 'part' || brushes.tape.mode === 'isolate')) { tapePartAt(p, brushes.tape.mode === 'isolate' || e.shiftKey); return; }
+  startStroke('2d', p, e);
+});
+$stage.addEventListener('contextmenu', (e) => e.preventDefault());
+
+function startPan(e) {
+  const start = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y };
+  $stage.classList.add('panning');
+  follow($stage, e, (m) => { view.x = start.vx + m.clientX - start.x; view.y = start.vy + m.clientY - start.y; renderView(); moveCursor2d(m); },
+    () => { if (!spaceHeld) $stage.classList.remove('panning'); });
+}
+
+function startMove(e, id) {
+  doc.sel = id;
+  const L = Lyr.layerOf(doc, id);
+  const before = Lyr.snapshot(doc);
+  const start = { x: e.clientX, y: e.clientY, lx: L.x, ly: L.y };
+  drawLayers();
+  drawSel();
+  follow($stage, e, (m) => {
+    L.x = Math.round(start.lx + (m.clientX - start.x) / view.s);
+    L.y = Math.round(start.ly + (m.clientY - start.y) / view.s);
+    renderDoc();
+    drawSel();
+  }, () => { commitDoc(before, 'Move a layer'); afterChange(); });
+}
+
+function startScale(e, corner) {
+  const L = Lyr.layerOf(doc, doc.sel);
+  if (!L || L.locked) return;
+  const before = Lyr.snapshot(doc);
+  const start = { ...L };
+  const r = $stage.getBoundingClientRect();
+  follow($stage, e, (m) => {
+    const p = toDoc(m.clientX - r.left, m.clientY - r.top);
+    Object.assign(L, Lyr.scaleFromCorner(start, corner, p.x, p.y));
+    renderDoc();
+    drawSel();
+  }, () => {
+    L.x = Math.round(L.x);
+    L.y = Math.round(L.y);
+    commitDoc(before, 'Scale a layer');
+    afterChange();
+  });
+}
+
+// ---- strokes: the same brushes on the flat picture and on the gun ---------------------------------
+
+let stroke = null;   // { where, target: 'layer' | 'tape', erase, id, before, rnd, last, carry, pending, b }
+
+/** The layer a stroke paints: the one chosen, unless it is the game's picture (or none): then a new paint layer. */
+function paintLayer() {
+  const L = Lyr.layerOf(doc, doc.sel);
+  if (L && L !== doc.layers[0]) return L;
+  return newPaintLayer();
+}
+function newPaintLayer(name = null) {
+  let made = null;
+  step(() => {
+    made = Lyr.addLayer(doc, { name: name ?? `Paint ${++paintSeq}`, w: doc.width, h: doc.height, x: 0, y: 0 });
+    els.set(made.id, blankCanvas(doc.width, doc.height));
+  }, 'New layer');
+  return made;
+}
+
+/** The brush a stroke uses now: the tool's own, the colour shared. Tape paints tape green. */
+function brushNow() {
+  const t = tool === 'tape' ? 'tape' : tool;
+  const b = { ...brushes[t], colour: tool === 'tape' ? rgbToHex(TAPE_RGB) : colour, picture: stampPicture };
+  if (tool === 'tape') b.flow = 1;
+  return b;
+}
+
+function startStroke(where, p, e) {
+  beginStroke(where, p);
+  const el = where === '2d' ? $stage : $v3d;
+  follow(el, e, (m) => {
+    if (!stroke) return;
+    const q = where === '2d' ? (() => { const r = $stage.getBoundingClientRect(); return toDoc(m.clientX - r.left, m.clientY - r.top); })() : screenPoint(m);
+    stroke.pending.push(q);
+    if (where === '2d') moveCursor2d(m); else moveCursor3d(m);
+    queueStroke();
+  }, () => endStroke());
+  queueStroke();
+}
+
+function beginStroke(where, p) {
+  const target = tool === 'tape' ? 'tape' : 'layer';
+  const erase = tool === 'eraser' || (tool === 'tape' && brushes.tape.mode === 'peel');
+  let id = null, before;
+  if (target === 'layer') {
+    const L = paintLayer();
+    id = L.id;
+    const c = els.get(id);
+    before = ctxOf(c).getImageData(0, 0, c.width, c.height);
+  } else {
+    before = tapeCtx.getImageData(0, 0, tapeCanvas.width, tapeCanvas.height);
+  }
+  stroke = { where, target, erase, id, before, rnd: random(seed++), last: p, carry: 0, pending: [p], first: true, b: brushNow() };
+}
+
+let strokeQueued = false;
+function queueStroke() {
+  if (strokeQueued) return;
+  strokeQueued = true;
+  requestAnimationFrame(() => { strokeQueued = false; if (stroke) runStroke(); });
+}
+
+/** The dabs since the last frame: drawn, projected (on the gun), tape taken out, laid on the layer or the tape. */
+function runStroke() {
+  const s = stroke, b = s.b;
+  const pts = s.pending.splice(0);
+  if (!pts.length) return;
+  if (s.where === '2d') {
+    const dabs = [];
+    if (s.first) { dabs.push(pts[0]); s.first = false; }
+    for (const p of pts) {
+      const a = along(s.last, p, spacingOf(b), s.carry);
+      dabs.push(...a.points);
+      s.carry = a.carry;
+      s.last = p;
+    }
+    if (!dabs.length) return;
+    const pad = b.size * (b.kind === 'scatter' ? 1 + b.scatter * 2 : 1) + 4;
+    const xs = dabs.map((d) => d.x), ys = dabs.map((d) => d.y);
+    const box = clampBox(Math.min(...xs) - pad, Math.min(...ys) - pad, Math.max(...xs) + pad, Math.max(...ys) + pad);
+    if (!box) return;
+    scratchCtx.clearRect(box.x, box.y, box.w, box.h);
+    for (const d of dabs) dab(scratchCtx, d.x, d.y, b, s.rnd);
+    lay(box);
+  } else {
+    // On the gun: the dabs in screen pixels (device pixels of the 3D view), projected onto the picture.
+    const dpr = window.devicePixelRatio || 1;
+    const sb = { ...b, size: b.size * dpr, dot: (b.dot ?? 2) * dpr };
+    const dabs = [];
+    if (s.first) { dabs.push(pts[0]); s.first = false; }
+    for (const p of pts) {
+      const a = along(s.last, p, spacingOf(b), s.carry);
+      dabs.push(...a.points);
+      s.carry = a.carry;
+      s.last = p;
+    }
+    if (!dabs.length) return;
+    const size = view3d.size;
+    if (brushCanvas.width !== size.w || brushCanvas.height !== size.h) { brushCanvas.width = size.w; brushCanvas.height = size.h; }
+    brushCtx.clearRect(0, 0, size.w, size.h);
+    for (const d of dabs) dab(brushCtx, d.x * dpr, d.y * dpr, sb, s.rnd);
+    const out = view3d.project(brushCanvas, doc.width, doc.height, { mirror });
+    if (!out) return;
+    // only where the projection put something
+    let x0 = doc.width, y0 = doc.height, x1 = -1, y1 = -1;
+    for (let y = 0; y < doc.height; y++) {
+      const row = y * doc.width * 4;
+      for (let x = 0; x < doc.width; x++) {
+        if (out[row + x * 4 + 3]) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      }
+    }
+    if (x1 < 0) return;
+    const box = { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+    const img = new ImageData(new Uint8ClampedArray(out.buffer, out.byteOffset, out.length), doc.width, doc.height);
+    scratchCtx.putImageData(img, 0, 0, box.x, box.y, box.w, box.h);
+    lay(box);
+  }
+}
+const brushCanvas = document.createElement('canvas');
+const brushCtx = brushCanvas.getContext('2d');
+
+/** A projection's result (RGBA, the picture's size) into the scratch canvas: the box it touched, or null. */
+function projectedIntoScratch(out) {
+  let x0 = doc.width, y0 = doc.height, x1 = -1, y1 = -1;
+  for (let y = 0; y < doc.height; y++) {
+    const row = y * doc.width * 4;
+    for (let x = 0; x < doc.width; x++) {
+      if (out[row + x * 4 + 3]) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    }
+  }
+  if (x1 < 0) return null;
+  const box = { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+  scratchCtx.putImageData(new ImageData(new Uint8ClampedArray(out.buffer, out.byteOffset, out.length), doc.width, doc.height), 0, 0, box.x, box.y, box.w, box.h);
+  return box;
+}
+
+function clampBox(x0, y0, x1, y1) {
+  x0 = Math.max(0, Math.floor(x0)); y0 = Math.max(0, Math.floor(y0));
+  x1 = Math.min(doc.width, Math.ceil(x1)); y1 = Math.min(doc.height, Math.ceil(y1));
+  return x1 > x0 && y1 > y0 ? { x: x0, y: y0, w: x1 - x0, h: y1 - y0 } : null;
+}
+
+/** The scratch's box onto the stroke's target: the tape keeps paint off what it covers. */
+function lay(box) {
+  const s = stroke;
+  if (s.target === 'tape') {
+    tapeCtx.globalCompositeOperation = s.erase ? 'destination-out' : 'source-over';
+    tapeCtx.drawImage(scratch, box.x, box.y, box.w, box.h, box.x, box.y, box.w, box.h);
+    tapeCtx.globalCompositeOperation = 'source-over';
+    tapeAny = true;
+    drawTape();
+    return;
+  }
+  if (tapeAny) {
+    scratchCtx.globalCompositeOperation = 'destination-out';
+    scratchCtx.drawImage(tapeCanvas, box.x, box.y, box.w, box.h, box.x, box.y, box.w, box.h);
+    scratchCtx.globalCompositeOperation = 'source-over';
+  }
+  const L = Lyr.layerOf(doc, s.id);
+  const g = ctxOf(els.get(s.id));
+  g.save();
+  g.setTransform(1 / L.s, 0, 0, 1 / L.s, -L.x / L.s, -L.y / L.s);   // the picture's pixels into the layer's own
+  g.globalCompositeOperation = s.erase ? 'destination-out' : 'source-over';
+  g.drawImage(scratch, box.x, box.y, box.w, box.h, box.x, box.y, box.w, box.h);
+  g.restore();
+  thumbs.delete(s.id);
+  scheduleLive();
+}
+
+function endStroke() {
+  const s = stroke;
+  if (!s) return;
+  if (s.pending.length) runStroke();
+  stroke = null;
+  const names = { brush: 'Brush', spray: 'Spray', scatter: 'Randomizer', eraser: 'Eraser' };
+  if (s.target === 'tape') record({ t: 'tape', before: s.before, label: s.erase ? 'Peel tape' : 'Paint tape' });
+  else {
+    record({ t: 'px', id: s.id, before: s.before, label: `${names[tool] ?? 'Paint'}${s.where === '3d' ? ' on the gun' : ''}` });
+    if (tool !== 'eraser') rememberColour(colour);
+  }
+  afterChange();
+}
+
+// ---- clicks: fill a part, tape a part, take a colour ---------------------------------------------
+
+function partsAt(p) {
+  if (!uvTris) return [];
+  const hits = trianglesAt(uvTris, p.x, p.y);
+  return [...new Set(hits.map((t) => isl.of[t]))];
+}
+
+function fillPartAt(p, wholeLayer = false) {
+  if (!uvTris && !wholeLayer) { tell('No model: Fill part needs the gun\'s UVs. Shift+click fills the whole layer.', true); return; }
+  const islands = wholeLayer ? null : partsAt(p);
+  if (!wholeLayer && !islands.length) { tell('Not on a part of the gun (nothing of it uses this spot of the picture).', true); return; }
+  const L = paintLayer();
+  const c = els.get(L.id);
+  const before = ctxOf(c).getImageData(0, 0, c.width, c.height);
+  stroke = { where: 'click', target: 'layer', erase: false, id: L.id, before };
+  scratchCtx.clearRect(0, 0, doc.width, doc.height);
+  scratchCtx.fillStyle = colour;
+  scratchCtx.globalAlpha = brushes.fill.flow;
+  if (wholeLayer) scratchCtx.fillRect(0, 0, doc.width, doc.height);
+  else fillTriangles(scratchCtx, uvTris, islands.flatMap((i) => isl.islands[i]));
+  scratchCtx.globalAlpha = 1;
+  lay({ x: 0, y: 0, w: doc.width, h: doc.height });
+  stroke = null;
+  record({ t: 'px', id: L.id, before, label: wholeLayer ? 'Fill the layer' : 'Fill a part' });
+  rememberColour(colour);
+  afterChange();
+}
+
+function tapePartAt(p, isolate) {
+  if (!uvTris) { tell('No model: taping a part needs the gun\'s UVs. Paint tape on with the Paint mode instead.', true); return; }
+  const islands = partsAt(p);
+  if (!islands.length) { tell('Not on a part of the gun.', true); return; }
+  const before = tapeCtx.getImageData(0, 0, tapeCanvas.width, tapeCanvas.height);
+  tapeCtx.fillStyle = rgbToHex(TAPE_RGB);
+  if (isolate) {
+    // everything taped but this part
+    tapeCtx.fillRect(0, 0, doc.width, doc.height);
+    tapeCtx.globalCompositeOperation = 'destination-out';
+    fillTriangles(tapeCtx, uvTris, islands.flatMap((i) => isl.islands[i]));
+    tapeCtx.globalCompositeOperation = 'source-over';
+  } else {
+    fillTriangles(tapeCtx, uvTris, islands.flatMap((i) => isl.islands[i]));
+  }
+  tapeAny = true;
+  record({ t: 'tape', before, label: isolate ? 'Isolate a part' : 'Tape a part' });
+  drawTape();
+  tell(isolate ? 'Everything taped but that part: paint lands only on it.' : `Taped ${islands.length === 1 ? 'that part' : `${islands.length} parts there`}.`);
+  afterChange();
+}
+
+function peelAll() {
+  if (!doc || !tapeAny) return;
+  const before = tapeCtx.getImageData(0, 0, tapeCanvas.width, tapeCanvas.height);
+  tapeCtx.clearRect(0, 0, tapeCanvas.width, tapeCanvas.height);
+  record({ t: 'tape', before, label: 'Peel all' });
+  tapeAny = false;
+  drawTape();
+  afterChange();
+}
+
+function pickAt(p) {
+  const x = Math.floor(p.x), y = Math.floor(p.y);
+  if (x < 0 || y < 0 || x >= doc.width || y >= doc.height) return;
+  const c = new OffscreenCanvas(doc.width, doc.height);
+  const g = c.getContext('2d', { willReadFrequently: true });
+  composeInto(g);
+  const d = g.getImageData(x, y, 1, 1).data;
+  setColour(rgbToHex([d[0], d[1], d[2]]));
+  tell(`Colour ${colour} taken.`);
+}
+
+function drawTape() {
+  const g = $tapeview.getContext('2d');
+  g.clearRect(0, 0, $tapeview.width, $tapeview.height);
+  g.drawImage(tapeCanvas, 0, 0);
+  $tapeview.hidden = !doc || !showTape || !tapeAny;
+  if (view3d) { view3d.setTape(tapeAny ? tapeCanvas : null); view3d.showTape = showTape; }
+}
+
+// ---- the keys ------------------------------------------------------------------------------------
+
+document.addEventListener('keydown', (e) => {
+  if (e.target.closest?.('input, select, textarea, dialog')) return;
+  if (!doc) return;
+  const k = e.key, ctrl = e.ctrlKey || e.metaKey;
+  if (ctrl && (k === 'z' || k === 'Z')) { e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
+  if (ctrl && (k === 'y' || k === 'Y')) { e.preventDefault(); redo(); return; }
+  if (ctrl && (k === 's' || k === 'S')) { e.preventDefault(); save(); return; }
+  if (ctrl && e.shiftKey && (k === 'n' || k === 'N')) { e.preventDefault(); newPaintLayer(); return; }
+  if (ctrl) return;
+  if (k === '\\' && !e.repeat) { comparing = true; renderDoc(); scheduleLiveNow(); tell('The game\'s own picture (let go of \\ to come back).'); return; }
+  if (k === '?') { $('helpdlg').showModal(); return; }
+  if (k === 'm' || k === 'M') { mirror = !mirror; keep('camo.mirror', mirror ? '1' : '0'); drawOpts(); tell(mirror ? 'Mirror on: paint on the gun lands on its other side too.' : 'Mirror off.'); return; }
+  if (k === ' ') { e.preventDefault(); spaceHeld = true; $stage.classList.add('panning'); return; }
+  if (k === 'Escape') { if (doc.sel) { doc.sel = null; drawLayers(); drawSel(); } return; }
+  if (k === '0') { fit(); return; }
+  if (k === '1') { const r = $stage.getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, 1); return; }
+  if (k === '+' || k === '=') { const r = $stage.getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, view.s * 1.25); return; }
+  if (k === '-') { const r = $stage.getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, view.s / 1.25); return; }
+  if (k === 'f' || k === 'F') { view3d?.frame(); return; }
+  if (k === '[' || k === ']') {
+    const t = tool === 'tape' ? 'tape' : tool;
+    if (brushes[t]?.size) { brushes[t].size = Math.max(1, Math.min(600, Math.round(brushes[t].size * (k === ']' ? 1.2 : 1 / 1.2)))); saveBrushes(); drawOpts(); moveCursor2d(); }
+    return;
+  }
+  const t = TOOLS.find((x) => x.key === k.toLowerCase());
+  if (t) { setTool(t.id); return; }
+  const L = Lyr.layerOf(doc, doc.sel);
+  if ((k === 'Delete' || k === 'Backspace') && L && L !== doc.layers[0]) { e.preventDefault(); step(() => Lyr.removeLayer(doc, L.id), 'Delete a layer'); return; }
+  const nudge = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[k];
+  if (nudge && L && !L.locked) {
+    e.preventDefault();
+    const n = e.shiftKey ? 10 : 1;
+    step(() => Lyr.moveBy(doc, L.id, nudge[0] * n, nudge[1] * n), 'Nudge');
+  }
+});
+document.addEventListener('keyup', (e) => {
+  if (e.key === ' ' && spaceHeld) { spaceHeld = false; $stage.classList.remove('panning'); }
+  if (e.key === '\\' && comparing) { comparing = false; say = null; renderDoc(); scheduleLiveNow(); drawBar(); }
+});
+document.addEventListener('keydown', (e) => {          // these work with nothing open too
+  if (e.target.closest?.('input, select, textarea, dialog')) return;
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'o' || e.key === 'O')) { e.preventDefault(); toggleMenu('openpop'); }
+  else if (!doc && e.key === '?') $('helpdlg').showModal();
+});
+
+// ---- the tool rail and the options bar -----------------------------------------------------------
+
+function drawRail() {
+  $('rail').innerHTML = TOOLS.map((t) => `<button type="button" data-tool="${t.id}" class="${t.cls ?? ''}" aria-pressed="${t.id === tool}" title="${esc(t.tip)}">${t.icon}</button>`).join('')
+    + '<hr><button type="button" id="railnew" title="New paint layer">' + ICON('<rect x="3" y="3" width="14" height="14" rx="2"/><path d="M10 7v6M7 10h6"/>') + '</button>';
+}
+$('rail').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  if (b.id === 'railnew') { if (doc) newPaintLayer(); return; }
+  setTool(b.dataset.tool);
+});
+
+function setTool(id) {
+  tool = id;
+  drawRail();
+  drawOpts();
+  drawSel();
+  $stage.classList.toggle('painting', painting());
+  $v3dbox.classList.toggle('painting', painting());
+  $v3dbox.classList.toggle('orbit', !painting());
+  moveCursor2d();
+}
+
+const slider = (key, label, min, max, stepv, fmt = (v) => v) => {
+  const t = tool === 'tape' ? 'tape' : tool;
+  const v = brushes[t][key];
+  return `<label title="${esc(label)}">${label} <input type="range" data-b="${key}" min="${min}" max="${max}" step="${stepv}" value="${v}"><output>${fmt(v)}</output></label>`;
+};
+const pct = (v) => `${Math.round(v * 100)}%`;
+
+function drawOpts() {
+  const t = TOOLS.find((x) => x.id === tool);
+  const colourBits = `<label>Colour <button type="button" class="chipbtn" id="colourbtn" style="background:${colour}" title="${colour}: click to change"></button></label><span class="swatches">${recent.map((c) => `<i style="background:${c}" data-swatch="${c}" title="${c}"></i>`).join('')}</span>`;
+  const presetBits = (PRESET_TOOLS.includes(tool)) ? `<label>Preset <select id="preset"><option value="">…</option>${Object.keys(presetsOf(tool)).map((n) => `<option>${esc(n)}</option>`).join('')}</select></label><button type="button" id="presetsave" title="Keep this brush as a preset">Save preset</button>` : '';
+  const mirrorBits = `<label title="On the gun, paint lands on its other side too (M). Most guns share one set of pixels for both sides, so paint shows on both anyway: Mirror adds it where a side has pixels of its own."><input type="checkbox" id="mirror"${mirror ? ' checked' : ''}> Mirror on the gun</label>`;
+  let bits = [`<span class="tname">${t.name}</span>`];
+  if (tool === 'move') bits.push('<span>Drag a layer to move it, its corners to scale it; drag the image to pan. In 3D: drag to turn, right-drag to pan, wheel to zoom.</span>');
+  else if (tool === 'gradient') bits.push(colourBits, `<label>Shape <select data-b="kind"><option value="linear"${brushes.gradient.kind === 'linear' ? ' selected' : ''}>Linear</option><option value="radial"${brushes.gradient.kind === 'radial' ? ' selected' : ''}>Radial</option></select></label>`, slider('flow', 'Opacity', 0.02, 1, 0.01, pct), mirrorBits, '<span>Drag from where the colour is full to where it fades out. Tape still protects.</span>');
+  else if (tool === 'text') bits.push(colourBits, '<span>Click where the words go, on the picture or the gun. They become a layer: move and scale them with Move.</span>');
+  else if (tool === 'brush') bits.push(colourBits, slider('size', 'Size', 1, 400, 1), slider('flow', 'Opacity', 0.02, 1, 0.01, pct), slider('hardness', 'Hardness', 0, 1, 0.01, pct), slider('spacing', 'Spacing', 0.02, 1, 0.01, pct));
+  else if (tool === 'spray') bits.push(colourBits, slider('size', 'Size', 4, 500, 1), slider('flow', 'Opacity', 0.02, 1, 0.01, pct), slider('density', 'Density', 2, 200, 1), slider('dot', 'Dot', 0.5, 12, 0.5));
+  else if (tool === 'scatter') {
+    bits.push(colourBits, slider('size', 'Size', 4, 400, 1), slider('flow', 'Opacity', 0.05, 1, 0.01, pct), slider('count', 'Count', 1, 12, 1), slider('scatter', 'Scatter', 0, 3, 0.05, pct),
+      `<label>Stamp <select data-b="stamp">${STAMPS.map((s) => `<option${s === brushes.scatter.stamp ? ' selected' : ''}>${s}</option>`).join('')}</select></label>`,
+      `<button type="button" id="stamppick" title="A picture of your own as the stamp">${stampPicture ? 'Picture ✓' : 'Picture…'}</button>`,
+      slider('sizeJitter', 'Size ±', 0, 1, 0.01, pct), slider('rotJitter', 'Turn ±', 0, 1, 0.01, pct), slider('hueJitter', 'Hue ±', 0, 1, 0.01, pct),
+      slider('valJitter', 'Light ±', 0, 1, 0.01, pct), slider('alphaJitter', 'Opacity ±', 0, 1, 0.01, pct), slider('spacing', 'Spacing', 0.05, 2, 0.05, pct),
+      '<button type="button" id="reroll" title="A new random throw">Reroll</button>');
+  } else if (tool === 'eraser') {
+    bits.push(`<label>Shape <select data-b="kind"><option value="round"${brushes.eraser.kind === 'round' ? ' selected' : ''}>Round</option><option value="spray"${brushes.eraser.kind === 'spray' ? ' selected' : ''}>Spray</option><option value="scatter"${brushes.eraser.kind === 'scatter' ? ' selected' : ''}>Randomizer</option></select></label>`,
+      slider('size', 'Size', 1, 400, 1), slider('flow', 'Strength', 0.02, 1, 0.01, pct), slider('hardness', 'Hardness', 0, 1, 0.01, pct));
+  } else if (tool === 'fill') bits.push(colourBits, slider('flow', 'Opacity', 0.02, 1, 0.01, pct), '<span>Click a part of the gun (flat or 3D) to fill it. Shift+click fills the whole layer. Tape still protects.</span>');
+  else if (tool === 'pick') bits.push(colourBits, '<span>Click the picture or the gun to take its colour.</span>');
+  else if (tool === 'tape') {
+    const m = brushes.tape.mode;
+    bits.push(`<span class="seg">${[['part', 'Tape a part'], ['isolate', 'Isolate a part'], ['paint', 'Paint tape'], ['peel', 'Peel']].map(([v, l]) => `<button type="button" data-tapemode="${v}" aria-pressed="${m === v}">${l}</button>`).join('')}</span>`);
+    if (m === 'paint' || m === 'peel') bits.push(slider('size', 'Size', 1, 400, 1), slider('hardness', 'Edge', 0, 1, 0.01, pct));
+    else bits.push(`<span>${m === 'part' ? 'Click a part to tape it (Shift+click: tape everything else).' : 'Click a part: everything else is taped.'}</span>`);
+    bits.push('<button type="button" id="peelall">Peel all</button>', `<label><input type="checkbox" id="showtape"${showTape ? ' checked' : ''}> Show tape</label>`, '<span>The tape is temporary: never saved into the game\'s files.</span>');
+  }
+  if (PAINT_TOOLS_WITH_MIRROR.includes(tool)) bits.push(mirrorBits);
+  if (presetBits) bits.splice(1, 0, presetBits);
+  $opts.innerHTML = bits.join('');
+}
+const PAINT_TOOLS_WITH_MIRROR = ['brush', 'spray', 'scatter', 'eraser'];
+$opts.addEventListener('input', (e) => {
+  const k = e.target.dataset.b;
+  if (k) {
+    const t = tool === 'tape' ? 'tape' : tool;
+    brushes[t][k] = e.target.type === 'range' ? Number(e.target.value) : e.target.value;
+    const out = e.target.nextElementSibling;
+    if (out?.tagName === 'OUTPUT') out.textContent = (['flow', 'hardness', 'spacing', 'scatter', 'sizeJitter', 'rotJitter', 'hueJitter', 'valJitter', 'alphaJitter'].includes(k) ? pct : (v) => v)(brushes[t][k]);
+    saveBrushes();
+    moveCursor2d();
+  } else if (e.target.id === 'colour') setColour(e.target.value, false);
+});
+$opts.addEventListener('change', (e) => {
+  if (e.target.dataset.b && e.target.tagName === 'SELECT') { drawOpts(); }
+  if (e.target.id === 'showtape') { showTape = e.target.checked; drawTape(); }
+  if (e.target.id === 'mirror') { mirror = e.target.checked; keep('camo.mirror', mirror ? '1' : '0'); }
+  if (e.target.id === 'preset' && e.target.value) {
+    Object.assign(brushes[tool], presetsOf(tool)[e.target.value]);
+    saveBrushes();
+    tell(`Preset "${e.target.value}".`);
+    drawOpts();
+  }
+});
+$opts.addEventListener('click', (e) => {
+  const sw = e.target.closest('[data-swatch]');
+  if (sw) { setColour(sw.dataset.swatch); return; }
+  const tm = e.target.closest('[data-tapemode]');
+  if (tm) { brushes.tape.mode = tm.dataset.tapemode; saveBrushes(); setTool('tape'); return; }
+  if (e.target.id === 'peelall') peelAll();
+  if (e.target.id === 'reroll') { seed = (Math.random() * 2 ** 32) >>> 0; tell('A new random throw.'); }
+  if (e.target.id === 'stamppick') $('stampfile').click();
+  if (e.target.id === 'colourbtn') openColour(e.target);
+  if (e.target.id === 'presetsave') {
+    const name = prompt('A name for this brush', '');
+    if (!name || !name.trim()) return;
+    const mine = userPresets();
+    mine[tool] = { ...(mine[tool] ?? {}), [name.trim().slice(0, 40)]: { ...brushes[tool] } };
+    keep('camo.presets', JSON.stringify(mine));
+    toast(`Preset "${name.trim()}" kept.`);
+    drawOpts();
+  }
+});
+$('stampfile').onchange = async (e) => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  try { stampPicture = (await pictureCanvas(f.name, new Uint8Array(await f.arrayBuffer()))).c; brushes.scatter.stamp = 'picture'; saveBrushes(); drawOpts(); }
+  catch (err) { tell(`${f.name}: ${err.message}`, true); }
+};
+
+function setColour(c, redraw = true) {
+  colour = c;
+  keep('camo.colour', c);
+  const chip = $('colourbtn');
+  if (chip) { chip.style.background = c; chip.title = c; }
+  if (redraw) drawOpts();
+}
+function rememberColour(c) {
+  recent = [c, ...recent.filter((x) => x !== c)].slice(0, 10);
+  keep('camo.recent', JSON.stringify(recent));
+  if ($('cpop').hidden) drawOpts();
+}
+
+// ---- the brush's ring under the pointer ------------------------------------------------------------
+
+let lastPointer2d = null;
+function moveCursor2d(e = null) {
+  if (e) { const r = $stage.getBoundingClientRect(); lastPointer2d = { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  const t = tool === 'tape' ? 'tape' : tool;
+  const show = doc && lastPointer2d && painting() && brushes[t]?.size;
+  $cur2.hidden = !show;
+  if (!show) return;
+  const d = brushes[t].size * view.s;
+  Object.assign($cur2.style, { left: `${lastPointer2d.x}px`, top: `${lastPointer2d.y}px`, width: `${d}px`, height: `${d}px` });
+  $cur2.classList.toggle('tapecur', tool === 'tape');
+}
+$stage.addEventListener('pointermove', (e) => {
+  moveCursor2d(e);
+  if (!e.buttons && doc) { const r = $stage.getBoundingClientRect(); hoverAt2d(toDoc(e.clientX - r.left, e.clientY - r.top)); }
+});
+$stage.addEventListener('pointerleave', () => { lastPointer2d = null; $cur2.hidden = true; setHover([]); });
+
+function screenPoint(e) { const r = $v3d.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+function moveCursor3d(e) {
+  const t = tool === 'tape' ? 'tape' : tool;
+  const show = e && painting() && brushes[t]?.size;
+  $cur3.hidden = !show;
+  if (!show) return;
+  const p = screenPoint(e), d = brushes[t].size;
+  Object.assign($cur3.style, { left: `${p.x}px`, top: `${p.y}px`, width: `${d}px`, height: `${d}px` });
+  $cur3.classList.toggle('tapecur', tool === 'tape');
+}
+
+// ---- the layers list, top first, with its buttons and the chosen layer's colour -----------------------
+
+function thumbOf(id) {
+  let t = thumbs.get(id);
+  if (t) return t;
+  const L = Lyr.layerOf(doc, id);
+  t = document.createElement('canvas');
+  const k = Math.min(44 / L.w, 30 / L.h);
+  t.width = Math.max(1, Math.round(L.w * k));
+  t.height = Math.max(1, Math.round(L.h * k));
+  t.getContext('2d').drawImage(els.get(id), 0, 0, t.width, t.height);
+  thumbs.set(id, t);
+  return t;
+}
+
+function drawLayers() {
+  if (!doc) { $layers.innerHTML = '<div class="lh"><span>Layers</span></div><div class="ll"><div class="lnone">Nothing open.</div></div>'; return; }
+  const sel = Lyr.layerOf(doc, doc.sel);
+  const isBase = (L) => L.id === doc.layers[0]?.id;
+  const rows = [...doc.layers].reverse().map((L) => {
+    const p = Math.round(L.opacity * 100);
+    return `<div class="layer${L.id === doc.sel ? ' on' : ''}${L.visible ? '' : ' off'}" data-l="${L.id}" draggable="true">
+      <button type="button" data-lact="eye" title="${L.visible ? 'Hide' : 'Show'} this layer" aria-pressed="${L.visible}">${L.visible ? EYE : EYE_SHUT}</button>
+      <span class="lt" data-thumb="${L.id}"></span>
+      <span class="ln" title="${esc(L.name)} (double-click to rename)">${esc(L.name)}${isBase(L) ? ' <span style="color:var(--dim)">(the game\'s)</span>' : ''}</span>
+      <button type="button" class="${L.locked ? 'on' : ''}" data-lact="lock" title="${L.locked ? 'Locked where it is: unlock it' : 'Lock it where it is'}" aria-pressed="${L.locked}">${L.locked ? LOCK : LOCK_OPEN}</button>
+      <button type="button" data-lact="del" title="Remove this layer"${isBase(L) ? ' disabled' : ''}>×</button>
+      <span class="lrow2">
+        <select data-lact="blend" aria-label="Blend of ${esc(L.name)}">${BLENDS.map((b) => `<option${b === L.blend ? ' selected' : ''}>${b}</option>`).join('')}</select>
+        <input type="range" data-lact="opacity" min="0" max="100" step="1" value="${p}" aria-label="Opacity of ${esc(L.name)}">
+        <span class="lov">${p}%</span>
+      </span>
+    </div>`;
+  }).join('');
+  const a = sel ? (adj.get(sel.id) ?? { hue: 0, sat: 100, light: 100 }) : null;
+  const can = !!sel && !isBase(sel);
+  $layers.innerHTML = `<div class="lh"><span>Layers</span><span>${doc.layers.length}</span></div>
+    <div class="lbtns">
+      <button type="button" data-lb="new" title="A new empty layer on top">+ New</button>
+      <button type="button" data-lb="dup" title="A copy of the chosen layer"${sel ? '' : ' disabled'}>Duplicate</button>
+      <button type="button" data-lb="merge" title="The chosen layer painted into the one under it"${can && doc.layers.indexOf(sel) > 1 ? '' : ' disabled'}>Merge down</button>
+      <button type="button" data-lb="clear" title="Empty the chosen layer"${can ? '' : ' disabled'}>Clear</button>
+      <button type="button" data-lb="tile" title="Repeat the chosen picture across the whole image, at its size and place"${can ? '' : ' disabled'}>Tile</button>
+    </div>
+    <div class="ll">${rows}</div>
+    ${sel ? `<div class="adj"><b>Colour of ${esc(sel.name)}</b>
+      <span>Hue</span><input type="range" data-adj="hue" min="-180" max="180" step="1" value="${a.hue}"><output>${a.hue}°</output>
+      <span>Saturation</span><input type="range" data-adj="sat" min="0" max="250" step="1" value="${a.sat}"><output>${a.sat}%</output>
+      <span>Brightness</span><input type="range" data-adj="light" min="0" max="250" step="1" value="${a.light}"><output>${a.light}%</output>
+    </div>` : ''}
+    <p class="lf">Paint on the picture or the gun; a stroke on the game's picture starts a paint layer. Drag rows to reorder. The image's alpha is kept as it was.</p>`;
+  for (const slot of $layers.querySelectorAll('[data-thumb]')) slot.append(thumbOf(slot.dataset.thumb));
+}
+
+$layers.addEventListener('click', (e) => {
+  if (!doc) return;
+  const lb = e.target.closest('[data-lb]')?.dataset.lb;
+  if (lb) { layerButton(lb); return; }
+  const row = e.target.closest('.layer');
+  if (!row) return;
+  const id = row.dataset.l;
+  const L = Lyr.layerOf(doc, id);
+  if (!L) return;
+  const act = e.target.closest('[data-lact]')?.dataset.lact;
+  if (act === 'eye') step(() => Lyr.setLayer(doc, id, { visible: !L.visible }), L.visible ? 'Hide a layer' : 'Show a layer');
+  else if (act === 'lock') step(() => Lyr.setLayer(doc, id, { locked: !L.locked }), L.locked ? 'Unlock' : 'Lock');
+  else if (act === 'del') { if (L !== doc.layers[0]) step(() => Lyr.removeLayer(doc, id), 'Delete a layer'); }
+  else if (act !== 'opacity' && act !== 'blend') { doc.sel = id; drawLayers(); drawSel(); }
+});
+$layers.addEventListener('dblclick', (e) => {
+  const row = e.target.closest('.layer');
+  if (!row || !e.target.closest('.ln') || !doc) return;
+  const L = Lyr.layerOf(doc, row.dataset.l);
+  const name = prompt('Layer name', L.name);
+  if (name && name.trim() && name !== L.name) step(() => Lyr.setLayer(doc, L.id, { name: name.trim().slice(0, 120) }), 'Rename');
+});
+let opacityBefore = null, adjBefore = null;
+$layers.addEventListener('input', (e) => {
+  if (!doc) return;
+  const inp = e.target.closest('[data-lact="opacity"]');
+  if (inp) {
+    opacityBefore ??= Lyr.snapshot(doc);
+    Lyr.setLayer(doc, inp.closest('.layer').dataset.l, { opacity: Number(inp.value) / 100 });
+    inp.nextElementSibling.textContent = `${inp.value}%`;
+    renderDoc();
+    return;
+  }
+  const k = e.target.dataset.adj;
+  if (k && doc.sel) {
+    const cur = adj.get(doc.sel) ?? { hue: 0, sat: 100, light: 100 };
+    adjBefore ??= { id: doc.sel, before: { ...cur } };
+    adj.set(doc.sel, { ...cur, [k]: Number(e.target.value) });
+    e.target.nextElementSibling.textContent = `${e.target.value}${k === 'hue' ? '°' : '%'}`;
+    renderDoc();
+  }
+});
+$layers.addEventListener('change', (e) => {
+  if (!doc) return;
+  const blend = e.target.closest('[data-lact="blend"]');
+  if (blend) { step(() => Lyr.setLayer(doc, blend.closest('.layer').dataset.l, { blend: blend.value }), `Blend: ${blend.value}`); return; }
+  if (e.target.closest('[data-lact="opacity"]') && opacityBefore) { commitDoc(opacityBefore, 'Opacity'); opacityBefore = null; afterChange(); return; }
+  if (e.target.dataset.adj && adjBefore) {
+    record({ t: 'adj', id: adjBefore.id, before: adjBefore.before, after: { ...adj.get(adjBefore.id) }, label: 'Colour of a layer' });
+    adjBefore = null;
+    afterChange();
+  }
+});
+const LAYER_ID = 'application/x-camo-layer';
+$layers.addEventListener('dragstart', (e) => {
+  const row = e.target.closest?.('.layer');
+  if (!row) return;
+  if (e.target.closest('input, select')) { e.preventDefault(); return; }
+  e.dataTransfer.setData(LAYER_ID, row.dataset.l);
+  e.dataTransfer.effectAllowed = 'move';
+});
+const dropSide = (row, e) => (e.clientY < row.getBoundingClientRect().top + row.offsetHeight / 2 ? 'above' : 'below');
+$layers.addEventListener('dragover', (e) => {
+  if (![...e.dataTransfer.types].includes(LAYER_ID)) return;
+  const row = e.target.closest('.layer');
+  if (!row) return;
+  e.preventDefault();
+  for (const x of $layers.querySelectorAll('.layer')) x.classList.remove('dropabove', 'dropbelow');
+  row.classList.add(`drop${dropSide(row, e)}`);
+});
+$layers.addEventListener('drop', (e) => {
+  const id = e.dataTransfer.getData(LAYER_ID);
+  const row = e.target.closest('.layer');
+  if (!id || !row || !doc) return;
+  e.preventDefault();
+  const rest = doc.layers.filter((L) => L.id !== id);
+  const at = rest.findIndex((L) => L.id === row.dataset.l);
+  if (at < 0) { drawLayers(); return; }
+  step(() => Lyr.reorder(doc, id, Math.max(1, dropSide(row, e) === 'above' ? at + 1 : at)), 'Reorder');   // the game's stays at the bottom
+});
+$layers.addEventListener('dragend', () => { if (doc) drawLayers(); });
+
+function layerButton(lb) {
+  const L = Lyr.layerOf(doc, doc.sel);
+  if (lb === 'new') { newPaintLayer(); return; }
+  if (!L) return;
+  if (lb === 'dup') {
+    const c = blankCanvas(els.get(L.id).width, els.get(L.id).height);
+    ctxOf(c).drawImage(els.get(L.id), 0, 0);
+    step(() => {
+      const D = Lyr.addLayer(doc, { name: `${L.name} copy`, w: L.w, h: L.h, x: L.x, y: L.y, s: L.s, opacity: L.opacity, visible: L.visible, blend: L.blend });
+      els.set(D.id, c);
+      if (adj.has(L.id)) adj.set(D.id, { ...adj.get(L.id) });
+      Lyr.reorder(doc, D.id, doc.layers.indexOf(L) + 1);
+    }, 'Duplicate');
+    return;
+  }
+  if (L === doc.layers[0]) return;
+  if (lb === 'clear') {
+    const c = els.get(L.id);
+    const before = ctxOf(c).getImageData(0, 0, c.width, c.height);
+    ctxOf(c).clearRect(0, 0, c.width, c.height);
+    record({ t: 'px', id: L.id, before, label: 'Clear a layer' });
+    thumbs.delete(L.id);
+    afterChange();
+    return;
+  }
+  if (lb === 'merge') {
+    const i = doc.layers.indexOf(L), B = doc.layers[i - 1];
+    if (!B || B === doc.layers[0]) return;
+    const bc = els.get(B.id);
+    const before = ctxOf(bc).getImageData(0, 0, bc.width, bc.height);
+    const g = ctxOf(bc);
+    g.save();
+    g.setTransform(1 / B.s, 0, 0, 1 / B.s, -B.x / B.s, -B.y / B.s);
+    g.globalAlpha = L.opacity;
+    g.globalCompositeOperation = L.blend === 'normal' ? 'source-over' : L.blend;
+    g.filter = filterOf(L.id) || 'none';
+    g.drawImage(els.get(L.id), L.x, L.y, L.w * L.s, L.h * L.s);
+    g.restore();
+    const snap = Lyr.snapshot(doc);
+    Lyr.removeLayer(doc, L.id);
+    doc.sel = B.id;
+    Lyr.commit(doc, snap);
+    record({ t: 'group', items: [{ t: 'px', id: B.id, before }, { t: 'doc' }], label: 'Merge down' });
+    thumbs.delete(B.id);
+    afterChange();
+    return;
+  }
+  if (lb === 'tile') {
+    const c = blankCanvas(doc.width, doc.height);
+    const g = ctxOf(c);
+    const src = els.get(L.id);
+    const w = L.w * L.s, h = L.h * L.s;
+    const ox = ((L.x % w) + w) % w - w, oy = ((L.y % h) + h) % h - h;
+    for (let y = oy; y < doc.height; y += h) for (let x = ox; x < doc.width; x += w) g.drawImage(src, x, y, w, h);
+    const beforeCanvas = src;
+    const snap = Lyr.snapshot(doc);
+    Object.assign(L, { w: doc.width, h: doc.height, x: 0, y: 0, s: 1 });
+    els.set(L.id, c);
+    Lyr.commit(doc, snap);
+    record({ t: 'group', items: [{ t: 'canvas', id: L.id, before: beforeCanvas, after: c }, { t: 'doc' }], label: 'Tile' });
+    thumbs.delete(L.id);
+    tell(`${L.name} tiled across the image.`);
+    afterChange();
+  }
+}
+
+// ---- files dragged in from Explorer ---------------------------------------------------------------
+
+const carriesFiles = (dt) => !!dt && [...dt.types].includes('Files');
+$stage.addEventListener('dragover', (e) => {
+  if (!carriesFiles(e.dataTransfer)) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+  $('droptext').textContent = doc ? 'Drop to add it as a layer' : 'Drop to open';
+  $drop.hidden = false;
+});
+$stage.addEventListener('dragleave', (e) => { if (!$stage.contains(e.relatedTarget)) $drop.hidden = true; });
+$stage.addEventListener('drop', async (e) => {
+  if (!carriesFiles(e.dataTransfer)) return;
+  e.preventDefault();
+  $drop.hidden = true;
+  const files = [...e.dataTransfer.files];
+  if (!files.length) return;
+  if (!doc || (files.length === 1 && extOf(files[0].name) === '.psd')) {
+    await openBytes(files[0].name, new Uint8Array(await files[0].arrayBuffer()));
+    return;
+  }
+  const r = $stage.getBoundingClientRect();
+  const at = toDoc(e.clientX - r.left, e.clientY - r.top);
+  for (const f of files) await addPicture(f.name, new Uint8Array(await f.arrayBuffer()), at);
+});
+window.addEventListener('dragover', (e) => e.preventDefault());
+window.addEventListener('drop', (e) => e.preventDefault());
+
+// ---- saving: a .dds for the running game, an .iwi for a build, a .psd that keeps the layers ---------
+
+/** Every layer at the size it is shown (its colour adjustment in it), the picture they make, and that with the alpha. */
+async function exportDoc({ skipBase = false } = {}) {
+  const W = doc.width, H = doc.height;
+  const parts = doc.layers.filter((L) => !(skipBase && L === doc.layers[0])).map((L) => {
+    const w = Math.max(1, Math.round(L.w * L.s));
+    const h = Math.max(1, Math.round(L.h * L.s));
+    const c = new OffscreenCanvas(w, h);
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.imageSmoothingQuality = 'high';
+    g.filter = filterOf(L.id) || 'none';
+    g.drawImage(els.get(L.id), 0, 0, w, h);
+    return { L, c, g, w, h, left: Math.round(L.x), top: Math.round(L.y) };
+  });
+  const comp = new OffscreenCanvas(W, H);
+  const cg = comp.getContext('2d', { willReadFrequently: true });
+  for (const p of parts) {
+    if (!p.L.visible) continue;
+    cg.globalAlpha = p.L.opacity;
+    cg.globalCompositeOperation = p.L.blend === 'normal' ? 'source-over' : p.L.blend;
+    cg.drawImage(p.c, p.left, p.top);
+  }
+  const shown = new Uint8Array(cg.getImageData(0, 0, W, H).data.buffer);
+  const texture = new Uint8Array(shown);
+  for (let i = 0; i < W * H; i++) texture[i * 4 + 3] = tex.alpha[i];
+  const layers = parts.map((p) => ({
+    name: p.L.name, left: p.left, top: p.top, width: p.w, height: p.h,
+    rgba: new Uint8Array(p.g.getImageData(0, 0, p.w, p.h).data.buffer),
+    opacity: p.L.opacity, visible: p.L.visible, blend: p.L.blend,
+  }));
+  if (!skipBase) {
+    // The alpha as a hidden layer of its own, named so it comes back as the alpha, with the .iwi header's first
+    // 32 bytes (flags, gamma, gloss) in its name.
+    const grey = new Uint8Array(W * H * 4);
+    for (let i = 0; i < W * H; i++) { const a = tex.alpha[i]; grey[i * 4] = grey[i * 4 + 1] = grey[i * 4 + 2] = a; grey[i * 4 + 3] = 255; }
+    layers.push({ name: `${ALPHA_LAYER}${tex.header ? ` (iwi ${hex(tex.header.subarray(0, 32))})` : ''}`, left: 0, top: 0, width: W, height: H, rgba: grey, opacity: 1, visible: false, blend: 'normal' });
+  }
+  const psd = writePsd({ width: W, height: H, composite: shown, layers: layers.length ? layers : [{ name: 'empty', left: 0, top: 0, width: 1, height: 1, rgba: new Uint8Array(4), opacity: 1, visible: true, blend: 'normal' }] });
+  return { texture, psd, comp };
+}
+
+const stampNow = () => {
+  const d = new Date(), p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+};
+
+async function save() {
+  if (!doc || busy) return;
+  const image = $imgname.value.trim();
+  if (!IMAGE_NAME.test(image)) { tell('The game image name is letters, digits and ~ - _ & . only (the .iwi\'s name without .iwi).', true); return; }
+  busy = true;
+  $('save').disabled = true;
+  $('save').textContent = 'Saving…';
+  try {
+    const { texture, psd } = await exportDoc();
+    // a sky folds back into its six faces: a cube .dds (every mip) for the live swap, a cube .iwi for a sky set
+    const mips = tex.cube ? mipChain(texture.subarray(0, 4), 1, 1) : mipChain(texture, doc.width, doc.height);
+    const files = tex.cube ? {
+      dds: writeDdsCube({ cross: texture, face: tex.cube }),
+      iwi: writeIwiCube({ cross: texture, face: tex.cube, header: tex.header }),
+      psd,
+    } : {
+      dds: writeDds({ width: doc.width, height: doc.height, mips }),
+      iwi: writeIwi({ width: doc.width, height: doc.height, mips, header: tex.header }),
+      psd,
+    };
+    const stamp = stampNow();
+    const paths = {};
+    for (const [ext, bytes] of Object.entries(files)) {
+      const r = await fetch(`/api/save?image=${encodeURIComponent(image)}&stamp=${stamp}&ext=${ext}`, {
+        method: 'POST', headers: { 'x-camo': '1', 'content-type': 'application/octet-stream' }, body: bytes,
+      });
+      const j = await r.json().catch(() => null);
+      if (!r.ok || !j?.ok) throw new Error(`the .${ext}: ${j?.error ?? `refused (${r.status})`}`);
+      paths[ext] = j.path;
+    }
+    saved = paths;
+    doc.dirty = false;
+    toast(`Saved: ${paths.dds.split(/[\\/]/).slice(-2).join('\\')} (and its .iwi, .psd)`, 'good', [['Send to the game', () => sendToGame(image, paths.dds)], ['Copy img swap line', () => navigator.clipboard.writeText(`img swap ${image}|${paths.dds}`)]]);
+    tell(tex.cube ? `Saved the sky: its six faces folded back. To see it in the game: the Designer's Sky page > New set from my painted skies, then Install set and restart the game.`
+                  : `Saved ${mips.length} mips${tex.header ? ', the .iwi with the original\'s header' : ', the .iwi with ImageConverter\'s header (no original .iwi was opened)'}.`);
+  } catch (e) {
+    tell(`Not saved: ${e.message}`, true);
+  } finally {
+    busy = false;
+    $('save').disabled = !doc;
+    $('save').textContent = 'Save DDS + IWI';
+  }
+}
+
+
+const $pub = $('pubdlg');
+const DRAFT = 'camo.publishDraft';
+function loadDraft() {
+  let d = {};
+  try { d = JSON.parse(kept(DRAFT) ?? '{}') ?? {}; } catch { d = {}; }
+  for (const el of $pub.querySelectorAll('[data-draft]')) {
+    const v = d[el.dataset.draft];
+    if (v === undefined) continue;
+    if (el.type === 'checkbox') el.checked = !!v; else el.value = v;
+  }
+}
+// what is typed is kept as it is typed (pages-save-every-keystroke)
+$pub.addEventListener('input', () => {
+  const d = {};
+  for (const el of $pub.querySelectorAll('[data-draft]')) d[el.dataset.draft] = el.type === 'checkbox' ? el.checked : el.value;
+  keep(DRAFT, JSON.stringify(d));
+});
+$('publish').onclick = () => { if (!doc) return; loadDraft(); $('pubsay').textContent = ''; $('pubpics').innerHTML = ''; $pub.showModal(); };
+$('pubclose').onclick = () => $pub.close();
+
+async function sha256Hex(bytes) {
+  const d = await crypto.subtle.digest('SHA-256', bytes);
+  return hex(new Uint8Array(d));
+}
+
+async function makePackage() {
+  const image = $imgname.value.trim();
+  const title = $('pubtitle').value.trim();
+  if (!IMAGE_NAME.test(image)) { $('pubsay').textContent = 'The game image name is not right (see the bar).'; return; }
+  if (!title) { $('pubsay').textContent = 'A design needs a title.'; return; }
+  if (doc.layers.length < 2) { $('pubsay').textContent = 'There is nothing of yours yet: a design is the layers on top of the game\'s picture.'; return; }
+  $('pubmake').disabled = true;
+  $('pubsay').textContent = 'Making the package…';
+  try {
+    const stamp = stampNow();
+    const { comp } = await exportDoc();
+    const mine = await exportDoc({ skipBase: true });
+    // the base it was painted on, so a receiver can tell whether theirs is the same picture
+    const base = els.get(doc.layers[0].id);
+    const baseRgba = new Uint8Array(ctxOf(base).getImageData(0, 0, base.width, base.height).data.buffer);
+    for (let i = 0; i < tex.alpha.length; i++) baseRgba[i * 4 + 3] = tex.alpha[i];
+    const pv = new OffscreenCanvas(512, Math.round(512 * doc.height / doc.width));
+    pv.getContext('2d').drawImage(comp, 0, 0, pv.width, pv.height);
+    const files = { 'layers.psd': mine.psd, 'preview.png': new Uint8Array(await (await pv.convertToBlob({ type: 'image/png' })).arrayBuffer()) };
+    const turns = [];
+    if (view3d?.hasMesh) {
+      scheduleLiveNow();
+      [[-0.6, 0.25], [Math.PI * 0.5, 0.15], [Math.PI + 0.6, 0.45]].forEach(([yaw, pitch], i) => {
+        const url = view3d.snapshot(yaw, pitch);
+        const b = atob(url.split(',')[1]);
+        files[`turn-${i + 1}.png`] = Uint8Array.from(b, (c) => c.charCodeAt(0));
+        turns.push(`turn-${i + 1}.png`);
+      });
+    }
+    const manifest = {
+      format: 'reluduali-camo/1',
+      title, description: $('pubdesc').value.trim(),
+      tags: $('pubtags').value.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 20),
+      priceButter: Math.max(0, Math.round(Number($('pubprice').value) || 0)),
+      allowRemix: $('pubremix').checked,
+      image, size: [doc.width, doc.height],
+      models: [...$model.options].map((o) => o.textContent).filter((n) => /_lod\d/.test(n)),
+      base: { sha256: await sha256Hex(baseRgba), from: tex.what },
+      layers: 'layers.psd', preview: 'preview.png', turns,
+      made: new Date().toISOString().slice(0, 19) + 'Z', tool: `Reluduali Camo Editor ${VERSION}`,
+    };
+    files['manifest.json'] = new TextEncoder().encode(JSON.stringify(manifest, null, 2));
+    let folder = '';
+    for (const [name, bytes] of Object.entries(files)) {
+      const r = await fetch(`/api/package?image=${encodeURIComponent(image)}&stamp=${stamp}&file=${encodeURIComponent(name)}`, {
+        method: 'POST', headers: { 'x-camo': '1', 'content-type': 'application/octet-stream' }, body: bytes,
+      });
+      const j = await r.json().catch(() => null);
+      if (!r.ok || !j?.ok) throw new Error(`${name}: ${j?.error ?? `refused (${r.status})`}`);
+      folder = j.path.replace(/[\\/][^\\/]+$/, '');
+    }
+    $('pubpics').innerHTML = ['preview.png', ...turns].map((n) => `<img alt="${n}" src="${URL.createObjectURL(new Blob([files[n]], { type: 'image/png' }))}">`).join('');
+    $('pubsay').innerHTML = `Package made: <code>${esc(folder)}</code>. Uploading waits for reluduali.com to take designs.`;
+    lastPackage = folder;
+  } catch (e) {
+    $('pubsay').textContent = `Not made: ${e.message}`;
+  } finally {
+    $('pubmake').disabled = false;
+  }
+}
+let lastPackage = null;
+$('pubmake').onclick = makePackage;
+
+// ---- the bar ------------------------------------------------------------------------------------
+
+function drawBar() {
+  if (!doc) {
+    $bar.innerHTML = say ? `<span class="${say.kind}">${esc(say.text)}</span>` : '<span>Nothing open.</span>';
+    return;
+  }
+  const bits = [
+    `<span class="name">${esc(tex.image || '(no name)')}</span>`,
+    `<span>${doc.width} × ${doc.height}, ${esc(tex.what)}</span>`,
+    `<span>${Math.round(view.s * 100)}%</span>`,
+    `<span>${doc.layers.length} layer${doc.layers.length === 1 ? '' : 's'}</span>`,
+  ];
+  if (doc.dirty) bits.push('<span class="dirty">unsaved</span>');
+  if (say) bits.push(`<span class="${say.kind}">${esc(say.text)}</span>`);
+  if (saved && !doc.dirty) {
+    const swap = `img swap ${tex.image}|${saved.dds}`;
+    bits.push(`<span>.dds <code>${esc(saved.dds)}</code></span>`,
+      `<button type="button" data-swap="${esc(tex.image)}" data-dds="${esc(saved.dds)}" title="Into the running game now (the Designer's RipperBridge img swap)">Send to the game</button>`,
+      `<button type="button" data-copy="${esc(swap)}" title="${esc(swap)}">Copy the img swap line</button>`,
+      `<button type="button" data-copy="${esc(saved.iwi)}" title="${esc(saved.iwi)}">Copy the .iwi path</button>`);
+  }
+  if (autosavedAt) bits.push(`<span class="autosaved" title="Kept as you work in out\\${esc(tex.image)}\\autosave\\">autosaved ${autosavedAt}</span>`);
+  bits.push('<span class="hint">? shortcuts · V move · B brush · A spray · R randomizer · E eraser · D gradient · G fill · W text · T tape · \\ compare</span>');
+  $bar.innerHTML = bits.join('');
+}
+$bar.addEventListener('click', async (e) => {
+  const sw = e.target.closest('[data-swap]');
+  if (sw) { sendToGame(sw.dataset.swap, sw.dataset.dds); return; }
+  const b = e.target.closest('[data-copy]');
+  if (!b) return;
+  try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = 'Copied'; } catch { prompt('Copy this:', b.dataset.copy); }
+});
+
+// ---- the model: its UV layout over the picture, and the gun in 3D ------------------------------------
+// Mycelium, 2026-10-17: "Make sure we have a 3D Version of the Model ... Also make sure that you're painting over the
+// original texture UV so you can see where your changes are gonna be applied."
+// OpenAssetTools' XMODEL_EXPORT keeps the game's own UVs: V runs DOWN the picture, as its rows do. Measured
+// 2026-10-17 on the DSR-50: drawn as is, every island sits on its painted shape (the bolt's hexagon, the stock's
+// outline); drawn flipped, none does (check/uv-orientation.py draws both).
+
+let mesh = null;                // models.py's mesh of the chosen model
+let uvTris = null;              // Float32Array: the edited image's triangles in picture pixels, 6 numbers each
+let editPos = null;             // Float32Array: the same triangles' corners in the model's space, 9 numbers each
+let isl = null;                 // islands.js's islands of them
+let showUV = true;
+let view3d = null;
+try { view3d = createView3d($v3d); } catch (e) { $('v3dnote').textContent = `No 3D here: ${e.message}`; }
+const liveCanvas = document.createElement('canvas');
+let liveQueued = false;
+
+async function findModels(image) {
+  $model.innerHTML = '<option>looking for the model…</option>';
+  $model.disabled = true;
+  let list = [];
+  try {
+    const r = await fetch(`/api/models?image=${encodeURIComponent(image)}`);
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error);
+    list = j.models;
+  } catch (e) { list = []; $('v3dnote').textContent = `No models: ${e.message}`; }
+  if (!tex || tex.image !== image) return;
+  if (!list.length) {
+    $model.innerHTML = '<option>no dumped model draws this image</option>';
+    $('uvbtn').disabled = true;
+    $v3dbox.hidden = true;
+    return;
+  }
+  $model.innerHTML = list.map((m) => `<option value="${esc(m.file)}">${esc(m.name)}</option>`).join('');
+  $model.disabled = false;
+  await loadModel(list[0].file);
+}
+
+async function readImageFile(path) {
+  const r = await fetch(`/api/file?path=${encodeURIComponent(path)}`);
+  if (!r.ok) return null;
+  const t = readTexture(new Uint8Array(await r.arrayBuffer()));
+  return t.ok ? { rgba: t.mips[0], w: t.width, h: t.height } : null;
+}
+
+async function loadModel(file) {
+  let m;
+  try {
+    const r = await fetch(`/api/mesh?file=${encodeURIComponent(file)}`);
+    m = await r.json();
+    if (!r.ok) throw new Error(m.error);
+  } catch (e) { tell(`The model could not be read: ${e.message}`, true); return; }
+  if (!doc) return;
+  mesh = m;
+  const W = doc.width, H = doc.height, mine = tex.image.toLowerCase();
+  // The edited image's triangles in picture pixels, each moved by whole tiles so it sits over the picture
+  // (a UV of 1.2 draws the picture's 0.2: the texture repeats); and their corners in 3D, in the same order.
+  const tris = [], pos = [];
+  for (const P of mesh.parts) {
+    if (P.image.toLowerCase() !== mine) continue;
+    for (let i = 0; i < P.uv.length; i += 6) {
+      const us = [P.uv[i], P.uv[i + 2], P.uv[i + 4]], vs = [P.uv[i + 1], P.uv[i + 3], P.uv[i + 5]];
+      const du = Math.floor((us[0] + us[1] + us[2]) / 3), dv = Math.floor((vs[0] + vs[1] + vs[2]) / 3);
+      for (let k = 0; k < 3; k++) tris.push((us[k] - du) * W, (vs[k] - dv) * H);
+      for (let k = 0; k < 9; k++) pos.push(P.position[(i / 2) * 3 + k]);
+    }
+  }
+  uvTris = new Float32Array(tris);
+  editPos = new Float32Array(pos);
+  isl = buildIslands(uvTris);
+  $('uvbtn').disabled = false;
+  drawUV();
+  if (!view3d) return;
+  layout();
+  // The other parts wear their own images, and every part its material's maps, from the dump, when they are there.
+  const images = new Map();
+  for (const P of mesh.parts) {
+    const want = [];
+    if (P.file && P.image.toLowerCase() !== mine && !images.has(P.image.toLowerCase())) want.push([P.image.toLowerCase(), P.file]);
+    for (const f of Object.values(P.maps ?? {})) if (!images.has(f)) want.push([f, f]);
+    for (const [key, path] of want) {
+      try { const t = await readImageFile(path); if (t) images.set(key, t); } catch { /* drawn without it */ }
+    }
+  }
+  if (mesh !== m) return;
+  view3d.setMesh(mesh, images, tex.image);
+  drawTape();
+  $('v3dnote').textContent = `${mesh.model}: ${uvTris.length / 6} triangles, ${isl.islands.length} parts wear this image`;
+  scheduleLiveNow();
+}
+
+/** The picture as the layers make it now, onto the gun: once a frame at most. */
+function scheduleLive() {
+  if (liveQueued || !view3d?.hasMesh || !doc || $v3dbox.hidden) return;
+  liveQueued = true;
+  requestAnimationFrame(() => { liveQueued = false; scheduleLiveNow(); });
+}
+function scheduleLiveNow() {
+  if (!doc || !view3d?.hasMesh) return;
+  if (liveCanvas.width !== doc.width || liveCanvas.height !== doc.height) { liveCanvas.width = doc.width; liveCanvas.height = doc.height; }
+  const g = liveCanvas.getContext('2d');
+  g.clearRect(0, 0, doc.width, doc.height);
+  composeInto(g);
+  view3d.updateLive(liveCanvas);
+}
+
+/** The UV layout over the picture, in screen pixels so its lines stay thin at any zoom. */
+function drawUV() {
+  const on = !!(doc && uvTris && (showUV || hover) && mode === 'colour');
+  $uv.hidden = !on;
+  if (!on) return;
+  const r = $stage.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  const w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
+  if ($uv.width !== w || $uv.height !== h) { $uv.width = w; $uv.height = h; $uv.style.width = `${r.width}px`; $uv.style.height = `${r.height}px`; }
+  const g = $uv.getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, w, h);
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.beginPath();
+  const t = uvTris;
+  for (let i = 0; i < t.length; i += 6) {
+    const ax = view.x + t[i] * view.s, ay = view.y + t[i + 1] * view.s;
+    g.moveTo(ax, ay);
+    g.lineTo(view.x + t[i + 2] * view.s, view.y + t[i + 3] * view.s);
+    g.lineTo(view.x + t[i + 4] * view.s, view.y + t[i + 5] * view.s);
+    g.lineTo(ax, ay);
+  }
+  g.lineWidth = 1;
+  g.strokeStyle = 'rgba(95, 221, 160, 0.5)';
+  if (showUV) g.stroke();
+  if (hover) {                                   // the part the click would take
+    g.beginPath();
+    for (const isle of hover.islands) for (const tri of isl.islands[isle]) {
+      const i = tri * 6;
+      g.moveTo(view.x + t[i] * view.s, view.y + t[i + 1] * view.s);
+      g.lineTo(view.x + t[i + 2] * view.s, view.y + t[i + 3] * view.s);
+      g.lineTo(view.x + t[i + 4] * view.s, view.y + t[i + 5] * view.s);
+      g.closePath();
+    }
+    g.fillStyle = 'rgba(255, 214, 90, 0.38)';
+    g.fill();
+    g.strokeStyle = 'rgba(255, 214, 90, 0.9)';
+    g.stroke();
+  }
+}
+
+// ---- the 3D view's mouse: paint with the left button, turn with the right (or the left with Move) ------------
+
+/** Where on the picture a point of the 3D view lands (the edited image's first triangle under it), or null. */
+function pictureUnder(e) {
+  if (!editPos) return null;
+  const p = screenPoint(e);
+  const ray = view3d.rayAt(p.x, p.y);
+  if (!ray) return null;
+  const hit = raycast(editPos, ray.origin, ray.dir);
+  return hit ? pictureAt(uvTris, hit) : null;
+}
+
+$v3d.addEventListener('pointerdown', (e) => {
+  if (!view3d?.hasMesh || !doc) return;
+  e.preventDefault();
+  const orbitButton = tool === 'move' ? e.button === 0 && !e.shiftKey : e.button === 2 || (e.button === 0 && e.altKey && !painting());
+  const panButton = e.button === 1 || (e.shiftKey && (e.button === 2 || (tool === 'move' && e.button === 0))) || (tool === 'move' && e.button === 2);
+  if (panButton) { dragCam(e, 'pan'); return; }
+  if (orbitButton) { dragCam(e, 'orbit'); return; }
+  if (e.button !== 0) return;
+  if (e.altKey && painting()) { const q = pictureUnder(e); if (q) pickAt(q); return; }
+  if (tool === 'gradient') { startGradient('3d', screenPoint(e), e); return; }
+  if (tool === 'pick' || tool === 'fill' || tool === 'text' || (tool === 'tape' && (brushes.tape.mode === 'part' || brushes.tape.mode === 'isolate'))) {
+    const q = pictureUnder(e);
+    if (!q) { tell('Not on a part of the gun that wears this image.', true); return; }
+    if (tool === 'pick') pickAt(q);
+    else if (tool === 'fill') fillPartAt(q, e.shiftKey);
+    else if (tool === 'text') placeText(q);
+    else tapePartAt(q, brushes.tape.mode === 'isolate' || e.shiftKey);
+    return;
+  }
+  if (painting()) startStroke('3d', screenPoint(e), e);
+});
+$v3d.addEventListener('contextmenu', (e) => e.preventDefault());
+$v3d.addEventListener('wheel', (e) => { e.preventDefault(); view3d?.zoomBy(e.deltaY); }, { passive: false });
+$v3d.addEventListener('dblclick', () => view3d?.frame());
+$v3d.addEventListener('pointermove', (e) => { if (!stroke) { moveCursor3d(e); if (!e.buttons) hoverAt3d(e); } });
+$v3d.addEventListener('pointerleave', () => { $cur3.hidden = true; setHover([]); });
+function dragCam(e, how) {
+  let last = { x: e.clientX, y: e.clientY };
+  follow($v3d, e, (m) => {
+    const dx = m.clientX - last.x, dy = m.clientY - last.y;
+    last = { x: m.clientX, y: m.clientY };
+    if (how === 'pan') view3d.panBy(dx, dy); else view3d.orbitBy(dx, dy);
+  }, () => {});
+}
+$('frame3d').onclick = () => view3d?.frame();
+let dimmed = false;
+$('dim3d').onclick = () => { dimmed = !dimmed; if (view3d) view3d.dimOthers = dimmed; $('dim3d').textContent = dimmed ? 'Show others' : 'Dim others'; };
+$('bright3d').onclick = () => {
+  if (!view3d) return;
+  const steps = [0.6, 0.8, 1.0, 1.3, 1.7];
+  view3d.exposure = steps[(steps.indexOf(view3d.exposure) + 1) % steps.length] ?? 1;
+  $('bright3d').textContent = `Light ×${view3d.exposure.toFixed(1)}`;
+};
+
+// ---- the views: 2D, both, 3D --------------------------------------------------------------------
+let layoutMode = kept('camo.layout') ?? 'both';
+function layout() {
+  for (const b of document.querySelectorAll('[data-layout]')) b.setAttribute('aria-pressed', String(b.dataset.layout === layoutMode));
+  $work.classList.toggle('only2d', layoutMode === '2d');
+  $work.classList.toggle('only3d', layoutMode === '3d' && !!mesh);
+  $v3dbox.hidden = !mesh || !view3d || layoutMode === '2d';
+  if (!$v3dbox.hidden) { scheduleLive(); view3d.draw(); }
+  if (doc) requestAnimationFrame(() => renderView());
+}
+for (const b of document.querySelectorAll('[data-layout]')) b.onclick = () => { layoutMode = b.dataset.layout; keep('camo.layout', layoutMode); layout(); };
+
+// ---- toasts: what just happened, in the corner, gone by itself -------------------------------------
+function toast(text, kind = 'good', actions = []) {
+  const t = document.createElement('div');
+  t.className = `toast ${kind}`;
+  t.innerHTML = `<span>${esc(text)}</span>`;
+  for (const [label, fn] of actions) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    b.onclick = () => { fn(); t.remove(); };
+    t.append(b);
+  }
+  const x = document.createElement('button');
+  x.type = 'button'; x.textContent = '×'; x.title = 'Dismiss';
+  x.onclick = () => t.remove();
+  t.append(x);
+  $('toasts').append(t);
+  if (!actions.length) setTimeout(() => t.remove(), kind === 'bad' ? 7000 : 4000);
+  while ($('toasts').children.length > 4) $('toasts').firstChild.remove();
+}
+
+// ---- menus ---------------------------------------------------------------------------------------
+function toggleMenu(id) {
+  const m = $(id), open = m.hidden;
+  closeMenus();
+  m.hidden = !open;
+  if (open && id === 'openpop') { drawRecent(); $path.focus(); }
+}
+function closeMenus() { for (const id of ['openpop', 'addpop']) $(id).hidden = true; }
+$('openmenu').onclick = (e) => { e.stopPropagation(); toggleMenu('openpop'); };
+$('addmenu').onclick = (e) => { e.stopPropagation(); toggleMenu('addpop'); };
+document.addEventListener('pointerdown', (e) => {
+  if (!e.target.closest('.menuwrap')) closeMenus();
+  if (!e.target.closest('#cpop') && e.target.id !== 'colourbtn') $('cpop').hidden = true;
+  if (!e.target.closest('#ctx')) $('ctx').hidden = true;
+});
+for (const d of document.querySelectorAll('dialog')) d.addEventListener('click', (e) => { if (e.target.closest('[data-close]')) d.close(); });
+$('helpbtn').onclick = () => $('helpdlg').showModal();
+
+// ---- recent files, and the guns to pick from -------------------------------------------------------
+const recentFiles = () => { try { return JSON.parse(kept('camo.recentFiles') ?? '[]'); } catch { return []; } };
+function addRecent(path) {
+  const list = [path, ...recentFiles().filter((x) => x.toLowerCase() !== path.toLowerCase())].slice(0, 8);
+  keep('camo.recentFiles', JSON.stringify(list));
+}
+function recentHtml() {
+  const list = recentFiles();
+  return list.length ? list.map((f) => `<button type="button" data-recent="${esc(f)}" title="${esc(f)}">${esc(baseName(f))}<small>${esc(f.split(/[\\/]/).slice(-3, -1).join('\\'))}</small></button>`).join('') : '<span style="color:var(--dim);padding:2px 6px">Nothing yet.</span>';
+}
+function drawRecent() {
+  $('recent').innerHTML = recentHtml();
+  $('welcomerecent').innerHTML = recentFiles().length ? `<h4 style="margin:0 0 4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase">Recent</h4><div class="recent">${recentHtml()}</div>` : '';
+}
+document.addEventListener('click', async (e) => {
+  const r = e.target.closest('[data-recent]');
+  if (!r) return;
+  $path.value = r.dataset.recent;
+  keep('camo.path', $path.value);
+  await openPath();
+});
+
+let guns = null;
+async function loadGuns() {
+  if (guns) return guns;
+  try { guns = (await (await fetch('/api/guns')).json()).guns ?? []; } catch { guns = []; }
+  return guns;
+}
+function gunGrid(el, filter) {
+  const q = filter.trim().toLowerCase();
+  const list = (guns ?? []).filter((g) => !q || g.name.includes(q) || g.image.toLowerCase().includes(q));
+  el.innerHTML = list.length ? list.map((g) => `<button type="button" class="gun" data-gun="${esc(g.file)}" title="${esc(g.image)}">
+      <img loading="lazy" alt="" src="/api/thumb?file=${encodeURIComponent(g.file)}">
+      <b>${esc(g.name)}</b><small>${esc(g.image)}</small></button>`).join('')
+    : `<span class="lead">${guns?.length ? 'No gun by that name.' : 'No guns yet: Make the gun models, on the Designer\'s Camo Editor page (once, about a minute), and every gun shows here. Or open a file.'}</span>`;
+}
+async function openGun(file) {
+  $path.value = file;
+  keep('camo.path', file);
+  $('gundlg').close();
+  await openPath();
+}
+document.addEventListener('click', (e) => {
+  const g = e.target.closest('[data-gun]');
+  if (g) openGun(g.dataset.gun);
+});
+$('gunsearch').addEventListener('input', () => gunGrid($('gungrid'), $('gunsearch').value));
+$('gunsearch2').addEventListener('input', () => gunGrid($('gungrid2'), $('gunsearch2').value));
+$('guns').onclick = async () => { closeMenus(); await loadGuns(); gunGrid($('gungrid2'), ''); $('gundlg').showModal(); $('gunsearch2').focus(); };
+$('welcomeopen').onclick = () => $('openfile').click();
+loadGuns().then(() => gunGrid($('gungrid'), $('gunsearch').value));
+drawRecent();
+
+// ---- the part under the pointer: what Fill and Tape would take, lit before the click -------------------
+let hover = null;                              // { key, islands }
+const hiCanvas = document.createElement('canvas');
+const hoverTool = () => tool === 'fill' || (tool === 'tape' && (brushes.tape.mode === 'part' || brushes.tape.mode === 'isolate'));
+function setHover(islands) {
+  const key = islands.join(',');
+  if ((hover?.key ?? '') === key) return;
+  hover = islands.length ? { key, islands } : null;
+  drawUV();
+  if (!view3d?.hasMesh) return;
+  if (!hover) { view3d.setHighlight(null); return; }
+  if (hiCanvas.width !== doc.width || hiCanvas.height !== doc.height) { hiCanvas.width = doc.width; hiCanvas.height = doc.height; }
+  const g = hiCanvas.getContext('2d');
+  g.clearRect(0, 0, hiCanvas.width, hiCanvas.height);
+  g.fillStyle = '#ffffff';
+  fillTriangles(g, uvTris, hover.islands.flatMap((i) => isl.islands[i]));
+  view3d.setHighlight(hiCanvas);
+}
+function hoverAt2d(p) { setHover(hoverTool() && uvTris ? partsAt(p) : []); }
+function hoverAt3d(e) {
+  if (!hoverTool() || !uvTris) { setHover([]); return; }
+  const q = pictureUnder(e);
+  setHover(q ? partsAt(q) : []);
+}
+
+// ---- the gradient: dragged on the picture, or across the gun and projected -------------------------
+function pointOf(where, m) {
+  if (where === '3d') return screenPoint(m);
+  const r = $stage.getBoundingClientRect();
+  return toDoc(m.clientX - r.left, m.clientY - r.top);
+}
+function showGuide(where, a, b) {
+  const g = where === '2d' ? $('guide2d') : $('guide3d');
+  const sa = where === '2d' ? { x: view.x + a.x * view.s, y: view.y + a.y * view.s } : a;
+  const sb = where === '2d' ? { x: view.x + b.x * view.s, y: view.y + b.y * view.s } : b;
+  g.hidden = false;
+  Object.assign(g.style, { left: `${sa.x}px`, top: `${sa.y}px`, width: `${Math.hypot(sb.x - sa.x, sb.y - sa.y)}px`, transform: `rotate(${Math.atan2(sb.y - sa.y, sb.x - sa.x)}rad)` });
+}
+function startGradient(where, a, e) {
+  let b = a;
+  const el = where === '2d' ? $stage : $v3d;
+  showGuide(where, a, b);
+  follow(el, e, (m) => { b = pointOf(where, m); showGuide(where, a, b); }, () => {
+    $('guide2d').hidden = true; $('guide3d').hidden = true;
+    if (Math.hypot(b.x - a.x, b.y - a.y) > 2) applyGradient(where, a, b);
+  });
+}
+function gradientInto(g, w, h, a, b, k = 1) {
+  const [r, gr, bl] = hexToRgb(colour), f = brushes.gradient.flow;
+  const grad = brushes.gradient.kind === 'radial'
+    ? g.createRadialGradient(a.x * k, a.y * k, 0, a.x * k, a.y * k, Math.hypot(b.x - a.x, b.y - a.y) * k)
+    : g.createLinearGradient(a.x * k, a.y * k, b.x * k, b.y * k);
+  grad.addColorStop(0, `rgba(${r},${gr},${bl},${f})`);
+  grad.addColorStop(1, `rgba(${r},${gr},${bl},0)`);
+  g.fillStyle = grad;
+  g.fillRect(0, 0, w, h);
+}
+function applyGradient(where, a, b) {
+  const L = paintLayer();
+  const c = els.get(L.id);
+  const before = ctxOf(c).getImageData(0, 0, c.width, c.height);
+  stroke = { where, target: 'layer', erase: false, id: L.id, before };
+  let box = { x: 0, y: 0, w: doc.width, h: doc.height };
+  if (where === '2d') {
+    scratchCtx.clearRect(0, 0, doc.width, doc.height);
+    gradientInto(scratchCtx, doc.width, doc.height, a, b);
+  } else {
+    const dpr = window.devicePixelRatio || 1, size = view3d.size;
+    if (brushCanvas.width !== size.w || brushCanvas.height !== size.h) { brushCanvas.width = size.w; brushCanvas.height = size.h; }
+    brushCtx.clearRect(0, 0, size.w, size.h);
+    gradientInto(brushCtx, size.w, size.h, a, b, dpr);
+    const out = view3d.project(brushCanvas, doc.width, doc.height, { mirror });
+    box = out ? projectedIntoScratch(out) : null;
+  }
+  if (box) lay(box);
+  stroke = null;
+  record({ t: 'px', id: L.id, before, label: where === '3d' ? 'Gradient on the gun' : 'Gradient' });
+  rememberColour(colour);
+  afterChange();
+}
+
+// ---- text: a layer of its own, placed where it was clicked ------------------------------------------
+const TDRAFT = 'camo.textDraft';
+function askText() {
+  const d = $('textdlg');
+  let draft = {};
+  try { draft = JSON.parse(kept(TDRAFT) ?? '{}') ?? {}; } catch { draft = {}; }
+  for (const el of d.querySelectorAll('[data-tdraft]')) {
+    const v = draft[el.dataset.tdraft];
+    if (v !== undefined) { if (el.type === 'checkbox') el.checked = !!v; else el.value = v; }
+  }
+  d.showModal();
+  $('ttext').focus();
+  $('ttext').select();
+  return new Promise((done) => {
+    const ok = () => {
+      const r = {};
+      for (const el of d.querySelectorAll('[data-tdraft]')) r[el.dataset.tdraft] = el.type === 'checkbox' ? el.checked : el.value;
+      keep(TDRAFT, JSON.stringify(r));
+      d.close();
+      done(r.text?.trim() ? r : null);
+    };
+    $('tok').onclick = ok;
+    $('ttext').onkeydown = (e) => { if (e.key === 'Enter') ok(); };
+    d.onclose = () => done(null);
+  });
+}
+function textCanvas(r) {
+  const size = Math.max(6, Math.min(600, Number(r.size) || 64)), outline = Math.max(0, Number(r.outline) || 0);
+  const font = `${r.italic ? 'italic ' : ''}${r.bold ? 'bold ' : ''}${size}px "${r.font}"`;
+  const m = document.createElement('canvas').getContext('2d');
+  m.font = font;
+  const w = Math.ceil(m.measureText(r.text).width) + outline * 2 + 8, h = Math.ceil(size * 1.3) + outline * 2 + 8;
+  const turn = Number(r.turn) || 0, side = turn % 180 !== 0;
+  const c = blankCanvas(side ? h : w, side ? w : h);
+  const g = ctxOf(c);
+  g.translate(c.width / 2, c.height / 2);
+  g.rotate((turn * Math.PI) / 180);
+  if (r.mirror) g.scale(-1, 1);
+  g.font = font;
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  if (outline) { g.lineWidth = outline * 2; g.lineJoin = 'round'; g.strokeStyle = '#000'; g.strokeText(r.text, 0, 0); }
+  g.fillStyle = colour;
+  g.fillText(r.text, 0, 0);
+  return c;
+}
+async function placeText(p) {
+  const r = await askText();
+  if (!r || !doc) return;
+  const c = textCanvas(r);
+  step(() => {
+    const L = Lyr.addLayer(doc, { name: `Text: ${r.text.slice(0, 24)}`, w: c.width, h: c.height, x: Math.round(p.x - c.width / 2), y: Math.round(p.y - c.height / 2) });
+    els.set(L.id, c);
+  }, 'Text');
+  rememberColour(colour);
+  setTool('move');
+  tell('Text placed: drag it, or its corners to scale it.');
+}
+$('addtext').onclick = () => { closeMenus(); if (doc) placeText({ x: doc.width / 2, y: doc.height / 2 }); };
+$('addlayer').onclick = () => { closeMenus(); if (doc) newPaintLayer(); };
+
+// ---- the game's camo patterns, tiled ------------------------------------------------------------------
+let patterns = null;
+$('addpattern').onclick = async () => {
+  closeMenus();
+  if (!doc) return;
+  $('patdlg').showModal();
+  if (!patterns) {
+    $('patgrid').innerHTML = '<span class="lead">Looking…</span>';
+    try { patterns = (await (await fetch('/api/patterns')).json()).patterns ?? []; } catch { patterns = []; }
+  }
+  $('patgrid').innerHTML = patterns.length ? patterns.map((pt) => `<button type="button" class="gun" data-pattern="${esc(pt.file)}" title="${esc(pt.name)}">
+      <img loading="lazy" alt="" src="/api/thumb?file=${encodeURIComponent(pt.file)}"><b>${esc(pt.name.replace(/^t6_camo_|^camo_/, '').replace(/_/g, ' '))}</b></button>`).join('')
+    : '<span class="lead">No patterns: the Unlinker dumps are not here.</span>';
+};
+$('patscale').oninput = () => { $('patscalev').textContent = `×${$('patscale').value}`; };
+$('patgrid').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-pattern]');
+  if (!b || !doc) return;
+  const t = await readImageFile(b.dataset.pattern);
+  if (!t) { tell('That pattern could not be read.', true); return; }
+  const src = canvasOf(opaque(t.rgba), t.w, t.h), k = Number($('patscale').value) || 1;
+  const c = blankCanvas(doc.width, doc.height), g = ctxOf(c), w = t.w * k, h = t.h * k;
+  for (let y = 0; y < doc.height; y += h) for (let x = 0; x < doc.width; x += w) g.drawImage(src, x, y, w, h);
+  step(() => {
+    const L = Lyr.addLayer(doc, { name: b.title.replace(/^t6_camo_/, ''), w: doc.width, h: doc.height, x: 0, y: 0 });
+    els.set(L.id, c);
+  }, 'Add a pattern');
+  $('patdlg').close();
+  tell('Pattern added: set its blend and opacity, tape what it must not cover.');
+});
+
+// ---- the colour picker: saturation / value square, hue, a hex, swatches ---------------------------------
+const PALETTE = ['#1b1b1b', '#3d3d3d', '#7a7a7a', '#d9d9d9', '#4b5320', '#6b7c3b', '#8f9779', '#c2b280', '#a0522d', '#6e3b1f', '#c0242b', '#ff6a00', '#ffd400', '#20c040', '#1f6feb', '#8a2be2'];
+let hsv = [0, 0.8, 0.75];
+const hsvToRgb = ([h, s, v]) => {
+  const f = (n) => { const k = (n + h / 60) % 6; return v - v * s * Math.max(0, Math.min(k, 4 - k, 1)); };
+  return [f(5) * 255, f(3) * 255, f(1) * 255];
+};
+const rgbToHsv = ([r, g, b]) => {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  let h = 0;
+  if (d) h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [((h * 60) + 360) % 360, max ? d / max : 0, max];
+};
+function drawSV() {
+  const c = $('sv'), g = c.getContext('2d'), w = c.width, h = c.height;
+  g.fillStyle = `hsl(${hsv[0]}, 100%, 50%)`;
+  g.fillRect(0, 0, w, h);
+  const white = g.createLinearGradient(0, 0, w, 0); white.addColorStop(0, '#fff'); white.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = white; g.fillRect(0, 0, w, h);
+  const black = g.createLinearGradient(0, 0, 0, h); black.addColorStop(0, 'rgba(0,0,0,0)'); black.addColorStop(1, '#000');
+  g.fillStyle = black; g.fillRect(0, 0, w, h);
+  g.beginPath(); g.arc(hsv[1] * w, (1 - hsv[2]) * h, 8, 0, Math.PI * 2);
+  g.lineWidth = 3; g.strokeStyle = '#fff'; g.stroke(); g.lineWidth = 1.5; g.strokeStyle = '#000'; g.stroke();
+}
+function colourFromHsv() {
+  const hex = rgbToHex(hsvToRgb(hsv));
+  setColour(hex, false);
+  $('hex').value = hex;
+  $('chip').style.background = hex;
+  drawSV();
+}
+function openColour(anchor) {
+  const pop = $('cpop'), r = anchor.getBoundingClientRect();
+  hsv = rgbToHsv(hexToRgb(colour));
+  $('hue').value = Math.round(hsv[0]);
+  $('hex').value = colour;
+  $('chip').style.background = colour;
+  $('cswatches').innerHTML = [...new Set([...recent, ...PALETTE])].slice(0, 26).map((c) => `<i style="background:${c}" data-cswatch="${c}" title="${c}"></i>`).join('');
+  pop.hidden = false;
+  pop.style.left = `${Math.min(innerWidth - 260, r.left)}px`;
+  pop.style.top = `${r.bottom + 6}px`;
+  drawSV();
+}
+{
+  let dragging = false;
+  const pick = (e) => {
+    const r = $('sv').getBoundingClientRect();
+    hsv[1] = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    hsv[2] = Math.max(0, Math.min(1, 1 - (e.clientY - r.top) / r.height));
+    colourFromHsv();
+  };
+  $('sv').addEventListener('pointerdown', (e) => { dragging = true; $('sv').setPointerCapture(e.pointerId); pick(e); });
+  $('sv').addEventListener('pointermove', (e) => { if (dragging) pick(e); });
+  $('sv').addEventListener('pointerup', () => { dragging = false; rememberColour(colour); });
+}
+$('hue').addEventListener('input', () => { hsv[0] = Number($('hue').value); colourFromHsv(); });
+$('hue').addEventListener('change', () => rememberColour(colour));
+$('hex').addEventListener('input', () => {
+  const v = $('hex').value.trim();
+  if (/^#?[0-9a-f]{6}$/i.test(v)) { const hex = v.startsWith('#') ? v : `#${v}`; hsv = rgbToHsv(hexToRgb(hex)); $('hue').value = Math.round(hsv[0]); setColour(hex.toLowerCase(), false); $('chip').style.background = hex; drawSV(); }
+});
+$('hex').addEventListener('change', () => rememberColour(colour));
+$('cswatches').addEventListener('click', (e) => {
+  const sw = e.target.closest('[data-cswatch]');
+  if (!sw) return;
+  hsv = rgbToHsv(hexToRgb(sw.dataset.cswatch));
+  $('hue').value = Math.round(hsv[0]);
+  colourFromHsv();
+});
+$('cpick').onclick = () => { $('cpop').hidden = true; setTool('pick'); };
+
+// ---- brush presets: a few to start from, and the ones you keep ------------------------------------------
+const PRESET_TOOLS = ['brush', 'spray', 'scatter', 'eraser'];
+const BUILTIN_PRESETS = {
+  brush: { 'Soft airbrush': { size: 140, flow: 0.25, hardness: 0, spacing: 0.08 }, 'Hard edge': { size: 24, flow: 1, hardness: 0.95, spacing: 0.08 }, 'Detail pen': { size: 6, flow: 1, hardness: 0.8, spacing: 0.1 } },
+  spray: { 'Fine mist': { size: 180, flow: 0.35, density: 140, dot: 1 }, 'Graffiti': { size: 60, flow: 0.9, density: 60, dot: 2.5 }, 'Grit': { size: 120, flow: 0.8, density: 30, dot: 4 } },
+  scatter: {
+    'Woodland leaves': { size: 70, count: 4, scatter: 1.2, stamp: 'leaves', sizeJitter: 0.6, rotJitter: 1, hueJitter: 0.1, valJitter: 0.35, alphaJitter: 0.15, flow: 0.95, spacing: 0.6 },
+    'Splatter': { size: 90, count: 2, scatter: 0.6, stamp: 'splats', sizeJitter: 0.7, rotJitter: 1, hueJitter: 0.02, valJitter: 0.15, alphaJitter: 0.1, flow: 1, spacing: 0.9 },
+    'Digital hexes': { size: 30, count: 6, scatter: 1.5, stamp: 'hexes', sizeJitter: 0.2, rotJitter: 0, hueJitter: 0.05, valJitter: 0.3, alphaJitter: 0, flow: 1, spacing: 0.5 },
+    'Starfield': { size: 24, count: 5, scatter: 2, stamp: 'stars', sizeJitter: 0.8, rotJitter: 1, hueJitter: 0, valJitter: 0.2, alphaJitter: 0.4, flow: 1, spacing: 0.7 },
+    'Tiger streaks': { size: 110, count: 2, scatter: 0.4, stamp: 'streaks', sizeJitter: 0.5, rotJitter: 0.15, hueJitter: 0.02, valJitter: 0.2, alphaJitter: 0.1, flow: 1, spacing: 0.7 },
+  },
+  eraser: { 'Soft': { kind: 'round', size: 120, flow: 0.4, hardness: 0 }, 'Speckle': { kind: 'spray', size: 100, flow: 1, density: 60, dot: 3 } },
+};
+const userPresets = () => { try { return JSON.parse(kept('camo.presets') ?? '{}') ?? {}; } catch { return {}; } };
+const presetsOf = (t) => ({ ...(BUILTIN_PRESETS[t] ?? {}), ...(userPresets()[t] ?? {}) });
+
+// ---- the history: every step, named; click one to go back (or forward) to it ------------------------------
+function drawHistory() {
+  const h = $('hist');
+  if (!doc) { h.innerHTML = '<div class="lnone">Nothing open.</div>'; return; }
+  const rows = [`<button type="button" data-hist="0" class="${past.length === 0 ? 'now' : ''}">Opened ${esc(tex.image)}</button>`];
+  past.forEach((e, i) => rows.push(`<button type="button" data-hist="${i + 1}" class="${i === past.length - 1 ? 'now' : ''}">${esc(e.label ?? 'Change')}</button>`));
+  [...future].reverse().forEach((e, i) => rows.push(`<button type="button" data-hist="${past.length + i + 1}" class="later">${esc(e.label ?? 'Change')}</button>`));
+  h.innerHTML = rows.join('');
+  h.querySelector('.now')?.scrollIntoView({ block: 'nearest' });
+}
+$('hist').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-hist]');
+  if (!b || !doc) return;
+  const want = Number(b.dataset.hist);
+  while (past.length > want && past.length) undo();
+  while (past.length < want && future.length) redo();
+});
+for (const b of document.querySelectorAll('[data-ptab]')) {
+  b.onclick = () => {
+    for (const x of document.querySelectorAll('[data-ptab]')) x.setAttribute('aria-pressed', String(x === b));
+    $('layers').hidden = b.dataset.ptab !== 'layers';
+    $('histpane').hidden = b.dataset.ptab !== 'history';
+    drawHistory();
+  };
+}
+
+// ---- a layer's own menu (right-click) --------------------------------------------------------------------
+$layers.addEventListener('contextmenu', (e) => {
+  const row = e.target.closest('.layer');
+  if (!row || !doc) return;
+  e.preventDefault();
+  doc.sel = row.dataset.l;
+  drawLayers(); drawSel();
+  const L = Lyr.layerOf(doc, doc.sel), base = L === doc.layers[0];
+  const items = [
+    ['rename', 'Rename…', base], ['dup', 'Duplicate', false], ['merge', 'Merge down', base || doc.layers.indexOf(L) < 2],
+    ['clear', 'Clear', base], ['tile', 'Tile across the image', base], null,
+    ['vis', L.visible ? 'Hide' : 'Show', false], ['top', 'Bring to the top', base], ['del', 'Delete', base],
+  ];
+  const m = $('ctx');
+  m.innerHTML = items.map((it) => (it ? `<button type="button" data-cx="${it[0]}"${it[2] ? ' disabled' : ''}>${it[1]}</button>` : '<hr>')).join('');
+  m.hidden = false;
+  m.style.left = `${Math.min(innerWidth - 190, e.clientX)}px`;
+  m.style.top = `${Math.min(innerHeight - 260, e.clientY)}px`;
+});
+$('ctx').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-cx]');
+  if (!b || !doc) return;
+  $('ctx').hidden = true;
+  const L = Lyr.layerOf(doc, doc.sel);
+  if (!L) return;
+  const a = b.dataset.cx;
+  if (a === 'rename') { const name = prompt('Layer name', L.name); if (name?.trim()) step(() => Lyr.setLayer(doc, L.id, { name: name.trim().slice(0, 120) }), 'Rename'); }
+  else if (a === 'vis') step(() => Lyr.setLayer(doc, L.id, { visible: !L.visible }), L.visible ? 'Hide a layer' : 'Show a layer');
+  else if (a === 'top') step(() => Lyr.reorder(doc, L.id, doc.layers.length - 1), 'Bring to the top');
+  else if (a === 'del') step(() => Lyr.removeLayer(doc, L.id), 'Delete a layer');
+  else layerButton(a);
+});
+
+// ---- the 3D view's own controls --------------------------------------------------------------------------
+for (const b of document.querySelectorAll('[data-side]')) b.onclick = () => view3d?.viewFrom(b.dataset.side);
+$('look3d').value = kept('camo.look') ?? 'studio';
+$('bg3d').value = kept('camo.bg') ?? 'dark';
+if (view3d) { view3d.lighting = $('look3d').value; view3d.background = $('bg3d').value; }
+$('look3d').onchange = () => { if (view3d) view3d.lighting = $('look3d').value; keep('camo.look', $('look3d').value); };
+$('bg3d').onchange = () => { if (view3d) view3d.background = $('bg3d').value; keep('camo.bg', $('bg3d').value); };
+$('wire3d').onclick = () => {
+  const on = $('wire3d').getAttribute('aria-pressed') !== 'true';
+  $('wire3d').setAttribute('aria-pressed', String(on));
+  if (view3d) view3d.wireframe = on;
+};
+
+// ---- autosave: the edit kept as you work, offered back the next time the image opens ---------------------------
+let autosaveSeq = 0, autosavedSeq = 0, autosaving = false, autosavedAt = '', restoring = false;
+async function autosave() {
+  if (!doc || autosaving || autosaveSeq === autosavedSeq || !IMAGE_NAME.test(tex.image)) return;
+  autosaving = true;
+  const seq = autosaveSeq, image = tex.image;
+  try {
+    const { psd } = await exportDoc();
+    const post = (file, body) => fetch(`/api/autosave?image=${encodeURIComponent(image)}&file=${file}`, { method: 'POST', headers: { 'x-camo': '1' }, body });
+    let r = await post('psd', psd);
+    if (!r.ok) throw new Error();
+    r = await post('json', JSON.stringify({ image, what: tex.what, layers: doc.layers.length, steps: past.length, time: Date.now() }));
+    if (!r.ok) throw new Error();
+    autosavedSeq = seq;
+    const d = new Date();
+    autosavedAt = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    drawBar();
+  } catch { /* tried again at the next tick */ } finally { autosaving = false; }
+}
+setInterval(autosave, 20000);
+document.addEventListener('visibilitychange', () => { if (document.hidden) autosave(); });
+async function offerAutosave(image) {
+  let m;
+  try { m = await (await fetch(`/api/autosave?image=${encodeURIComponent(image)}`)).json(); } catch { return; }
+  if (!m?.found || !Number.isFinite(m.time) || !tex || tex.image !== image) return;      // not one this page wrote: never offered
+  const when = new Date(m.time);
+  const label = `${when.toLocaleDateString('en-CA')} ${String(when.getHours()).padStart(2, '0')}:${String(when.getMinutes()).padStart(2, '0')}`;
+  toast(`This image has an autosaved edit from ${label} (${m.layers} layers, ${m.steps} steps).`, 'info', [['Open it', async () => {
+    const r = await fetch(`/api/file?path=${encodeURIComponent(m.psd)}`);
+    if (!r.ok) { tell('The autosave could not be read.', true); return; }
+    restoring = true;
+    if (doc) doc.dirty = false;
+    openPsd(`${image}.psd`, new Uint8Array(await r.arrayBuffer()));
+    toast('The autosaved edit is open. Its tape and history start fresh.');
+  }], ['Not now', () => {}]]);
+}
+
+// ---- the buttons ----------------------------------------------------------------------------------
+
+$('open').onclick = () => { closeMenus(); $('openfile').click(); };
+$('openfile').onchange = async (e) => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (f) await openBytes(f.name, new Uint8Array(await f.arrayBuffer()));
+};
+$('openpath').onclick = openPath;
+$path.addEventListener('keydown', (e) => { if (e.key === 'Enter') openPath(); });
+$('add').onclick = () => { closeMenus(); $('addfile').click(); };
+$('addfile').onchange = async (e) => {
+  const fs = [...e.target.files];
+  e.target.value = '';
+  for (const f of fs) await addPicture(f.name, new Uint8Array(await f.arrayBuffer()));
+};
+$('undo').onclick = () => { if (doc) undo(); };
+$('redo').onclick = () => { if (doc) redo(); };
+$('save').onclick = save;
+$model.onchange = () => loadModel($model.value);
+$('uvbtn').onclick = () => { showUV = !showUV; $('uvbtn').setAttribute('aria-pressed', String(showUV)); drawUV(); };
+for (const b of document.querySelectorAll('[data-view]')) {
+  b.onclick = () => {
+    mode = b.dataset.view;
+    for (const x of document.querySelectorAll('[data-view]')) x.setAttribute('aria-pressed', String(x === b));
+    $alpha.hidden = mode !== 'alpha' || !doc;
+    drawUV();
+    drawSel();
+  };
+}
+window.addEventListener('beforeunload', (e) => { if (doc?.dirty) e.preventDefault(); });
+
+// For a page that hosts this one (the Console's WebView2, later) and for tests.
+window.camo = {
+  openBytes, addPicture, save, loadModel, setTool, setColour, undo, redo, peelAll, tapePartAt, fillPartAt, pickAt, makePackage,
+  brushes, get doc() { return doc; }, get tex() { return tex; }, get saved() { return saved; }, get mesh() { return mesh; },
+  get uvTris() { return uvTris; }, get islands() { return isl; }, get view3d() { return view3d; }, get tapeAny() { return tapeAny; },
+  get history() { return { past: past.length, future: future.length }; }, layerCanvas: (id) => els.get(id), tapeCanvas, liveCanvas,
+  /** A stroke without a mouse: points in picture pixels (2d) or the 3D view's CSS pixels (3d). */
+  strokeAt(where, points) {
+    beginStroke(where, points[0]);
+    stroke.pending.push(...points.slice(1));
+    runStroke();
+    endStroke();
+  },
+};
+
+drawRail();
+drawOpts();
+drawLayers();
+drawBar();
+layout();
+
+// ---- from the Designer (2026-10-18) ------------------------------------------------------------------
+// The Designer serves this page itself (CamoServer.cs, no Python): Send to the game puts a saved .dds into the running
+// game (RipperBridge's img swap), and ?open=<path> opens a picture at once (the Guns page's Paint, the Sky page's
+// Paint this sky; Mycelium 10-18: "Why can't I just paint on the skybox as well?").
+async function sendToGame(image, dds) {
+  let r;
+  try { r = await fetch(`/api/swap?image=${encodeURIComponent(image)}&path=${encodeURIComponent(dds)}`, { method: 'POST', headers: { 'x-camo': '1' } }); }
+  catch { tell('The editor\'s server did not answer.', true); return; }
+  if (r.status === 404) { tell('Send to the game works when the editor is opened from the Designer (Guns > Paint a camo).', true); return; }
+  const j = await r.json().catch(() => null);
+  if (!r.ok || !j?.ok) { tell(`Not sent: ${j?.error ?? `refused (${r.status})`}`, true); return; }
+  toast(j.said || 'In the game.', 'good');
+}
+{
+  const open = new URLSearchParams(location.search).get('open');
+  if (open) { $path.value = open; openPath(); }
+}
+</script>
+</body>
+</html>

@@ -53,6 +53,8 @@
     <Compile Include="ProtectedDvars.cs" />
     <Compile Include="BatchSettings.cs" />
     <Compile Include="BridgeClient.cs" />
+    <Compile Include="TheaterFirst.cs" />
+    <Compile Include="RecordingSettings.cs" />
     <Compile Include="ConsoleHost.cs" />
     <Compile Include="UserCfg.cs" />
     <Compile Include="GameClock.cs" />

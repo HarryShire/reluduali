@@ -68,6 +68,8 @@ namespace BatchRecorder
             public string FfmpegPath = "";
             public string VideoCodecArgs = "-c:v dnxhd -profile:v dnxhr_hq -pix_fmt yuv422p";
             public string VideoExtension = "mov";
+            // the codec list's names and their "ext|ffmpeg args", for a take that names its own codec (2026-10-18)
+            public Dictionary<string, string> Codecs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
 
         public sealed class Result
@@ -110,6 +112,25 @@ namespace BatchRecorder
         private int BeforeFor(Take t) { return t.BeforeMs >= 0 ? t.BeforeMs : _opt.PreRollMs; }
         private int AfterFor(Take t) { return t.AfterMs >= 0 ? t.AfterMs : _opt.PostRollMs; }
         private bool HideHudFor(Take t) { return t.Hud >= 0 ? t.Hud == 0 : _opt.HideHud; }
+        // how it records, per take (2026-10-18: RecordingSettings, resolved by TakeList): the take's own, else the tab's
+        private bool DepthFor(Take t) { return t.Depth >= 0 ? t.Depth == 1 : _opt.Depth; }
+        private int DepthDistFor(Take t) { return t.DepthDist > 0 ? t.DepthDist : _opt.DepthDistance; }
+        private bool PlateFor(Take t) { return t.Plate >= 0 ? t.Plate == 1 : _opt.Plate; }
+        private bool NoPlayersFor(Take t) { return t.NoPlayers >= 0 ? t.NoPlayers == 1 : _opt.NoPlayers; }
+        private bool PlayersOnlyFor(Take t) { return t.PlayersOnly >= 0 ? t.PlayersOnly == 1 : _opt.PlayersOnly; }
+
+        /// <summary>The take's codec ("ext|ffmpeg args" from the codec list by its name, or a name's first letters), else the tab's.</summary>
+        private void CodecFor(Take t, out string ext, out string args)
+        {
+            ext = _opt.VideoExtension; args = _opt.VideoCodecArgs;
+            if (string.IsNullOrEmpty(t.Codec) || _opt.Codecs == null) return;
+            string tag = null;
+            foreach (var kv in _opt.Codecs) if (string.Equals(kv.Key, t.Codec, StringComparison.OrdinalIgnoreCase)) tag = kv.Value;
+            if (tag == null && t.Codec.Length >= 3) foreach (var kv in _opt.Codecs) if (kv.Key.StartsWith(t.Codec, StringComparison.OrdinalIgnoreCase)) { tag = kv.Value; break; }
+            int bar = tag == null ? -1 : tag.IndexOf('|');
+            if (bar > 0) { ext = tag.Substring(0, bar); args = tag.Substring(bar + 1); }
+            else Log("    no codec called '" + t.Codec + "' in the list: the Batch's own (" + ext + ")");
+        }
 
         /// <summary>The CFG sent right before this take: its own file when it names one, else the CFG box. Null when
         /// the row names a file that cannot be read - a take must never go out with a CFG it did not ask for.</summary>
@@ -302,12 +323,14 @@ namespace BatchRecorder
                 int w, h;
                 if (!GameKeys.ClientSize(out w, out h)) { w = 3840; h = 1608; }
                 double raw = w * (double)h * 3;
-                string codec = (_opt.VideoCodecArgs ?? "").ToLowerInvariant();
+                string takeExt, takeArgs;
+                CodecFor(take, out takeExt, out takeArgs);
+                string codec = (takeArgs ?? "").ToLowerInvariant();
                 double share = codec.Contains("utvideo") ? 0.38
                              : codec.Contains("prores_ks") && codec.Contains("-profile:v 4") ? 0.24
                              : codec.Contains("prores") || codec.Contains("dnx") ? 0.16
                              : 0.04;
-                double perFrame = raw * share + (_opt.Depth ? raw * 0.5 : 0);
+                double perFrame = (takeExt == "png" ? raw * 0.5 : raw * share) + (DepthFor(take) ? raw * 0.5 : 0) + (PlateFor(take) ? raw * share : 0);
                 double ms = (take.HasTicks ? take.TickOut - take.TickIn : take.Seconds * 1000.0 + 2000)   // +-1 s for clocks read by eye
                             + BeforeFor(take) + AfterFor(take);
                 double framesPerMs = 1.0 / Math.Max(1, 1000 / Math.Max(1, FpsFor(take)));   // the film steps 1000/fps whole ms a frame
@@ -338,7 +361,7 @@ namespace BatchRecorder
         /// <summary>The Console's exact moves (2026-10-17, the playback engine): given a Reluduali recording's start and end
         /// ticks, its step and a file to write, the slider moves that play as RipperBridge events for every frame (the file),
         /// or null when none play. Set by the Console; BatchCore alone has none.</summary>
-        public static Func<int, int, int, string, string> MovesTrack;
+        public static Func<string, int, int, int, string, string> MovesTrack;     // (the take's keyframes file or "", start, end, step, file)
 
         /// <summary>True while a recording with exact moves runs (the Console's own replay of them waits), false after.</summary>
         public static Action<bool> MovesRecording;
@@ -346,8 +369,27 @@ namespace BatchRecorder
         public List<Result> Run(IEnumerable<Take> takes)
         {
             Recording = !_opt.DryRun;
+            // the film mode it was in, put back at the end (Mycelium 2026-10-18: "switch from codcast to the regular and then back
+            // to codcast for future POV work"): each take sets its own (a cinematic turns CODCAST off), so a run that ends on
+            // a cinematic left the film in the regular theater. No film up at the start: CODCAST, when POV takes want it.
+            int modeAtStart = -1;
+            try { if (_clock.Attached && _clock.InTheater) modeAtStart = _clock.IsCodcast ? 1 : 0; } catch { }
             try { return RunTakes(takes); }
-            finally { Recording = false; }
+            finally { Recording = false; PutModeBack(modeAtStart); }
+        }
+
+        private void PutModeBack(int modeAtStart)
+        {
+            try
+            {
+                int want = modeAtStart >= 0 ? modeAtStart : (_opt.RequireCodcast ? 1 : -1);
+                if (want < 0 || !_clock.Attached || !_clock.InTheater || _clock.IsCodcast == (want == 1)) return;
+                bool ok = _clock.SetCodcast(want == 1);
+                Thread.Sleep(300);
+                Log((ok && _clock.IsCodcast == (want == 1) ? "the film is back in " : "could not put the film back in ")
+                    + (want == 1 ? "CODCAST" : "the regular theater") + (modeAtStart >= 0 ? ", as it was before the run" : ", ready for POV takes"));
+            }
+            catch (Exception ex) { Log("could not put the film mode back: " + ex.Message); }
         }
 
         private List<Result> RunTakes(IEnumerable<Take> takes)
@@ -437,7 +479,7 @@ namespace BatchRecorder
             else if ((_opt.LoadEachDemo || jumped) && !string.IsNullOrEmpty(take.DemoPath))
             {
                 _loadedDemo = null;
-                if (!LoadTheDemo(take)) { r.Message = "could not load this take's demo"; return r; }
+                if (!LoadTheDemo(take)) { r.Message = _loadWhy ?? "could not load this take's demo"; return r; }
                 _loadedDemo = take.DemoPath;
                 _barShowing = true;   // a load always brings the theater bar back
                 _hudShowing = true;   // and the HUD (sandbox 0378)
@@ -587,7 +629,7 @@ namespace BatchRecorder
                     reached = EnsurePov(take.Pov, startTick) && (now > startTick || ApproachStart(startTick));
                 }
             }
-            if (!reached) { r.Message = "could not reach the start tick on POV '" + take.Pov + "'"; return r; }
+            if (!reached) { r.Message = "could not reach the start tick on POV '" + take.Pov + "'" + (_loadWhy != null ? " (the film could not be loaded again: " + _loadWhy + ")" : ""); return r; }
             r.LandedTick = _clock.Tick;
             Log("    sitting at " + r.LandedTick + ", which is " + (startTick - r.LandedTick) + " ms before the start tick");
             int povSlot = string.IsNullOrEmpty(take.Pov) ? -1 : _clock.SlotForName(take.Pov);
@@ -634,7 +676,7 @@ namespace BatchRecorder
             if (cam)
             {
                 if (!File.Exists(take.CamPath)) { r.Message = "no camera track at " + take.CamPath; return r; }
-                string reply = BridgeClient.Ask("cam path " + take.CamPath) ?? ("no answer: " + BridgeClient.LastError);
+                string reply = BridgeClient.CamPath(take.CamPath, Log);
                 Log("    cam path: " + reply);
                 if (!reply.StartsWith("ok", StringComparison.Ordinal)) { r.Message = "camera track refused: " + reply; return r; }
             }
@@ -666,12 +708,14 @@ namespace BatchRecorder
 
         private IEnumerable<string> ExtraPasses(Take take)
         {
-            if (_opt.NoPlayers) yield return "world";
-            if (_opt.PlayersOnly) yield return "players";
+            if (NoPlayersFor(take)) yield return "world";
+            if (PlayersOnlyFor(take)) yield return "players";
         }
 
         // the pass being recorded now ("" the take itself): its file name's suffix and RipperBridge's rule
         private string _pass = "";
+        // why the last LoadTheDemo refused, in words for the take's result (null: it tried and failed)
+        private string _loadWhy;
 
         /// <summary>One extra pass: back to the take's start (a keyframe jump, or the film loaded again), the camera track
         /// again if the row has one, and the same ticks recorded with the rule on. Null when it worked, else why not.</summary>
@@ -696,7 +740,7 @@ namespace BatchRecorder
             bool cam = !string.IsNullOrEmpty(take.CamPath);
             if (cam)
             {
-                string reply = BridgeClient.Ask("cam path " + take.CamPath) ?? ("no answer: " + BridgeClient.LastError);
+                string reply = BridgeClient.CamPath(take.CamPath, Log);
                 if (!reply.StartsWith("ok", StringComparison.Ordinal)) return "camera track refused: " + reply;
             }
             var pr = new Result { Take = take };
@@ -719,6 +763,14 @@ namespace BatchRecorder
         /// </summary>
         private bool LoadTheDemo(Take take)
         {
+            _loadWhy = null;
+            // theater first (Mycelium, 2026-10-18: "never ... from the game's menu screen; it always has to be from the theater")
+            if (!TheaterFirst.Ok())
+            {
+                _loadWhy = "not loaded: " + TheaterFirst.Why;
+                Log("    " + Path.GetFileName(take.DemoPath) + " " + _loadWhy);
+                return false;
+            }
             if (_clock.InTheater)
             {
                 Pause(null);
@@ -806,8 +858,25 @@ namespace BatchRecorder
             }
 
             // the pass through the film: keyframes all the way, so any later take behind it jumps back in one step
-            bool reached = Wait(() => { int t = _clock.Tick; KeyframeOnTheWay(t); return t != int.MinValue && t >= target; },
-                                _opt.WatchTimeoutMs, "playback to pass the take");
+            // A film held still while it should play (sandbox 0721/0723, 2026-10-18: after a jump to a marker with the camera
+            // put on it, the film moved 91 ms and stopped, at any speed): after 3 s without a tick, one keyframe jump lets it go.
+            int lastTick = int.MinValue, freed = 0;
+            var still = System.Diagnostics.Stopwatch.StartNew();
+            bool reached = Wait(() =>
+            {
+                int t = _clock.Tick;
+                KeyframeOnTheWay(t);
+                if (t != lastTick) { lastTick = t; still.Restart(); }
+                else if (still.ElapsedMilliseconds > 3000 && freed < 2 && t != int.MinValue)
+                {
+                    freed++;
+                    string k = BridgeClient.Ask("kf jump " + t.ToString(CultureInfo.InvariantCulture), 10000, 1);
+                    Log("    the film stood still at " + t + " while playing (held by a marker jump?): " + (k ?? "no answer") + "; playing on");
+                    Resume(null);
+                    still.Restart();
+                }
+                return t != int.MinValue && t >= target;
+            }, _opt.WatchTimeoutMs, "playback to pass the take");
 
             Pause(null);
             SetTimescale(1);
@@ -1192,6 +1261,16 @@ namespace BatchRecorder
             string why;
             string userCfg = CfgFor(take, out why);
             if (userCfg == null) { r.Message = why; Log("    " + why); return false; }
+            // the row's look (2026-10-18: a global look or a CFG dragged onto the row, or its kind's), sent right after its
+            // CFG so the look it was given has the last word; a look that cannot be read stops the take, as a CFG does
+            if (!string.IsNullOrEmpty(take.LookPath))
+            {
+                string lookText;
+                try { lookText = RecordingSettings.StripSection(File.ReadAllText(take.LookPath, Encoding.UTF8)); }      // its RECORDING part is the batch's, not the game's
+                catch (Exception ex) { r.Message = "cannot read this take's look " + take.LookPath + ": " + ex.Message; Log("    " + r.Message); return false; }
+                Log("    look: " + Path.GetFileNameWithoutExtension(take.LookPath) + " (sent after the CFG)");
+                userCfg = (userCfg ?? "") + "\r\n// == the row's look: " + Path.GetFileNameWithoutExtension(take.LookPath) + " ==\r\n" + lookText;
+            }
             return RecordReluduali(take, startTick, endTick, dir, name, userCfg, ref r);
         }
 
@@ -1220,8 +1299,33 @@ namespace BatchRecorder
                 Log("    " + (string.IsNullOrEmpty(take.CfgPath) ? "" : Path.GetFileName(take.CfgPath) + ": ") + UserCfg.Send(userCfg, _clock.HasDvar, Log));
 
             int step = Math.Max(1, 1000 / Math.Max(1, FpsFor(take)));
-            string video = VideoFile(take, dir, name, _opt.VideoExtension);
+            string codecExt, codecArgs;
+            CodecFor(take, out codecExt, out codecArgs);
+            string video = VideoFile(take, dir, name, codecExt);
             if (_pass.Length > 0) video = Path.Combine(Path.GetDirectoryName(video), Path.GetFileNameWithoutExtension(video) + " - " + _pass + Path.GetExtension(video));
+            // "PNG sequence" in the codec list (2026-10-18, Mycelium: "clicking on the codec already implies that ... they could
+            // select pngs from this drop-down"): ffmpeg writes one PNG a frame into a folder named after the take; the files
+            // RipperBridge names after the output (its frame list, the depth folder, the plate) are tidied afterwards
+            // The pattern ("name_%06d.png") is ffmpeg's own output; RipperBridge is handed a plain name beside it ("name.frames", a
+            // null output: nothing is written there), because it names the depth folder and the plate after what it is handed and
+            // a "%06d" there broke them (sandbox 0725: the depth's ffmpeg met two patterns and stopped after 6 frames).
+            string pngStem = null, pngPattern = null;
+            bool plateOff = false;
+            if (string.Equals(codecExt, "png", StringComparison.OrdinalIgnoreCase))
+            {
+                pngStem = Path.GetFileNameWithoutExtension(video);
+                string framesDir = Path.Combine(Path.GetDirectoryName(video), pngStem);
+                pngPattern = Path.Combine(framesDir, pngStem + "_%06d.png");
+                codecArgs = codecArgs + " \"" + pngPattern + "\" -f null";
+                video = Path.Combine(Path.GetDirectoryName(video), pngStem + ".frames");
+                plateOff = PlateFor(take);       // the plate is written with the picture's codec: a PNG sequence has none to give it
+                if (plateOff) Log("    no clean plate beside a PNG sequence (the plate needs a video codec): pick a codec for it, or leave Clean plate off");
+                if (!_opt.DryRun)
+                {
+                    try { Directory.CreateDirectory(framesDir); }
+                    catch (Exception ex) { r.Message = "could not create " + framesDir + ": " + ex.Message; Log("    " + r.Message); return false; }
+                }
+            }
             if (_opt.DryRun)
             {
                 Log("    [dry run] would record ticks " + startTick + "-" + endTick + " at " + step + " ms a frame (Reluduali recorder) to " + video);
@@ -1242,18 +1346,24 @@ namespace BatchRecorder
             string moves = null;
             if (MovesTrack != null)
             {
-                try { moves = MovesTrack(startTick, endTick, step, video + ".params.txt"); }
+                try { moves = MovesTrack(take.Keys ?? "", startTick, endTick, step, video + ".params.txt"); }
                 catch (Exception ex) { Log("    exact moves not written (" + ex.Message + "); the Designer sends them as the film plays"); }
                 if (moves != null) Log("    exact moves: " + Path.GetFileName(moves));
             }
             Log("    recording from tick " + _clock.Tick + " (" + (startTick - _clock.Tick) + " ms before the start tick), Reluduali recorder");
             if (moves != null && MovesRecording != null) MovesRecording(true);
-            string reply = BridgeClient.Ask("rec start " + _opt.FfmpegPath + "|" + video + "|" + _opt.VideoCodecArgs
+            bool depth = DepthFor(take), plate = PlateFor(take) && !plateOff;
+            int depthDist = DepthDistFor(take);
+            if (_pass.Length == 0 && take.From.Count > 0)
+                Log("    this take records: " + (codecExt == "png" ? "PNG sequence" : codecExt) + (depth ? ", depth " + depthDist : "") + (plate ? ", clean plate" : "")
+                    + (NoPlayersFor(take) ? ", no players" : "") + (PlayersOnlyFor(take) ? ", players only" : "")
+                    + "  (" + string.Join(", ", take.From.Select(kv => kv.Key + ": " + kv.Value).ToArray()) + ")");
+            string reply = BridgeClient.Ask("rec start " + _opt.FfmpegPath + "|" + video + "|" + codecArgs
                                             + "|start=" + startTick.ToString(CultureInfo.InvariantCulture)
                                             + "|end=" + endTick.ToString(CultureInfo.InvariantCulture)
                                             + "|step=" + step.ToString(CultureInfo.InvariantCulture)
-                                            + (_opt.Depth ? "|depth=" + _opt.DepthDistance.ToString(CultureInfo.InvariantCulture) : "")
-                                            + (_opt.Plate ? "|plate=1" : "")
+                                            + (depth ? "|depth=" + depthDist.ToString(CultureInfo.InvariantCulture) : "")
+                                            + (plate ? "|plate=1" : "")
                                             + (_pass.Length > 0 ? "|only=" + _pass : "")
                                             + (moves != null ? "|params=" + moves : ""), 15000, 1);
             if (reply == null || !reply.StartsWith("ok", StringComparison.Ordinal))
@@ -1320,16 +1430,16 @@ namespace BatchRecorder
                 return false;
             }
             // the depth pass (RipperBridge dev23+): one PNG per picture frame, none black for want of a copy
-            if (_opt.Depth)
+            if (depth)
             {
                 var dm = System.Text.RegularExpressions.Regex.Match(stop, @"depth \(\d+ units\): (\d+) frames, (\d+) written, (\d+) missing");
                 if (!dm.Success) { r.Message = "no depth pass: this RipperBridge has none (Setup installs the RipperBridge that comes with the Designer); the video is fine"; Log("    " + r.Message); return false; }
                 int dFrames = int.Parse(dm.Groups[1].Value), dWritten = int.Parse(dm.Groups[2].Value), dMissing = int.Parse(dm.Groups[3].Value);
                 if (dWritten != captured || dMissing > 0)
                 { r.Message = "the depth pass is not complete: " + dWritten + " of " + captured + " frames written, " + dMissing + " black (no copy)"; Log("    " + r.Message); return false; }
-                Log("    depth: " + dWritten + " frames (" + _opt.DepthDistance + " units)");
+                Log("    depth: " + dWritten + " frames (" + depthDist + " units)");
             }
-            if (_opt.Plate)
+            if (plate)
             {
                 var pm = System.Text.RegularExpressions.Regex.Match(stop, @"plate: (\d+) frames, (\d+) written, (\d+) missing \(black\), ffmpeg exit (-?\d+)");
                 if (!pm.Success) { r.Message = "no clean plate: this RipperBridge has none (Setup installs the RipperBridge that comes with the Designer); the video is fine"; Log("    " + r.Message); return false; }
@@ -1338,8 +1448,26 @@ namespace BatchRecorder
                 { r.Message = "the clean plate is not complete: " + pWritten + " of " + captured + " frames written, " + pMissing + " black (no copy), ffmpeg exit " + pExit; Log("    " + r.Message); return false; }
                 Log("    plate: " + pWritten + " frames");
             }
+            if (pngStem != null) { TidyPng(video, pngPattern, pngStem); Log("    PNG sequence: " + captured + " frames in " + Path.GetDirectoryName(pngPattern)); return true; }
             Log("    video: " + captured + " frames in " + video);
             return true;
+        }
+
+        /// <summary>A PNG sequence's side files, named by RipperBridge after the plain name it was handed ("name.frames"), put
+        /// into the frames folder after the take: its frame list as "name.frames.csv", its ffmpeg log, the moves it played.
+        /// The depth folder is already "name - depth" beside it. Nothing is lost if a move fails (it is said, the files stay).</summary>
+        private void TidyPng(string handed, string pattern, string stem)
+        {
+            string framesDir = Path.GetDirectoryName(pattern);
+            try
+            {
+                foreach (var side in new[] { new[] { ".frames.csv", ".frames.csv" }, new[] { ".ffmpeg.log", ".ffmpeg.log" }, new[] { ".params.txt", ".params.txt" } })
+                {
+                    string from = handed + side[0], to = Path.Combine(framesDir, stem + side[1]);
+                    if (File.Exists(from)) { if (File.Exists(to)) File.Delete(to); File.Move(from, to); }
+                }
+            }
+            catch (Exception ex) { Log("    the PNG sequence's side files were not all moved (" + ex.Message + "); they are beside " + framesDir); }
         }
 
 

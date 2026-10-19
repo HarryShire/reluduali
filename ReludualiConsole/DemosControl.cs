@@ -166,9 +166,10 @@ namespace ReludualiConsole
 
         private void Choose()
         {
-            var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "BO2 film|*.demo", Title = "Pick any film in the folder" };
-            if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;
-            _folder = Path.GetDirectoryName(dlg.FileName);
+            // a real folder box (2026-10-18: the file box had no way to pick the folder itself)
+            string picked = FolderPicker.Pick(Window.GetWindow(this), "The folder that holds your films (its sub-folders are searched too)", _folder);
+            if (picked == null) return;
+            _folder = picked;
             try { File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "demos.txt"), _folder); } catch { }
             Refresh();
         }
@@ -213,6 +214,8 @@ namespace ReludualiConsole
                         Interlocked.Exchange(ref _loading, 0);
                         return;
                     }
+                    // theater first, every time (Mycelium 2026-10-18: "never ... from the game's menu screen")
+                    if (!TheaterFirst.Ok()) throw new Exception(TheaterFirst.Why);
                     string st = BridgeClient.Ask("stats", 1000, 2) ?? "";
                     if (!st.Contains("theater 0x00000000"))
                     {

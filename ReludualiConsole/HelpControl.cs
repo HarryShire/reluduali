@@ -14,23 +14,27 @@ namespace ReludualiConsole
         static readonly string[][] Sections =
         {
             new[] { "Start here",
-                "1. Start Redacted BO2. 2. Pre-Production > Setup: it shows where it found the game and what this PC is missing. Most tools need the " +
-                "RipperBridge plugin in the game's Plugins folder (Setup can install it; close the game first). 3. Go to the theater by its menus and " +
+                "1. Start Redacted BO2. 2. Settings (the cog at the top): it shows where it found the game and what this PC is missing. Most tools need the " +
+                "RipperBridge plugin in the game's Plugins folder (Settings can install it; close the game first). 3. Go to the theater by its menus and " +
                 "start one film there, once after every game start: films loaded afterwards keep their jump points, and seeking needs them. " +
-                "Ctrl+Alt+D brings the Designer back from anywhere, also while the game holds the mouse." },
+                "Alt+Q (or Ctrl+Alt+D) brings the Designer back from anywhere, also while the game holds the mouse; Settings > Keyboard shortcuts changes it." },
             new[] { "Getting around",
-                "The start screen is the three stages of making a film: Pre-Production (this PC), Principal Vegaography (the game: films, looks, " +
+                "The start screen is the three stages of making a film: Pre-Production (the song, in a later version), Principal Vegaography (the game: films, looks, " +
                 "cameras, recording) and Post-Production (3D in Blender, in a later version). Click a stage to open it. The rail on the left lists " +
                 "the open stage's tools in working order: Film, Look, Control, Shoot. The pills at the top show the tether to the game: " +
                 "Redacted and RipperBridge; green is connected. Re-attach makes the tether again after the game restarts. Help is F1 from anywhere; " +
                 "the logo (or Ctrl+Home) goes back to the start screen. The coloured button on a page is its main action (maroon by day, lilac " +
-                "by night). By day the Designer is light, as reluduali.com's card screen is; by night it is dark (Dynamic); Setup > Appearance picks Dark, " +
+                "by night). By day the Designer is light, as reluduali.com's card screen is; by night it is dark (Dynamic); Settings > Appearance picks Dark, " +
                 "Light or Dynamic." },
-            new[] { "Cam Queue: tonight's cameras",
-                "Place markers in the theater's Edit Camera (F inserts one), then SAVE MY MARKERS: they become a CINE row - the same path the game's " +
-                "own dolly flies - and the game's markers are never changed. POV in / POV out mark a player's own view; Add POV take adds it. Each row " +
-                "gets its kind's defaults (Row defaults: CFG, fps, time before and after, HUD, film mode) unless it has its own. Check finds every " +
-                "demo, path and CFG now rather than at 3 am; Rehearse runs the night without recording; RUN QUEUE records it all, then quits the game." },
+            new[] { "POV Queue, Cam Queue, Batch",
+                "One queue, three tabs. POV Queue: watch a player, POV in at the start, POV out at the end, Add POV take. Cam Queue: place markers in " +
+                "the theater's Edit Camera (F inserts one), then SAVE MY MARKERS - the same path the game's own dolly flies. Edit a path in the 3D " +
+                "views, then Apply to game: the game's Edit Camera gets exactly those markers (Keep the game in step does it after every edit and " +
+                "every row you pick). Batch: how every take records - POV takes and cinematics each have their fps, time before and after, HUD, film " +
+                "mode, passes, codec, CFG and Global CFG, and a batch preset to save and load them; the list shows every take with every setting " +
+                "(bold = the take's own), and picking one lets you change it for that take only. Drag a look from the shelf onto a take or a kind. " +
+                "The night: Check finds every demo, path and CFG now rather than at 3 am; Rehearse runs it without recording; Record all records " +
+                "it all, the failed takes once more, then quits the game." },
             new[] { "The 3D views",
                 "The path loops in every view as soon as two markers are placed, at the speed you set. + View adds one: through the camera (the " +
                 "loop, 1920x808 with thirds), a fixed side (top, front, right, back) or free. Each view has its own map look - colour, see-through, " +
@@ -38,6 +42,25 @@ namespace ReludualiConsole
                 "view every time the Designer opens. Double-click a view's header to make it the big one; the pop-out button puts it in a window of its " +
                 "own. Click a view, then Blender's numpad: 1 front, 3 right, 7 top (Ctrl: the other side), 5 orthographic, 0 through the camera, " +
                 "period frames the path. Drag a camera marker to move it, Alt+drag to aim it, Ctrl+Z to undo." },
+            new[] { "The Camo Editor",
+                "Paint a gun's camo or a sky, on the flat picture or straight on the gun in 3D, in layers, with the gun's UV lines over the " +
+                "picture. Pick a gun on its first screen, paint, Save DDS + IWI, then Send to the game: the running game shows it at once " +
+                "(Guns > Back to the game's takes it off). Skies open as their six faces in a cross; save, then Sky > New set from my painted " +
+                "skies and Install set. Two things it needs, and offers when they are missing: Microsoft's WebView2 (part of Windows 11; " +
+                "Install WebView2 runs Microsoft's own installer, and until then the editor opens in your browser), and the guns' 3D models, " +
+                "made once from your own game by OpenAssetTools (Make the gun models downloads it from its authors, after asking; about a " +
+                "minute)." },
+            new[] { "The timeline under the game: the loop, the lanes, keyframes",
+                "The strip over the bar is the loop bracket, as in Ableton: drag there to draw it, drag an end or the middle to change it, double-click " +
+                "it or press Loop to switch it on - the game keeps playing that section. Under the bar, the lanes: the POV lane holds every POV take of " +
+                "this film as its in and out markers (and the in and out not yet a take), then each cinematic has a lane with its cameras. Drag a POV " +
+                "marker, or a take's middle to move it; drag a cinematic to move it along the film, or one of its cameras to retime it; Left / Right " +
+                "nudge the one picked by a frame (Shift: a second). Every drag snaps onto the markers near it, the playhead and the loop's ends; hold " +
+                "Alt to drag freely. The loop and the POV takes are separate: From the loop and Loop it (POV Queue) are where they meet. Wheel: zoom; " +
+                "Shift+wheel: along. Pick a take, then right-click any slider > Keyframe: the key goes on that take at the film's time, its lane shows " +
+                "under the take, and the batch records it. A click on a key, a camera or a cinematic opens the strip under the lanes: the key's values, " +
+                "or each camera's rotation and FOV. Keys plays the picked take's keys as the film plays. Loop in the game's dolly (Cam Queue) puts a " +
+                "path in the game and loops it in Dolly Camera, from whatever view the game was in." },
             new[] { "Live sliders (Fog, Sun, SSAO, DOF, Look, Theater, Custom)",
                 "Every slider acts while you drag it; click anywhere on a slider to jump there. Type a number in the box beside a slider for an exact " +
                 "value (Enter). The toolbar: presets first (pick, Load, Save as), then files (Open file takes a .cfg; Copy as CFG), then the game " +
@@ -57,7 +80,7 @@ namespace ReludualiConsole
                 "colour grade. Reset takes it away with the rest." },
             new[] { "Fog, Sun, SSAO, DOF",
                 "Fog writes the game's fog record: distance, height fog and the sun haze. Sun: light, colour (the game keeps only its hue; brightness " +
-                "is Sun light), direction, flare, sky temperature, brightness and rotation. DOF needs its switch on (it turns on r_dof_tweak, without which " +
+                "is Sun light), direction, flare, sky temperature, brightness and rotation. DOF needs its switch on, and moving a DOF slider turns it on (it turns on r_dof_tweak, without which " +
                 "the game ignores the values). SSAO shows most on close walls and the gun." },
             new[] { "Theater",
                 "Live passes for the edit, while the film plays: No HUD (the kill feed goes too), No gun (first person), FOV, Blur, Far clip, and " +
@@ -66,9 +89,11 @@ namespace ReludualiConsole
             new[] { "CFG",
                 "Type a command or a setting: the box completes over every setting and command the game has and shows its type, default and range. " +
                 "Enter sends; Up and Down go through what you sent; Read shows what the game holds now. Timescale buttons. The CFG box sends many lines " +
-                "at once; the library on the right lists your .cfg files (add folders, double-click a file to open it)." },
+                "at once; the library on the right lists your .cfg files (add folders, double-click a file to open it). The Global CFG tab shows " +
+                "everything a Global CFG holds in one place: its dvars page by page (a setting on two pages is marked), and its Designer parameters - how " +
+                "takes recorded with it record (a batch preset wins over these)." },
             new[] { "Custom",
-                "New slider: name any number setting; the slider takes the game's own range. Keys: two keys nudge it while the game is in front (the " +
+                "New slider: search the game's number settings and pick one (or type its name); right-click any slider on any page: Add as custom slider. The slider takes the game's own range. Keys: two keys nudge it while the game is in front (the " +
                 "game still gets the keys). Learn MIDI: press it, then move a fader or knob on your MIDI device (open the device first)." },
             new[] { "Demos",
                 "The films in the game's theater folder (or any folder). Search and the map filter narrow the list. Load in theater loads one safely " +

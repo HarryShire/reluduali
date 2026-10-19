@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
@@ -151,6 +152,29 @@ namespace ReludualiConsole
         public static TextBlock Status()
         {
             return new TextBlock { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(2, 6, 0, 0), Foreground = Brush("AccentPale") };
+        }
+
+        /// <summary>Tabs in the Designer's own look (2026-10-18; WPF's TabControl draws Windows' white): a row of toggles, the
+        /// picked one's page under it.</summary>
+        public static FrameworkElement Tabs(params Tuple<string, UIElement>[] tabs)
+        {
+            var bar = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
+            var host = new ContentControl { Focusable = false };
+            var toggles = new List<ToggleButton>();
+            foreach (var t in tabs)
+            {
+                var tb = new ToggleButton { Content = t.Item1, Style = Style("QuietToggle"), Padding = new Thickness(12, 4, 12, 4), Margin = new Thickness(0, 0, 4, 0) };
+                UIElement page = t.Item2;
+                tb.Click += (s, e) => { foreach (ToggleButton o in toggles) o.IsChecked = o == tb; host.Content = page; };
+                toggles.Add(tb);
+                bar.Children.Add(tb);
+            }
+            if (toggles.Count > 0) { toggles[0].IsChecked = true; host.Content = tabs[0].Item2; }
+            var dock = new DockPanel();
+            var line = new Border { Height = 1, Background = Brush("Line"), Margin = new Thickness(0, 0, 0, 8) };
+            DockPanel.SetDock(bar, Dock.Top); DockPanel.SetDock(line, Dock.Top);
+            dock.Children.Add(bar); dock.Children.Add(line); dock.Children.Add(host);
+            return dock;
         }
 
         /// <summary>An icon-only quiet button (the 3D views' headers).</summary>

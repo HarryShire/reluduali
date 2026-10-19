@@ -28,9 +28,24 @@ namespace ReludualiConsole
     /// </summary>
     public sealed class CamQueueControl : UserControl
     {
+        /// <summary>The Cam Queue (the cinematics' tab): the night's runs, the pipe's "queue ...".</summary>
         public static CamQueueControl Instance { get; private set; }
+        /// <summary>The POV Queue (2026-10-18): the same queue, its POV rows.</summary>
+        public static CamQueueControl PovInstance { get; private set; }
+        private static readonly List<CamQueueControl> Pages = new List<CamQueueControl>();
 
-        private CamQueue _q;
+        // one queue for both tabs: opened on either, shown on both
+        private static CamQueue _sharedQueue;
+        private CamQueue _q { get { return _sharedQueue; } set { _sharedQueue = value; } }
+        /// <summary>The open queue (the Batch page edits its rows and its kinds' settings), or null.</summary>
+        public static CamQueue Queue { get { return _sharedQueue; } }
+        /// <summary>Raised on the window's thread when the queue changed (a row added, moved, removed; another queue opened).</summary>
+        public static event Action QueueChanged;
+        private readonly string _kind;
+        private CamQueue _shownQueue;
+        // the queue rows this tab's list shows, in order (its list index -> the queue's row index)
+        private readonly List<int> _shown = new List<int>();
+        private readonly TextBlock _povRecording = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = Ui.Brush("Dim") };
         private readonly GameClock _game = new GameClock();
         private readonly CamScene _scene = new CamScene();
         private readonly CamViewsPanel _views;
@@ -49,6 +64,11 @@ namespace ReludualiConsole
         private readonly CheckBox _shutdownAfter = new CheckBox { Content = "Then shut down the PC", IsChecked = false, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 4, 0, 0) };
         private readonly DispatcherTimer _poll = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
         private readonly DispatcherTimer _noteTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+        // Apply to game, and keeping the game in step with every edit and every row picked (2026-10-18)
+        private readonly CheckBox _inStep = new CheckBox { Content = "Keep the game in step", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 10, 6),
+                                                           ToolTip = "Every edit in the 3D view, and every CINE row you pick, goes into the game's Edit Camera by itself (the film moves to place each marker)" };
+        private readonly DispatcherTimer _stepTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1500) };
+        private int _applying;
         private bool _loadingDefaults;
 
         // what the game shows now
@@ -68,26 +88,35 @@ namespace ReludualiConsole
 
         private static string SettingsFile { get { return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Presets", "CAMQUEUE", "camqueue.txt"); } }
 
-        public CamQueueControl()
+        /// <summary>
+        /// One queue, two tabs (2026-10-18; Mycelium: "in the shoot section, we should also have something called, say, POV Queue
+        /// ... the name of the cam queue isn't necessarily so explicit"; "In the cam queue, you do your cinematics. In the POV
+        /// view ... you do your POVs ... And then in the batch queue, you could then record them all at once"). "cine": the Cam
+        /// Queue (markers, paths, the 3D views); "pov": the POV Queue (POV in / out, the POV takes). Both show the same queue
+        /// folder, each its own kind of row; the night (check, rehearse, record all) is on the Batch page (NightCard).
+        /// </summary>
+        public CamQueueControl(string kind = "cine")
         {
-            Instance = this;
+            _kind = kind == "pov" ? "pov" : "cine";
+            if (_kind == "cine") Instance = this; else PovInstance = this;
+            lock (Pages) Pages.Add(this);
             Foreground = (Brush)Application.Current.FindResource("Text");
             BuildList();
             _views = new CamViewsPanel(_scene);
 
             var root = new Grid { Margin = new Thickness(12, 0, 12, 2) };
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-            // row 0: tonight's queue - the folder, open / new / show it, and what is in it
+            // row 0: tonight's queue - the folder, open / new / show it, and what is in it (the same queue on both tabs)
             var qbar = new Grid { Margin = new Thickness(0, 0, 0, 8) };
             qbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             qbar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 160 });
             qbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             qbar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MaxWidth = 440 });
-            var qLabel = new TextBlock { Text = "Queue", FontWeight = FontWeights.SemiBold, Foreground = Ui.Brush("Chrome"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
+            var qLabel = new TextBlock { Text = "Queue", FontWeight = FontWeights.SemiBold, Foreground = Ui.Brush("Chrome"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0),
+                                         ToolTip = "The POV Queue and the Cam Queue share one queue: POV takes here and there, cinematics in the Cam Queue, all recorded from the Batch page" };
             var qButtons = new StackPanel { Orientation = Orientation.Horizontal };
             qButtons.Children.Add(Btn("New for tonight", (s, e) => NewQueue(), "A new queue folder for tonight", Glyph.Add));
             qButtons.Children.Add(Btn("Open", (s, e) => OpenQueue(_queueBox.Text.Trim()), "Open the folder typed here as the queue (made if it is new)", Glyph.Folder));
@@ -96,82 +125,53 @@ namespace ReludualiConsole
             qbar.Children.Add(qLabel); qbar.Children.Add(_queueBox); qbar.Children.Add(qButtons); qbar.Children.Add(_summary);
             Grid.SetRow(qbar, 0); root.Children.Add(qbar);
 
-            // row 1: the two kinds' defaults - set once, then folded away
-            var prof = new StackPanel { Margin = new Thickness(0, 2, 0, 4) };
-            prof.Children.Add(Profile("POV rows", "pov", _povFps, _povBefore, _povAfter, _povHud, _povMode));
-            prof.Children.Add(Profile("CINE rows", "cine", _cineFps, _cineBefore, _cineAfter, _cineHud, _cineMode));
-            var defHead = new StackPanel { Orientation = Orientation.Horizontal };
-            defHead.Children.Add(new TextBlock { Text = "Row defaults", VerticalAlignment = VerticalAlignment.Center });
-            defHead.Children.Add(_defaultsText);
-            var defaults = new Expander { Header = defHead, Content = prof, Margin = new Thickness(0, 0, 0, 8), IsExpanded = false,
-                                          ToolTip = "What every POV row and every CINE row gets unless the row says otherwise: its CFG, fps, time before and after, HUD, film mode" };
-            Grid.SetRow(defaults, 1); root.Children.Add(defaults);
-
-            // row 2: the list and what acts on it | the 3D views
+            // row 1: the list and what acts on it | (the Cam Queue) the 3D views
             var main = new Grid();
-            main.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(43, GridUnitType.Star), MinWidth = 380 });
-            main.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(10) });
-            main.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(57, GridUnitType.Star), MinWidth = 320 });
             var left = new DockPanel();
 
             // capture: what is on the theater's screen now goes into the queue
-            var save = Btn("SAVE MY MARKERS", (s, e) => Report(SaveMarkers(null)), "Read the markers you placed in Edit Camera and add them to the queue as a cinematic. Nothing in the game changes.", Glyph.Camera);
-            save.Style = Ui.Style("PrimaryButton");
-            save.Padding = new Thickness(16, 7, 16, 7); save.FontSize = 13.5;
             var capture = new WrapPanel();
-            capture.Children.Add(save);
-            capture.Children.Add(Ui.Gap());
-            capture.Children.Add(Btn("POV in", (s, e) => Report(MarkPov(true)), "The film's time now is where a POV take starts (and who is being watched is its player)"));
-            capture.Children.Add(Btn("POV out", (s, e) => Report(MarkPov(false)), "The film's time now is where it ends"));
-            capture.Children.Add(Btn("Add POV take", (s, e) => Report(AddPovLive(null)), "Add the POV take between the in and out you marked", Glyph.Add));
-            capture.Children.Add(Ui.Gap());
-            // 2026-10-17: the film to one of his markers, the game's own jump (F on it does the same, then opens its menu)
-            capture.Children.Add(new TextBlock { Text = "Marker", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 6), Foreground = Ui.Brush("Dim") });
-            _jumpN.Margin = new Thickness(0, 0, 6, 6);
-            capture.Children.Add(_jumpN);
-            capture.Children.Add(Btn("Jump", (s, e) => JumpToMarker(), "The film to that marker of yours (1 = the first), as F on it does, without its menu. The camera goes onto the marker; Shift+click keeps the camera where it is."));
+            if (_kind == "cine")
+            {
+                var save = Btn("SAVE MY MARKERS", (s, e) => Report(SaveMarkers(null)), "Read the markers you placed in Edit Camera and add them to the queue as a cinematic. Nothing in the game changes.", Glyph.Camera);
+                save.Style = Ui.Style("PrimaryButton");
+                save.Padding = new Thickness(16, 7, 16, 7); save.FontSize = 13.5;
+                capture.Children.Add(save);
+                capture.Children.Add(Ui.Gap());
+                // 2026-10-17: the film to one of his markers, the game's own jump (F on it does the same, then opens its menu)
+                capture.Children.Add(new TextBlock { Text = "Marker", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 6), Foreground = Ui.Brush("Dim") });
+                _jumpN.Margin = new Thickness(0, 0, 6, 6);
+                capture.Children.Add(_jumpN);
+                capture.Children.Add(Btn("Jump", (s, e) => JumpToMarker(), "The film to that marker of yours (1 = the first), as F on it does, without its menu. The camera goes onto the marker; Shift+click keeps the camera where it is."));
+            }
+            else
+            {
+                var pin = Btn("POV in", (s, e) => Report(MarkPov(true)), "The film's time now is where a POV take starts (and who is being watched is its player)");
+                pin.Style = Ui.Style("PrimaryButton"); pin.Padding = new Thickness(16, 7, 16, 7);
+                var pout = Btn("POV out", (s, e) => Report(MarkPov(false)), "The film's time now is where it ends");
+                pout.Style = Ui.Style("PrimaryButton"); pout.Padding = new Thickness(16, 7, 16, 7);
+                capture.Children.Add(pin);
+                capture.Children.Add(pout);
+                capture.Children.Add(Btn("Add POV take", (s, e) => Report(AddPovLive(null)), "Add the POV take between the in and out you marked", Glyph.Add));
+                capture.Children.Add(Ui.Gap());
+                // the loop and the POV markers, separate, meeting only here (Mycelium 2026-10-18: "two separate ones that work together")
+                capture.Children.Add(Btn("From the loop", (s, e) => Report(PovFromLoop()), "POV in and out from the timeline's loop bracket. The loop stays as it is."));
+                capture.Children.Add(Btn("Loop it", (s, e) => Report(LoopPov()), "The timeline's loop bracket to the picked take's in and out (or the in and out marked here), and the loop on. The take does not change when the loop moves.", Glyph.Play));
+                capture.Children.Add(Ui.Gap());
+                capture.Children.Add(Btn("Go to its start", (s, e) => Report(GoToStart(Sel())), "The film to the picked take's start (POV in), on its player", Glyph.Play));
+            }
             var captureCard = new PrintCard { Padding = new Thickness(12, 10, 12, 8), Margin = new Thickness(0, 0, 0, 8) };
             var capturePanel = new StackPanel();
             capturePanel.Children.Add(capture);
             capturePanel.Children.Add(_live);
+            if (_kind == "pov")
+            {
+                // where the POV's fps is (Mycelium: "it was also kind of annoying ... looking for where the pov was going to have its fps")
+                _povRecording.Margin = new Thickness(2, 6, 0, 0);
+                capturePanel.Children.Add(_povRecording);
+            }
             captureCard.Child = capturePanel;
             DockPanel.SetDock(captureCard, Dock.Top); left.Children.Add(captureCard);
-
-            // the night: check, rehearse, run - and what happens after
-            var run = new WrapPanel();
-            run.Children.Add(Btn("Check", (s, e) => Report(Check()), "Every demo, track and CFG found, now rather than at 3 am", Glyph.Check));
-            run.Children.Add(Btn("Rehearse", (s, e) => Report(Run(true)), "Goes through the whole queue without recording (a dry run)"));
-            var go = Btn("RUN QUEUE", (s, e) => Report(Run(false)), "Record every row, one after the other, with the BATCH page's settings", Glyph.Record);
-            go.Style = Ui.Style("PrimaryButton");
-            go.Padding = new Thickness(18, 7, 18, 7);
-            run.Children.Add(go);
-            var stop = Btn("Stop", (s, e) => Report(StopRun()), "Stops after the current step", Glyph.Stop);
-            stop.Style = Ui.Style("DangerButton");
-            run.Children.Add(stop);
-            var after = new WrapPanel();
-            after.Children.Add(_quitAfter);
-            after.Children.Add(_shutdownAfter);
-            // the files' names (Mycelium, 2026-10-16: "C and D, as Options"; D his pick): a frag's POV and cinematics in one folder
-            var names = new WrapPanel { Margin = new Thickness(0, 4, 0, 0) };
-            names.Children.Add(new TextBlock { Text = "File names", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0), Foreground = Ui.Brush("Dim") });
-            var style = new ComboBox { MinWidth = 330, ToolTip = "Every take goes into Recordings\\<the frag>\\, with the POV and its cinematics side by side. Short names: edit short-names.txt in %LOCALAPPDATA%\\Reluduali\\Console (Standoff=Stnd)" };
-            style.Items.Add("Short: POV_Stnd-Ballst-360nswb_t0001");
-            style.Items.Add("Full: Standoff ballista 360 ns wb - 440 - POV - take0001");
-            style.Items.Add("Old: a folder per row (before 0.6)");
-            style.SelectedIndex = BatchRecorder.Naming.Style == "C" ? 1 : BatchRecorder.Naming.Style == "D" ? 0 : 2;
-            style.SelectionChanged += (s, e) =>
-            {
-                BatchRecorder.Naming.Style = style.SelectedIndex == 1 ? "C" : style.SelectedIndex == 0 ? "D" : "";
-                try { Where.Save("names", BatchRecorder.Naming.Style.Length > 0 ? BatchRecorder.Naming.Style : "old"); } catch { }
-                Refresh(Sel());
-            };
-            names.Children.Add(style);
-            var runPanel = new StackPanel();
-            runPanel.Children.Add(run);
-            runPanel.Children.Add(names);
-            runPanel.Children.Add(after);
-            var runCard = new PrintCard { Padding = new Thickness(12, 10, 12, 8), Margin = new Thickness(0, 8, 0, 0), Child = runPanel };
-            DockPanel.SetDock(runCard, Dock.Bottom);
 
             // the picked row: its note, then what can be done to it, grouped
             var edit = new WrapPanel { Margin = new Thickness(0, 8, 0, 0) };
@@ -180,11 +180,19 @@ namespace ReludualiConsole
             edit.Children.Add(Ui.Gap());
             edit.Children.Add(Btn("Rename", (s, e) => RenameSel(), "The row's own name in this list", Glyph.Edit));
             edit.Children.Add(Btn("Frag name", (s, e) => FragSel(), "The frag this row belongs to: its recordings folder and its files' names. It starts as the name of the folder that holds the demo; changed here, it changes for every row of that frag"));
-            edit.Children.Add(Btn("Duplicate", (s, e) => { int i = Sel(); if (i >= 0) { FlushNote(); _q.Duplicate(i); Refresh(i + 1); } }, "A second row with the same path (its own name and folder)", Glyph.Copy));
+            edit.Children.Add(Btn("Duplicate", (s, e) => { int i = Sel(); if (i >= 0) { FlushNote(); _q.Duplicate(i); Refresh(i + 1); } }, "A second row with the same " + (_kind == "cine" ? "path" : "take") + " (its own name and folder)", Glyph.Copy));
             edit.Children.Add(Btn("Own CFG", (s, e) => OwnCfg(), "This row gets a CFG of its own (a copy of its kind's, to change)"));
-            edit.Children.Add(Ui.Gap());
-            edit.Children.Add(Btn("Preview in game", (s, e) => Report(Preview(Sel())), "Play this path through the game's free camera now (its film loaded in the theater)", Glyph.Play));
-            edit.Children.Add(Btn("Stop preview", (s, e) => Report(StopPreview()), null));
+            if (_kind == "cine")
+            {
+                edit.Children.Add(Ui.Gap());
+                edit.Children.Add(Btn("Preview in game", (s, e) => Report(Preview(Sel())), "Play this path through the game's free camera now (its film loaded in the theater)", Glyph.Play));
+                edit.Children.Add(Btn("Stop preview", (s, e) => Report(StopPreview()), null));
+                // 2026-10-18 (Mycelium: "you could see the camera path looping inside of the game on the dolly camera mode")
+                edit.Children.Add(Btn("Loop in the game's dolly", (s, e) => Report(PreviewInDolly(Sel())), "The game's own Dolly Camera flies this path over and over: its markers go into the game, the game goes to Dolly Camera from whatever view it is in, and the timeline's loop bracket goes over the path. Loop (under the game) stops it.", Glyph.Play));
+                // 2026-10-18: the markers shown here put into the game (Mycelium: "Apply ... Camera ... Button")
+                edit.Children.Add(Btn("Apply to game", (s, e) => Report(ApplyToGame()), "Put the markers shown here into the game in place of its own: the game's Edit Camera then has exactly these (positions, roll, FOV). The game must be in Edit Camera.", Glyph.Camera));
+                edit.Children.Add(_inStep);
+            }
             edit.Children.Add(Ui.Gap());
             edit.Children.Add(Btn("Remove", (s, e) => RemoveSel(), "Out of the queue; its files go to the queue's removed folder, never deleted", Glyph.Delete));
             DockPanel.SetDock(edit, Dock.Bottom);
@@ -196,17 +204,33 @@ namespace ReludualiConsole
             noteRow.Children.Add(_note);
             DockPanel.SetDock(noteRow, Dock.Bottom);
 
-            left.Children.Add(runCard);
+            // the Batch page records them all (Mycelium: "in the batch queue, you could then record them all at once")
+            var toBatch = new TextBlock { Margin = new Thickness(2, 10, 0, 0), Foreground = Ui.Brush("Dim"), TextWrapping = TextWrapping.Wrap };
+            var link = new System.Windows.Documents.Hyperlink(new System.Windows.Documents.Run("the Batch page")) { Foreground = Ui.Brush("Accent") };
+            link.Click += (s, e) => { var w = Application.Current.MainWindow as MainWindow; if (w != null) w.ShowTool("batch"); };
+            toBatch.Inlines.Add(new System.Windows.Documents.Run((_kind == "cine" ? "Cinematics" : "POV takes") + " are recorded from "));
+            toBatch.Inlines.Add(link);
+            toBatch.Inlines.Add(new System.Windows.Documents.Run(": each take's fps, passes, look and codec are there, with Record all."));
+            DockPanel.SetDock(toBatch, Dock.Bottom);
+
+            left.Children.Add(toBatch);
             left.Children.Add(edit);
             left.Children.Add(noteRow);
             left.Children.Add(_list);
-            Grid.SetColumn(left, 0); main.Children.Add(left);
-            var split = new GridSplitter { Width = 10, HorizontalAlignment = HorizontalAlignment.Stretch, ResizeDirection = GridResizeDirection.Columns, Cursor = Cursors.SizeWE };
-            Grid.SetColumn(split, 1); main.Children.Add(split);
-            Grid.SetColumn(_views, 2); main.Children.Add(_views);
-            Grid.SetRow(main, 2); root.Children.Add(main);
+            if (_kind == "cine")
+            {
+                main.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(43, GridUnitType.Star), MinWidth = 380 });
+                main.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(10) });
+                main.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(57, GridUnitType.Star), MinWidth = 320 });
+                Grid.SetColumn(left, 0); main.Children.Add(left);
+                var split = new GridSplitter { Width = 10, HorizontalAlignment = HorizontalAlignment.Stretch, ResizeDirection = GridResizeDirection.Columns, Cursor = Cursors.SizeWE };
+                Grid.SetColumn(split, 1); main.Children.Add(split);
+                Grid.SetColumn(_views, 2); main.Children.Add(_views);
+            }
+            else main.Children.Add(left);
+            Grid.SetRow(main, 1); root.Children.Add(main);
 
-            Grid.SetRow(_status, 3); root.Children.Add(_status);
+            Grid.SetRow(_status, 2); root.Children.Add(_status);
             Content = root;
 
             _list.SelectionChanged += (s, e) => { FlushNote(); ShowSelected(); };
@@ -214,22 +238,79 @@ namespace ReludualiConsole
             _note.LostKeyboardFocus += (s, e) => FlushNote();
             _noteTimer.Tick += (s, e) => FlushNote();
             Unloaded += (s, e) => FlushNote();
-            Dispatcher.ShutdownStarted += (s, e) => { FlushNote(); SaveSettings(); _views.CloseWindows(); };
+            Dispatcher.ShutdownStarted += (s, e) => { FlushNote(); if (_kind == "cine") SaveSettings(); _views.CloseWindows(); };
             _scene.MarkersEdited += OnMarkersEdited;
+            _scene.MarkersEdited += ms => { if (_inStep.IsChecked == true) { _stepTimer.Stop(); _stepTimer.Start(); } };
+            _stepTimer.Tick += (s, e) => { _stepTimer.Stop(); Report(ApplyToGame()); };
             _scene.SpeedChanged += SaveSettings;
             _views.LiveRequested += () => { _viewLive = true; _list.SelectedIndex = -1; ShowLiveInView(true); };
-            foreach (TextBox b in new[] { _povFps, _povBefore, _povAfter, _cineFps, _cineBefore, _cineAfter })
-                b.TextChanged += (s, e) => DefaultsChanged();
-            foreach (ComboBox c in new[] { _povHud, _cineHud, _povMode, _cineMode }) c.SelectionChanged += (s, e) => DefaultsChanged();
+            IsVisibleChanged += (s, e) => { if ((bool)e.NewValue) { PaintPovRecording(); if (_q != null && _q != _shownQueue) { _queueBox.Text = _q.Dir; Refresh(); } } };
 
             _poll.Tick += (s, e) => PollGame();
             if (!App.Tour) _poll.Start();
-            BatchEngine.TakeFinished += OnTakeFinished;
-            BatchPipe.Extra["queue"] = rest => OnUi(() => Pipe(rest));
-
-            LoadSettings();
+            if (_kind == "cine")
+            {
+                BatchEngine.TakeFinished += OnTakeFinished;
+                BatchPipe.Extra["queue"] = rest => OnUi(() => Pipe(rest));
+                LoadSettings();
+            }
+            else if (_q != null) { _queueBox.Text = _q.Dir; Refresh(); }
             _scene.Clear("Place two or more markers in the theater's Edit Camera: the path loops here.");
         }
+
+        // ---------------------------------------------------------------- the night, on the Batch page (2026-10-18)
+
+        private FrameworkElement _nightCard;
+
+        /// <summary>
+        /// Check, Rehearse, Record all, Stop, what happens after, and how the files are named: the night's card, shown on the
+        /// Batch page (Mycelium: "in the batch queue, you could then record them all at once"). The Cam Queue keeps the night's
+        /// logic (every row once, the failed ones once more, the status file, quit and shut down); only its card moved.
+        /// </summary>
+        public FrameworkElement NightCard()
+        {
+            if (_nightCard != null) return _nightCard;
+            var run = new WrapPanel();
+            run.Children.Add(Btn("Check", (s, e) => Report(Check()), "Every demo, track and CFG found, now rather than at 3 am", Glyph.Check));
+            run.Children.Add(Btn("Rehearse", (s, e) => Report(Run(true)), "Goes through the whole queue without recording (a dry run)"));
+            var go = Btn("Record all", (s, e) => Report(Run(false)), "Record every take in the queue, one after the other, each as its row says; the ones that fail once more at the end", Glyph.Record);
+            go.Style = Ui.Style("PrimaryButton");
+            go.Padding = new Thickness(18, 7, 18, 7);
+            run.Children.Add(go);
+            var stop = Btn("Stop", (s, e) => Report(StopRun()), "Stops after the current step", Glyph.Stop);
+            stop.Style = Ui.Style("DangerButton");
+            run.Children.Add(stop);
+            var after = new WrapPanel();
+            after.Children.Add(_quitAfter);
+            after.Children.Add(_shutdownAfter);
+            // the files' names (Mycelium, 2026-10-16: "C and D, as Options"; D his pick): a frag's POV and cinematics in one folder
+            var names = new WrapPanel { Margin = new Thickness(0, 4, 0, 0) };
+            names.Children.Add(new TextBlock { Text = "How files are named", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0), Foreground = Ui.Brush("Dim") });
+            var style = new ComboBox { MinWidth = 330, ToolTip = "Every take goes into Recordings\\<the frag>\\, with the POV and its cinematics side by side. Short names: edit short-names.txt in %LOCALAPPDATA%\\Reluduali\\Console (Standoff=Stnd)" };
+            style.Items.Add("Short   (for example: POV_Stnd-Ballst-360nswb_t0001)");
+            style.Items.Add("Full   (for example: Standoff ballista 360 ns wb - 440 - POV - take0001)");
+            style.Items.Add("Old   (a folder per row, as before 0.6)");
+            style.SelectedIndex = BatchRecorder.Naming.Style == "C" ? 1 : BatchRecorder.Naming.Style == "D" ? 0 : 2;
+            style.SelectionChanged += (s, e) =>
+            {
+                BatchRecorder.Naming.Style = style.SelectedIndex == 1 ? "C" : style.SelectedIndex == 0 ? "D" : "";
+                try { Where.Save("names", BatchRecorder.Naming.Style.Length > 0 ? BatchRecorder.Naming.Style : "old"); } catch { }
+                Refresh(Sel());
+            };
+            names.Children.Add(style);
+            var said = new TextBlock { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(2, 6, 0, 0), Foreground = Ui.Brush("AccentPale") };
+            _nightSaid = said;
+            var panel = new StackPanel();
+            panel.Children.Add(new TextBlock { Text = "The night", FontWeight = FontWeights.SemiBold, FontFamily = (FontFamily)Application.Current.TryFindResource("TitleFont") ?? new FontFamily("Segoe UI"), FontSize = 14.5, Margin = new Thickness(0, 0, 0, 8) });
+            panel.Children.Add(run);
+            panel.Children.Add(names);
+            panel.Children.Add(after);
+            panel.Children.Add(said);
+            _nightCard = new PrintCard { Padding = new Thickness(14, 10, 14, 8), Margin = new Thickness(0, 0, 0, 10), Child = panel };
+            return _nightCard;
+        }
+
+        private TextBlock _nightSaid;
 
         // ---------------------------------------------------------------- small UI helpers
 
@@ -276,8 +357,19 @@ namespace ReludualiConsole
             return p;
         }
 
-        private void Report(string s) { if (s != null) _status.Text = s; }
+        private void Report(string s) { if (s == null) return; _status.Text = s; if (_nightSaid != null) _nightSaid.Text = s; }
 
+        // ---------------------------------------------------------------- looks (2026-10-18)
+        // The looks shelf (drag a Global CFG onto a row or a kind) is on the Batch page since Mycelium's test of 10-18 ("the looks
+        // tab should be in the batch"); the list here shows each row's look.
+
+        private string LookLabel(QueueRow r)
+        {
+            if (_q == null) return "";
+            bool own;
+            string name = _q.LookOf(r, out own);
+            return name.Length == 0 ? "" : own ? name : "(" + name + ")";
+        }
         // ---------------------------------------------------------------- the list
 
         private sealed class Item
@@ -291,13 +383,14 @@ namespace ReludualiConsole
             public string Len { get; set; }
             public string From { get; set; }
             public string Note { get; set; }
+            public string Look { get; set; }
         }
 
         private void BuildList()
         {
             var gv = new GridView();
             foreach (var c in new[] { new[] { "#", "No", "30" }, new[] { "Kind", "Kind", "46" }, new[] { "Name", "Name", "136" }, new[] { "Film time", "Time", "82" },
-                                      new[] { "Len", "Len", "52" }, new[] { "Frag (its folder)", "Demo", "170" }, new[] { "File", "File", "210" },
+                                      new[] { "Len", "Len", "52" }, new[] { "Look", "Look", "120" }, new[] { "Frag (its folder)", "Demo", "170" }, new[] { "File", "File", "210" },
                                       new[] { "From", "From", "72" }, new[] { "Note", "Note", "200" } })
                 gv.Columns.Add(new GridViewColumn { Header = c[0], DisplayMemberBinding = new System.Windows.Data.Binding(c[1]), Width = double.Parse(c[2], CultureInfo.InvariantCulture) });
             _list.View = gv;
@@ -316,10 +409,19 @@ namespace ReludualiConsole
                 "</ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>");
         }
 
-        private void Refresh(int select = -1)
+        private bool Mine(QueueRow r) { return _kind == "cine" ? r.IsCine : !r.IsCine; }
+
+        /// <summary>The list again, this tab's kind of rows; <paramref name="select"/> is a row of the queue (-1: none). The other
+        /// tab follows (the same queue), and so does anything listening (the Batch page).</summary>
+        private void Refresh(int select = -1) { RefreshOwn(select); foreach (CamQueueControl p in Pages.ToArray()) if (p != this) p.RefreshOwn(p.Sel()); if (QueueChanged != null) QueueChanged(); }
+
+        private void RefreshOwn(int select)
         {
             _list.Items.Clear();
-            if (_q == null) { _summary.Text = "no queue open"; return; }
+            _shown.Clear();
+            _shownQueue = _q;
+            if (_q == null) { _summary.Text = "no queue open"; PaintPovRecording(); return; }
+            if (_queueBox.Text != _q.Dir) _queueBox.Text = _q.Dir;
             int i = 0;
             var kinds = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             foreach (QueueRow r in _q.Rows)
@@ -328,25 +430,74 @@ namespace ReludualiConsole
                 // the file its take will be (Naming, 2026-10-16): the take number is the first free one when it records
                 string key = r.Folder + "|" + (r.IsCine ? "cine" : "pov"), file = "";
                 int n; kinds.TryGetValue(key, out n); kinds[key] = ++n;
+                if (!Mine(r)) continue;
                 if (BatchRecorder.Naming.Style == "C" || BatchRecorder.Naming.Style == "D")
                     file = BatchRecorder.Naming.Base(BatchRecorder.Naming.Style, r.Folder, !r.IsCine, n, 1) + "...";
+                _shown.Add(i - 1);
                 _list.Items.Add(new Item
                 {
                     No = i, Kind = r.IsCine ? "CINE" : "POV", Name = r.Name, Demo = r.Folder, File = file,
                     Time = r.ClockIn + (r.ClockOut.Length > 0 ? "-" + r.ClockOut : ""),
                     Len = r.Seconds > 0 ? r.Seconds.ToString("0.0#", CultureInfo.InvariantCulture) + " s" : "",
-                    From = r.IsCine ? r.Source : (r.Pov.Length > 0 ? r.Pov : "pov"), Note = r.Note
+                    From = r.IsCine ? r.Source : (r.Pov.Length > 0 ? r.Pov : "pov"), Note = r.Note,
+                    // its own look as it is; its kind's in brackets (it changes when the kind's does)
+                    Look = LookLabel(r)
                 });
             }
-            if (select >= 0 && select < _list.Items.Count) _list.SelectedIndex = select;
-            int demos = _q.Rows.Select(r => r.Demo.Length > 0 ? r.Demo : r.Folder).Distinct(StringComparer.OrdinalIgnoreCase).Count();
-            int cines = _q.Rows.Count(r => r.IsCine);
-            double sec = _q.Rows.Sum(r => r.Seconds);
-            _summary.Text = _q.Rows.Count + " rows (" + cines + " CINE, " + (_q.Rows.Count - cines) + " POV) on " + demos + " demo(s), "
-                            + sec.ToString("0.#", CultureInfo.InvariantCulture) + " s of film";
+            int at = _shown.IndexOf(select);
+            if (at >= 0) _list.SelectedIndex = at;
+            int mine = _shown.Count, others = _q.Rows.Count - mine;
+            double sec = _q.Rows.Where(Mine).Sum(r => r.Seconds);
+            int demos = _q.Rows.Where(Mine).Select(r => r.Demo.Length > 0 ? r.Demo : r.Folder).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+            _summary.Text = mine + (_kind == "cine" ? " cinematic(s)" : " POV take(s)") + " on " + demos + " demo(s), " + sec.ToString("0.#", CultureInfo.InvariantCulture) + " s of film"
+                            + (others > 0 ? "; and " + others + (_kind == "cine" ? " POV take(s) on the POV Queue" : " cinematic(s) on the Cam Queue") : "");
+            PaintPovRecording();
         }
 
-        private int Sel() { return _list.SelectedIndex; }
+        /// <summary>The queue row picked in this tab's list, or -1.</summary>
+        private int Sel() { int li = _list.SelectedIndex; return li >= 0 && li < _shown.Count ? _shown[li] : -1; }
+
+        /// <summary>Picks a queue row in this tab's list (-1, or a row of the other kind: nothing picked).</summary>
+        private void SelectRow(int queueRow) { _list.SelectedIndex = _shown.IndexOf(queueRow); }
+
+        /// <summary>The POV Queue's line on how its takes record: the Batch's POV global (Mycelium: "kind of looking for where the pov
+        /// was going to have its fps").</summary>
+        private void PaintPovRecording()
+        {
+            if (_kind != "pov") return;
+            if (_q == null) { _povRecording.Text = ""; return; }
+            Func<string, string, string> d = (k, dflt) => { string v = _q.Default("pov_" + k); return v.Length == 0 || v == "tab" ? dflt : v; };
+            string hud = d("hud", "shown"), mode = d("codcast", "on");
+            _povRecording.Text = "POV takes record at " + d("fps", "1000") + " fps, " + d("before", "3") + " s before and " + d("after", "3") + " s after, HUD " + (hud == "hide" || hud == "off" ? "hidden" : "shown")
+                                 + ", " + (mode == "off" ? "in the regular theater" : "in CODCAST") + (d("depth", "off") == "on" ? ", with a depth pass" : "")
+                                 + ". Change it on the Batch page (POV takes), or per take in its list.";
+        }
+
+        /// <summary>The film to a POV take's start, on its player (the timeline's seek, then the batch's own way to the player).</summary>
+        private string GoToStart(int i)
+        {
+            if (_q == null || i < 0 || i >= _q.Rows.Count) return "Pick a POV take first.";
+            QueueRow r = _q.Rows[i];
+            int tin = r.TickInValue;
+            if (tin < 0) return "This take has no start tick.";
+            TheaterTimeline tl = TheaterTimeline.Current;
+            string who = r.Pov;
+            ThreadPool.QueueUserWorkItem(_ =>
+            {
+                string said;
+                try
+                {
+                    bool ok = tl != null && tl.SeekNow(tin);
+                    if (!ok) { BridgeClient.Ask("kf jump " + tin.ToString(CultureInfo.InvariantCulture), 10000, 1); BridgeClient.Ask("cmd demo_pause 1", 800, 1); }
+                    string slot = "";
+                    if (who.Length > 0 && Attached()) { int sl = _game.SlotForName(who); if (sl >= 0) { BridgeClient.Ask("cmd demo_client " + sl.ToString(CultureInfo.InvariantCulture), 800, 1); slot = ", on " + who; } }
+                    said = "The film is at " + r.ClockIn + slot + ".";
+                }
+                catch (Exception ex) { said = "Could not go there: " + ex.Message; }
+                Dispatcher.BeginInvoke(new Action(() => Report(said)));
+            });
+            return "Going to " + r.Name + "...";
+        }
 
         private void ShowSelected()
         {
@@ -368,6 +519,9 @@ namespace ReludualiConsole
                     _viewRow = i;
                     _viewRowRef = r;
                     _scene.ShowPath(t, ms, Looks.MapOf(r.Demo), "row " + (i + 1) + ": " + r.Name, true);
+                    // picking a cinematic puts it in the game, when the game is kept in step (Mycelium: "As a user clicks on different
+                    // kinds of cinematics")
+                    if (_inStep.IsChecked == true && ms != null) { _stepTimer.Stop(); _stepTimer.Start(); }
                     LoadPlayers(Path.Combine(Path.GetDirectoryName(ct), Path.GetFileName(ct).Split('.')[0] + ".players.rvp.gz"), i);
                 }
                 catch (Exception ex) { Report("could not show row " + (i + 1) + ": " + ex.Message); }
@@ -539,6 +693,8 @@ namespace ReludualiConsole
             ShowDefaults();
             Refresh();
             SaveSettings();
+            // the BATCH page shows this queue's list and follows it as rows are added (2026-10-18: "not 1:1")
+            try { if (BatchControl.Instance != null) BatchControl.Instance.Follow(_q.Csv); } catch (Exception ex) { App.Note("the BATCH page following the queue", ex); }
             string s = "queue " + _q.Dir + ": " + _q.Rows.Count + " rows";
             Report(s);
             return s;
@@ -607,7 +763,7 @@ namespace ReludualiConsole
         public string TourOpen(string dir, int row)
         {
             string s = OpenQueue(dir);
-            if (_q != null && row >= 0 && row < _q.Rows.Count) _list.SelectedIndex = row;
+            if (_q != null && row >= 0 && row < _q.Rows.Count) SelectRow(row);
             return s;
         }
 
@@ -653,6 +809,7 @@ namespace ReludualiConsole
                     });
             }
             SetLive(ms, why, sig);
+            if (_kind == "pov" && IsVisible) UpdateLiveText();          // who is being watched changes without the markers changing
         }
 
         private void SetLive(List<DollyMarker> ms, string why, string sig)
@@ -683,6 +840,15 @@ namespace ReludualiConsole
         {
             List<DollyMarker> ms = _liveMarkers;
             string pov = _povIn >= 0 ? "   POV in " + CamPaths.ClockLabel(_povIn) + (_povOut > _povIn ? " out " + CamPaths.ClockLabel(_povOut) : "") : "";
+            if (_kind == "pov")
+            {
+                // the POV Queue: who is being watched now, and the marks so far (no dolly markers here)
+                string who = "";
+                try { if (_game.Attached && _game.InTheater) { int slot = _game.PlayerIndex; string n = _game.PlayerName(slot); who = n.Length > 0 ? "watching " + n : "slot " + slot; } } catch { }
+                _live.Text = (who.Length > 0 ? "Live: " + who : ms == null ? "Live: " + _liveWhy : "Live: the film is up") + pov
+                             + (_povIn < 0 ? ".  POV in marks the start on the player you are watching." : _povOut <= _povIn ? ".  Now POV out at its end." : ".  Add POV take.");
+                return;
+            }
             _live.Text = ms == null ? "Live: " + _liveWhy + pov
                        : ms.Count == 0 ? "Live: no markers placed" + pov
                        : "Live: " + ms.Count + " marker" + (ms.Count == 1 ? "" : "s")
@@ -694,7 +860,7 @@ namespace ReludualiConsole
             _viewRow = -1;
             _viewRowRef = null;
             _scene.SetPlayers(null);
-            if (_liveEdited != null && _liveMarkers != null && _liveEdited.Count == _liveMarkers.Count)
+            if (_liveEdited != null && _liveMarkers != null)
             {
                 string w;
                 CamTrack t = CamPaths.TrackFromMarkers(_liveEdited, 1, out w);
@@ -771,7 +937,20 @@ namespace ReludualiConsole
             if (r.StartsWith("error ", StringComparison.Ordinal)) return "Not jumped: " + r.Substring(6) + ".";
             int at = r.IndexOf(" at ", StringComparison.Ordinal), sp = at < 0 ? -1 : r.IndexOf(' ', at + 4);
             string tick = at < 0 ? "" : r.Substring(at + 4, (sp < 0 ? r.Length : sp) - at - 4);
-            return "The film is at your marker " + n + (tick.Length > 0 ? " (tick " + tick + ")" : "") + (keepCamera ? ", the camera where it was." : ", the camera on the marker.");
+            // Sandbox 0723-0724 (2026-10-18): a jump that puts the camera on the marker leaves the film held there - it does not
+            // play again (41050 -> 41141, then still, at any speed, in any camera mode) until another jump. "keep" does not
+            // hold it. So the film is let go at once: a keyframe jump to the marker's moment (the camera stays on the marker),
+            // then played up to it - where the batch, the timeline and Play can move it again.
+            string freed = "";
+            if (!keepCamera)
+            {
+                string landed = BridgeClient.Ask("stats", 800, 1);
+                int t = landed == null ? -1 : (int)BridgeClient.Field(landed, "tick");
+                string k = t > 0 ? BridgeClient.Ask("kf jump " + t.ToString(CultureInfo.InvariantCulture), 10000, 1) : null;
+                if (k != null && k.StartsWith("ok", StringComparison.Ordinal)) { string why; MarkerApply.GoToForJump(t, out why); }
+                else freed = " Note: the film stays held on the marker until it is moved (no keyframe before it yet: play the film once from before it).";
+            }
+            return "The film is at your marker " + n + (tick.Length > 0 ? " (tick " + tick + ")" : "") + (keepCamera ? ", the camera where it was." : ", the camera on the marker.") + freed;
         }
 
         // ---------------------------------------------------------------- SAVE MY MARKERS, POV in / out
@@ -786,7 +965,7 @@ namespace ReludualiConsole
             List<DollyMarker> ms = CamPaths.ReadMarkers(_game, out why, out sig);
             if (ms == null) return "Nothing saved: " + why + ".";
             if (ms.Count < 2) return "Nothing saved: place at least 2 markers in Edit Camera first (" + ms.Count + " now).";
-            bool edited = _liveEdited != null && _liveEdited.Count == ms.Count && sig == _liveSig;
+            bool edited = _liveEdited != null && _liveEdited.Count >= 2 && sig == _liveSig;      // an added or removed camera counts too
             if (edited) ms = _liveEdited;
             string warn;
             CamTrack track = CamPaths.TrackFromMarkers(ms, 1, out warn);
@@ -819,6 +998,7 @@ namespace ReludualiConsole
             if (start) { _povIn = tick; _povOut = -1; _povName = _game.PlayerName(_game.PlayerIndex); }
             else _povOut = tick;
             UpdateLiveText();
+            RaisePovMarks();
             return start ? "POV in at film " + CamPaths.ClockLabel(tick) + " (tick " + tick + "), watching " + (_povName.Length > 0 ? _povName : "slot " + _game.PlayerIndex) + ". Now POV out."
                          : "POV out at film " + CamPaths.ClockLabel(tick) + " (tick " + tick + ")" + (_povIn >= 0 && tick > _povIn ? ": " + ((tick - _povIn) / 1000.0).ToString("0.0", CultureInfo.InvariantCulture) + " s. Add POV take." : ". Mark POV in first.");
         }
@@ -835,7 +1015,86 @@ namespace ReludualiConsole
             QueueRow r = _q.AddPov(demo, _povName, _povIn, _povOut, name);
             Refresh(_q.Rows.Count - 1);
             _povIn = _povOut = -1;
+            RaisePovMarks();
             return "Added row " + _q.Rows.Count + " \"" + r.Name + "\": " + _povName + "'s view, " + r.Seconds.ToString("0.0", CultureInfo.InvariantCulture) + " s at film " + r.ClockIn + " on " + r.Folder + ".";
+        }
+
+        // ---------------------------------------------------------------- the timeline's lanes and its loop (2026-10-18)
+        // Mycelium: "Make two separate ones that work together, because one may want to change the global bracket without
+        // changing the POV one. So make the POV one more like markers on its own timeline layer". The POV in and out marked
+        // here, and every POV take's, are markers on the timeline's POV lane; the loop bracket is the timeline's own. They
+        // meet only when asked: "From the loop" and "Loop it".
+
+        /// <summary>Raised on the window's thread when the POV in / out marked here (not a take yet) changed.</summary>
+        public static event Action PovMarksChanged;
+        private static void RaisePovMarks() { if (PovMarksChanged != null) PovMarksChanged(); }
+
+        /// <summary>The POV Queue's in and out not yet a take (-1: none).</summary>
+        public static int PendingIn { get { CamQueueControl p = PovInstance; return p == null ? -1 : p._povIn; } }
+        public static int PendingOut { get { CamQueueControl p = PovInstance; return p == null ? -1 : p._povOut; } }
+
+        /// <summary>The POV Queue's in and out, set from the timeline (dragged on the POV lane, or from the loop). Its player is
+        /// the one being watched now when none was marked.</summary>
+        public static void SetPending(int tin, int tout)
+        {
+            CamQueueControl p = PovInstance;
+            if (p == null) return;
+            p._povIn = tin; p._povOut = tout;
+            if (string.IsNullOrEmpty(p._povName) && p.Attached()) p._povName = p._game.PlayerName(p._game.PlayerIndex);
+            p.UpdateLiveText();
+            RaisePovMarks();
+        }
+
+        /// <summary>The film the game is playing, as a demo path, never asking (the timeline's lanes show its rows); null when
+        /// not known.</summary>
+        public static string FilmQuiet()
+        {
+            CamQueueControl p = Instance ?? PovInstance;
+            if (p == null || !p.Attached() || !p._game.InTheater) return null;
+            try { string how; return p.FilmNow(false, out how); } catch { return null; }
+        }
+
+        /// <summary>The row picked on its kind's page (-1: none).</summary>
+        public static int Picked(bool cine) { CamQueueControl p = cine ? Instance : PovInstance; return p == null ? -1 : p.Sel(); }
+
+        /// <summary>Picks a row on its kind's page (a click on its lane).</summary>
+        public static void Pick(int row)
+        {
+            CamQueue q = _sharedQueue;
+            if (q == null || row < 0 || row >= q.Rows.Count) return;
+            CamQueueControl p = q.Rows[row].IsCine ? Instance : PovInstance;
+            if (p != null) p.SelectRow(row);
+        }
+
+        /// <summary>Rows changed on the timeline: the queue saved, every page and the Batch shown again.</summary>
+        public static void Edited(int row)
+        {
+            CamQueue q = _sharedQueue;
+            if (q == null) return;
+            q.Save();
+            CamQueueControl p = Instance ?? PovInstance;
+            if (p != null) p.Refresh(row);
+        }
+
+        private string PovFromLoop()
+        {
+            if (!LoopBracket.Has) return "There is no loop bracket: drag one on the strip above the timeline (in the Workspace layout).";
+            SetPending(LoopBracket.In, LoopBracket.Out);
+            return "POV in " + CamPaths.ClockLabel(_povIn) + ", out " + CamPaths.ClockLabel(_povOut) + " from the loop (" + ((_povOut - _povIn) / 1000.0).ToString("0.0", CultureInfo.InvariantCulture)
+                   + " s), watching " + (_povName.Length > 0 ? _povName : "nobody yet") + ". Add POV take, or drag them on the POV lane. The loop stays as it is.";
+        }
+
+        private string LoopPov()
+        {
+            int i = Sel();
+            int a, b; string what;
+            if (i >= 0 && _q != null && i < _q.Rows.Count && _q.Rows[i].TickInValue >= 0 && _q.Rows[i].TickOutValue > _q.Rows[i].TickInValue)
+            { a = _q.Rows[i].TickInValue; b = _q.Rows[i].TickOutValue; what = "\"" + _q.Rows[i].Name + "\""; }
+            else if (_povIn >= 0 && _povOut > _povIn) { a = _povIn; b = _povOut; what = "the POV in and out marked here"; }
+            else return "Pick a POV take, or mark POV in and out, first.";
+            LoopBracket.Set(a, b);
+            LoopBracket.Switch(true);
+            return "The loop is " + what + ": " + CamPaths.ClockLabel(a) + " to " + CamPaths.ClockLabel(b) + ", on. The take does not change when you move the loop.";
         }
 
 
@@ -855,7 +1114,7 @@ namespace ReludualiConsole
             CamTrack t = CamTrack.Read(ct);
             ThreadPool.QueueUserWorkItem(_ =>
             {
-                string reply = BridgeClient.Ask("cam path " + ct, 3000, 1) ?? ("no answer: " + BridgeClient.LastError);
+                string reply = BridgeClient.CamPath(ct);        // asked again while the free camera is not ready yet
                 string result;
                 if (!reply.StartsWith("ok", StringComparison.Ordinal)) result = "the game would not take the path: " + reply + " (Preview needs the RipperBridge that comes with the Designer)";
                 else
@@ -881,6 +1140,99 @@ namespace ReludualiConsole
                 Dispatcher.BeginInvoke(new Action(() => Report("preview stopped: " + a + "; " + b)));
             });
             return "stopping the preview...";
+        }
+
+        // ---------------------------------------------------------------- Apply to game (2026-10-18)
+
+        /// <summary>The markers the views show: the picked row's (its markers.json), or the live ones as edited here.</summary>
+        private List<DollyMarker> ShownMarkers(out string what, out string demo)
+        {
+            what = ""; demo = null;
+            if (_viewLive || _viewRowRef == null)
+            {
+                what = "the live markers" + (_liveEdited != null ? " as edited here" : "");
+                return _liveEdited ?? _liveMarkers;
+            }
+            return RowMarkers(_viewRowRef, out what, out demo);
+        }
+
+        /// <summary>A queue row's markers (its markers.json), or null with what it is.</summary>
+        private List<DollyMarker> RowMarkers(QueueRow r, out string what, out string demo)
+        {
+            what = ""; demo = null;
+            if (_q == null || !_q.Rows.Contains(r) || !r.IsCine) return null;
+            string ct = Path.IsPathRooted(r.CamPath) ? r.CamPath : Path.Combine(_q.Dir, r.CamPath);
+            string mj = Path.Combine(Path.GetDirectoryName(ct), Path.GetFileName(ct).Split('.')[0] + ".markers.json");
+            if (!File.Exists(mj)) { what = "row " + (_q.Rows.IndexOf(r) + 1) + " (a generated path, no markers)"; return null; }
+            what = "row " + (_q.Rows.IndexOf(r) + 1) + " \"" + r.Name + "\"";
+            demo = r.Demo;
+            return CamPaths.ReadMarkersJson(mj);
+        }
+
+        /// <summary>Apply to game: off the window's thread (each marker is a seek). The reply comes when it is done. With a row
+        /// (the pipe's "queue apply I"): that row's markers; without: what the views show.</summary>
+        private string ApplyToGame(QueueRow row = null, Action<string> then = null)
+        {
+            string what, demo;
+            List<DollyMarker> ms;
+            try { ms = row != null ? RowMarkers(row, out what, out demo) : ShownMarkers(out what, out demo); }
+            catch (Exception ex) { return "Not applied: could not read the markers (" + ex.Message + ")."; }
+            if (ms == null || ms.Count < 2) return "Not applied: pick a CINE row with markers, or place markers in the game" + (what.Length > 0 ? " (" + what + " has none)" : "") + ".";
+            if (!Attached() || !_game.InTheater) return "Not applied: load the film in the theater first.";
+            if (BatchControl.Instance != null && BatchControl.Instance.IsBusy) return "Not applied: the batch has the film.";
+            if (demo != null)
+            {
+                string how, film = FilmNow(false, out how);
+                if (film != null && demo.Length > 0 && !string.Equals(Path.GetFullPath(film), Path.GetFullPath(demo), StringComparison.OrdinalIgnoreCase))
+                    return "Not applied: the theater has " + Path.GetFileName(film) + "; " + what + " is on " + Path.GetFileName(demo) + ".";
+            }
+            if (Interlocked.CompareExchange(ref _applying, 1, 0) != 0) return "Already applying markers to the game.";
+            var copy = ms.ToList();
+            ThreadPool.QueueUserWorkItem(_ =>
+            {
+                string r;
+                try { r = MarkerApply.Apply(copy, line => Dispatcher.BeginInvoke(new Action(() => Report("Applying " + what + ": " + line)))); }
+                catch (Exception ex) { App.Note("applying markers to the game", ex); r = "Not applied: " + ex.Message; }
+                Dispatcher.BeginInvoke(new Action(() => { Interlocked.Exchange(ref _applying, 0); Report(r); }));
+                if (then != null && r.StartsWith("Applied", StringComparison.Ordinal))
+                {
+                    try { then(r); } catch (Exception ex) { App.Note("after applying markers", ex); }
+                }
+            });
+            return "Applying " + what + " (" + ms.Count + " markers) to the game: the film moves to place each one...";
+        }
+
+        /// <summary>
+        /// A cinematic flown by the game's own dolly, looping (Mycelium 10-18, 25:34: "I also want there to be a possibility for
+        /// the in-game ... to be doing the exact motion"; 35:12: "you could see the camera path looping inside of the game on
+        /// the dolly camera mode. ... then you wouldn't even need this sort of fake test kind of path thing"). Its markers
+        /// applied to the game (Edit Camera reached by itself), then Dolly Camera (CameraView: from whatever view the game was
+        /// in), the loop bracket over the path, on, and the film played. Off the window's thread; the page says how it went.
+        /// </summary>
+        public string PreviewInDolly(int i)
+        {
+            if (_q == null || i < 0 || i >= _q.Rows.Count || !_q.Rows[i].IsCine) return "Pick a cinematic first.";
+            QueueRow r = _q.Rows[i];
+            int a = r.TickInValue, b = r.TickOutValue;
+            if (a < 0 || b <= a) return "This cinematic has no film times.";
+            StopPreview();
+            LoopBracket.Switch(false);
+            string name = r.Name;
+            return ApplyToGame(r, applied =>
+            {
+                string v = CameraView.To(CameraView.View.Dolly);
+                string said;
+                if (!v.StartsWith("ok", StringComparison.Ordinal)) said = "The markers are in the game, but the Dolly Camera did not come up: " + v + ".";
+                else
+                {
+                    LoopBracket.Set(a, b);
+                    LoopBracket.Switch(true);
+                    BridgeClient.Ask("cmd demo_pause 0", 800, 1);
+                    said = "\"" + name + "\" loops in the game's Dolly Camera (" + v.Substring(3) + "): " + CamPaths.ClockLabel(a) + " to " + CamPaths.ClockLabel(b)
+                           + ". The loop bracket is over it on the timeline; Loop switches it off.";
+                }
+                Dispatcher.BeginInvoke(new Action(() => Report(said)));
+            });
         }
 
         // ---------------------------------------------------------------- check and run
@@ -1098,6 +1450,7 @@ namespace ReludualiConsole
             "  queue view markers | view pick X Y | view drag I DX DY [aim] | view undo   (the first non-camera view's markers, for tests)\n" +
             "  queue view list | view add ANGLE MAP PLAYERS [pin] | view close I | view main I | view look I MAP | view pop I | view default\n" +
             "  queue run failed               the rows that failed in the last run, once more\n" +
+            "  queue apply [I]                Apply to game: row I's markers (or what the views show) in place of the game's\n" +
             "  queue track-from MARKERS.json OUT [STEP]  the C# track maths on a file (to compare with markers_to_track.py)";
 
         private string Pipe(string rest)
@@ -1109,6 +1462,14 @@ namespace ReludualiConsole
             {
                 case "": case "help": return PipeHelp;
                 case "open": return OpenQueue(arg);
+                case "said": return _status.Text;                              // the page's last words (tests: what Apply said when done)
+                case "apply":
+                    {
+                        if (arg.Length == 0) return ApplyToGame();
+                        int i = row(arg);
+                        if (_q == null || i < 0 || i >= _q.Rows.Count) return "no row " + arg;
+                        return ApplyToGame(_q.Rows[i]);
+                    }
                 case "snap":
                     {
                         // the Console's own picture of itself, whatever covers it (Windows won't raise it over the game)
@@ -1176,6 +1537,7 @@ namespace ReludualiConsole
                         if (p.Length < 1 || !int.TryParse(p[0], out n)) return "usage: queue jump N [keep]";
                         return MarkerJump(n, p.Length > 1 && p[1] == "keep");
                     }
+                case "dolly": return PreviewInDolly(row(arg));                 // 2026-10-18: the path in the game's own Dolly Camera, looping
                 case "pov-in": return MarkPov(true);
                 case "pov-out": return MarkPov(false);
                 case "pov-add": return AddPovLive(arg.Length > 0 ? arg : null, false);
@@ -1249,7 +1611,7 @@ namespace ReludualiConsole
                         else if (p.Length >= 4 && p[0] == "drag") { return ev != null ? ev.DragForTest(row(p[1]), double.Parse(p[2], CultureInfo.InvariantCulture), double.Parse(p[3], CultureInfo.InvariantCulture), p.Length > 4 && p[4] == "aim") : "no view"; }
                         else if (p.Length >= 1 && p[0] == "undo") { _scene.Undo(); }
                         else if (p.Length >= 2 && p[0] == "pop") { CamView v = _views.View(row(p[1])); if (v == null) return "no view " + p[1]; _views.TogglePop(v); return _views.List(); }
-                        else if (p.Length >= 2 && p[0] == "row") { _list.SelectedIndex = row(p[1]); }
+                        else if (p.Length >= 2 && p[0] == "row") { SelectRow(row(p[1])); }
                         else if (p.Length >= 1 && p[0] == "live") { _viewLive = true; _list.SelectedIndex = -1; ShowLiveInView(true); }
                         else if (p.Length >= 2 && p[0] == "speed") { double d; if (double.TryParse(p[1], NumberStyles.Float, CultureInfo.InvariantCulture, out d)) _scene.Speed = d; }
                         else if (p.Length >= 1 && p[0] == "list") { return _views.List(); }

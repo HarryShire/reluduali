@@ -39,6 +39,15 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Net.Http" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <!-- Microsoft WebView2 SDK, pinned: lib\webview2\PIN.md (the runtime is Windows' own; CamoEditorControl checks for it) -->
+    <Reference Include="Microsoft.Web.WebView2.Core">
+      <HintPath>lib\webview2\1.0.4258.31\Microsoft.Web.WebView2.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Web.WebView2.Wpf">
+      <HintPath>lib\webview2\1.0.4258.31\Microsoft.Web.WebView2.Wpf.dll</HintPath>
+    </Reference>
     <Reference Include="System.Security" />
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
@@ -92,6 +101,17 @@
     <Compile Include="ContestControl.cs" />
     <Compile Include="TimerSelfTest.cs" />
     <Compile Include="CamPaths.cs" />
+    <Compile Include="MarkerApply.cs" />
+    <Compile Include="CameraView.cs" />
+    <Compile Include="LoopBracket.cs" />
+    <Compile Include="TakeKeys.cs" />
+    <Compile Include="CamoServer.cs" />
+    <Compile Include="CamoEditorControl.cs" />
+    <Compile Include="TheaterTimeline.Lanes.cs" />
+    <Compile Include="FolderPicker.cs" />
+    <Compile Include="Shortcuts.cs" />
+    <Compile Include="BatchPage.cs" />
+    <Compile Include="GlobalCfgView.cs" />
     <Compile Include="CamQueue.cs" />
     <Compile Include="CamView.cs" />
     <Compile Include="CamScene.cs" />
@@ -139,6 +159,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="lib\webview2\1.0.4258.31\WebView2Loader.dll">
+      <Link>WebView2Loader.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

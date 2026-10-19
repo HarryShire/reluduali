@@ -8,5 +8,5 @@ using System.Windows;
 [assembly: AssemblyCopyright("Copyright (c) 2026 Mycelium")]
 [assembly: ComVisible(false)]
 [assembly: ThemeInfo(ResourceDictionaryLocation.None, ResourceDictionaryLocation.SourceAssembly)]
-[assembly: AssemblyVersion("0.7.2.0")]
-[assembly: AssemblyFileVersion("0.7.2.0")]
+[assembly: AssemblyVersion("0.7.8.0")]
+[assembly: AssemblyFileVersion("0.7.8.0")]

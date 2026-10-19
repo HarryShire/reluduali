@@ -187,7 +187,7 @@ namespace ReludualiConsole
         {
             Foreground = (Brush)Application.Current.FindResource("Text");
             Content = Ui.Page(Ui.Card("This PC", "Where things are, and what this PC has. The game folder is found by itself while the game runs; choose it here if it is not.", _rows),
-                              MapShapes.Card(), AppearanceCard.Make(), UpdatesCard());
+                              MapShapes.Card(), AppearanceCard.Make(), Shortcuts.Card(), UpdatesCard());
             IsVisibleChanged += (s, e) => { if ((bool)e.NewValue) Fill(); };
         }
 

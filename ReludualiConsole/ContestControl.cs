@@ -370,9 +370,9 @@ namespace ReludualiConsole
 
         void ChooseLumit()
         {
-            var dlg = new Microsoft.Win32.OpenFileDialog { Title = "Pick any file in the folder Lumit watches (or type a name in it)", CheckFileExists = false, FileName = "this folder" };
-            if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;
-            LumitFolder.Path_ = Path.GetDirectoryName(dlg.FileName);
+            string folder = FolderPicker.Pick(Window.GetWindow(this), "The folder Lumit watches");
+            if (folder == null) return;
+            LumitFolder.Path_ = folder;
             Paint();
         }
 

@@ -2,13 +2,67 @@ The Reluduali Designer - third-party notices
 =============================================
 
 The Reluduali Designer (the Designer, BatchCore, RipperBridge, the theater layer and the installer) is MIT licensed,
-Copyright (c) 2026 Mycelium: see LICENSE. It uses no third-party code libraries: only Windows, the .NET Framework and
-the Microsoft Visual C++ runtime, which are Microsoft's and are not redistributed here (the C++ runtime is linked into
-RipperBridge as Microsoft's licence for it allows).
+Copyright (c) 2026 Mycelium: see LICENSE. Its one third-party code library is Microsoft's WebView2 SDK (below), which
+shows the Camo Editor inside the Designer. Otherwise it uses only Windows, the .NET Framework and the Microsoft Visual
+C++ runtime, which are Microsoft's and are not redistributed here (the C++ runtime is linked into RipperBridge as
+Microsoft's licence for it allows).
 
 The installer also carries the pieces below. Their notices travel with them.
 
-Last updated for version 0.7.2.
+Last updated for version 0.7.8.
+
+
+-------------------------------------------------------------------------------
+Microsoft WebView2 SDK 1.0.4258.31 (Microsoft.Web.WebView2.Core.dll,
+Microsoft.Web.WebView2.Wpf.dll and WebView2Loader.dll, beside the Designer)
+  By Microsoft Corporation - https://www.nuget.org/packages/Microsoft.Web.WebView2
+  Its own notices for the material it incorporates are in WebView2-NOTICE.txt,
+  beside the Designer. The WebView2 runtime itself is NOT included: it is part of
+  Windows 11; where it is missing the Designer offers Microsoft's own installer,
+  whose licence you accept or decline yourself.
+-------------------------------------------------------------------------------
+
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * The name of Microsoft Corporation, or the names of its contributors
+may not be used to endorse or promote products derived from this
+software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+-------------------------------------------------------------------------------
+OpenAssetTools - https://github.com/Laupetin/OpenAssetTools
+  By its own authors, under the GNU General Public License version 3.
+  OpenAssetTools is NOT included in this release or its installer. When you press
+  "Make the gun models" in the Camo Editor, the Designer downloads its v0.33.0
+  release from the authors' own page (after asking you), checks it, and runs it
+  as a separate program to read your own game's files. It is never linked into
+  the Designer. Its licence and source come with it from its authors.
+  It runs on Microsoft's Visual C++ runtime (32-bit), which is NOT included
+  either: where it is missing or too old, the Designer offers Microsoft's own
+  installer, whose licence you accept or decline yourself.
+-------------------------------------------------------------------------------
 
 
 -------------------------------------------------------------------------------

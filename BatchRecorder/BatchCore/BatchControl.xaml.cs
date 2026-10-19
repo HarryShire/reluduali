@@ -51,10 +51,95 @@ namespace BatchRecorder
                 ? "Load each demo is on: each take loads its own demo."
                 : "Load each demo is off: it uses whatever demo is on the theater screen.");
             WatchSettings();
+            FollowList();
             BatchPipe.Start();
         }
 
+        // ---- the take list followed live (2026-10-18): the CAM QUEUE adds a row, the list here shows it at once, 1:1 ----
+        private FileSystemWatcher _listWatch;
+        private readonly DispatcherTimer _listTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
+
+        private void FollowList()
+        {
+            _listTimer.Tick += (s, e) => { _listTimer.Stop(); if (!IsBusy && File.Exists(CsvBox.Text.Trim().Trim('"'))) LoadList(true); };
+            CsvBox.TextChanged += (s, e) => WatchList();
+            WatchList();
+        }
+
+        private void WatchList()
+        {
+            if (_listWatch != null) { _listWatch.EnableRaisingEvents = false; _listWatch.Dispose(); _listWatch = null; }
+            string p = CsvBox.Text.Trim().Trim('"');
+            try
+            {
+                string dir = p.Length > 0 ? Path.GetDirectoryName(Path.GetFullPath(p)) : null;
+                if (dir == null || !Directory.Exists(dir)) return;
+                _listWatch = new FileSystemWatcher(dir, Path.GetFileName(p)) { NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.Size };
+                FileSystemEventHandler soon = (s, e) => Dispatcher.BeginInvoke(new Action(() => { _listTimer.Stop(); _listTimer.Start(); }));
+                _listWatch.Changed += soon;
+                _listWatch.Created += soon;
+                _listWatch.Renamed += (s, e) => soon(s, e);      // a queue is saved to a temporary file, then swapped in
+                _listWatch.EnableRaisingEvents = true;
+                _listTimer.Stop(); _listTimer.Start();
+            }
+            catch (Exception ex) { Log("could not follow the take list " + p + ": " + ex.Message); }
+        }
+
+        /// <summary>The CAM QUEUE's list shown here and followed (it opened or made a queue). Null when it took.</summary>
+        public string Follow(string csvPath)
+        {
+            if (IsBusy) return "a batch is running";
+            if (!string.Equals(CsvBox.Text.Trim(), csvPath, StringComparison.OrdinalIgnoreCase)) CsvBox.Text = csvPath;
+            else if (File.Exists(csvPath)) LoadList(true);
+            return null;
+        }
+
         public bool IsBusy { get { return _worker != null && _worker.IsAlive; } }
+
+        // ---- hosted by the Designer's Batch page (2026-10-18) ----
+        // Mycelium: "the batch tab should have these sort of global commands ... for POVs separately and then ... for cinematics
+        // separately", "a detailed list inside of the batch queue". The Designer puts its POV / CINE global recording above the
+        // Output card, its own take list where TakesBox was, and its night card beside Run; the rows those take over hide here.
+
+        /// <summary>True when the Designer's page hosts this tab: per-take settings come from the queue, and what this tab's own
+        /// hidden boxes hold is not used (fps 1000, no passes, 3 s either side: the Designer's global recording says the rest).</summary>
+        public bool Hosted { get; private set; }
+
+        /// <summary>The takes as last loaded, and a signal each time they are (the Designer's take list follows it).</summary>
+        public IList<Take> Takes { get { return _takes; } }
+        public event Action TakesLoaded;
+
+        /// <summary>The list's take picked in the Designer's own take list (Run selected take runs it); -1 = none.</summary>
+        public Func<int> PickedTake;
+
+        public string CsvPath { get { return CsvBox.Text.Trim().Trim('"'); } }
+
+        /// <summary>The codec list's names, in order (a take or a kind may name one of its own).</summary>
+        public IList<string> CodecNames { get { return CodecBox.Items.OfType<ComboBoxItem>().Select(i => i.Content as string ?? "").ToList(); } }
+
+        /// <summary>The Output card's codec now (the one a take that names none records with).</summary>
+        public string CodecName { get { return (CodecBox.SelectedItem as ComboBoxItem)?.Content as string ?? ""; } }
+
+        public void Host(UIElement global, UIElement takes, UIElement night)
+        {
+            Hosted = true;
+            foreach (UIElement e in TimingRow.Children) e.Visibility = Visibility.Collapsed;
+            PassesRow.Visibility = Visibility.Collapsed;
+            RecordingTitle.Text = "Output: the recorder, ffmpeg, and the codec for takes that do not name their own";
+            if (global != null) RecordingSlot.Children.Insert(0, global);
+            if (night != null) RunSlot.Children.Add(night);
+            if (takes != null)
+            {
+                TakesSlot.Child = takes;
+                TakesColumn.Width = new GridLength(7, GridUnitType.Star);
+                LogColumn.Width = new GridLength(3, GridUnitType.Star);
+                ((Grid)TakesArea.Parent).RowDefinitions[Grid.GetRow(TakesArea)].MinHeight = 520;     // the page scrolls: the list gets room
+            }
+            AllButton.Visibility = Visibility.Collapsed;          // "Record all" is the night card's (it retries, then quits if asked)
+        }
+
+        /// <summary>The list read again (quietly) - the Designer changed a row or a kind's settings.</summary>
+        public void Reload() { if (!IsBusy && File.Exists(CsvPath)) LoadList(true); }
 
         /// <summary>A line in the tab's log from outside the tab (a host's own fixes).</summary>
         public void Note(string line) { Log(line); }
@@ -90,6 +175,7 @@ namespace BatchRecorder
                 { "nohud", Flag(NoHudBox) },
                 { "before", BeforeSlider.Value.ToString("0.0", inv) },
                 { "after", AfterSlider.Value.ToString("0.0", inv) },
+
                 { "codec", (CodecBox.SelectedItem as ComboBoxItem)?.Content as string ?? "" },
                 { "ffmpeg", FfmpegBox.Text },
                 { "dryrun", Flag(DryRunBox) },
@@ -136,6 +222,10 @@ namespace BatchRecorder
                 case "noplayers": box = NoPlayersBox; break;
                 case "playersonly": box = PlayersOnlyBox; break;
                 case "nohud": box = NoHudBox; break;
+                case "video":
+                    // an older settings file (before 2026-10-18): "video off" meant PNGs, now the codec list's last choice
+                    if (ParseFlag(value) == false) foreach (object o in CodecBox.Items) if (((o as ComboBoxItem)?.Tag as string ?? "").StartsWith("png|")) CodecBox.SelectedItem = o;
+                    return null;
                 case "dryrun": box = DryRunBox; break;
                 case "loadeach": box = LoadEachBox; break;
                 case "codcast": box = CodcastBox; break;
@@ -295,7 +385,7 @@ namespace BatchRecorder
                 if (!int.TryParse(which, out i) || i < 0 || i >= _takes.Count)
                     return "usage: run all | run N, with N from 0 to " + (_takes.Count - 1) + " ('takes' lists them)";
                 TakesBox.SelectedIndex = i;
-                RunOne_Click(null, null);
+                Start(new List<Take> { _takes[i] });      // take i itself (hosted, the picked take is the Designer's list's)
             }
             // Started: the status line still shows what it said before (sandbox 2026-10-01: "started:
             // Redacted is not running" while it ran fine) - name the take instead; 'status' follows it.
@@ -415,10 +505,15 @@ namespace BatchRecorder
                    + (bridge != null && bridge.StartsWith("pong") ? bridge.Substring(5) : "not answering");
         }
 
-        private void Load_Click(object sender, RoutedEventArgs e)
+        private void Load_Click(object sender, RoutedEventArgs e) { LoadList(false); }
+
+        /// <summary>Reads the take list into the list here. Quiet: a reload because the file changed (the picked row stays
+        /// picked, and the log says it once, not as if the person had pressed Load).</summary>
+        private void LoadList(bool quiet)
         {
             string error;
-            _takes = TakeList.Load(CsvBox.Text.Trim(), DemoRootBox.Text.Trim(), out error);
+            int keep = TakesBox.SelectedIndex;
+            _takes = TakeList.Load(CsvBox.Text.Trim().Trim('"'), DemoRootBox.Text.Trim(), out error);
             TakesBox.Items.Clear();
             int missing = 0;
             foreach (Take t in _takes)
@@ -426,9 +521,11 @@ namespace BatchRecorder
                 TakesBox.Items.Add(t.ToString() + (t.DemoPath == null ? "   [no demo found]" : "") + (t.Fitted ? "   [fitted]" : ""));
                 if (t.DemoPath == null) missing++;
             }
-            if (error.Length > 0) Log(error);
-            Log("loaded " + _takes.Count + " takes" + (missing > 0 ? ", " + missing + " without a demo file" : ""));
-            Status(_takes.Count + " takes loaded" + (missing > 0 ? " (" + missing + " missing their demo)" : ""));
+            if (quiet && keep >= 0 && keep < TakesBox.Items.Count) TakesBox.SelectedIndex = keep;
+            if (error.Length > 0 && !quiet) Log(error);
+            Log((quiet ? "the take list changed: " : "loaded ") + _takes.Count + " takes" + (missing > 0 ? ", " + missing + " without a demo file" : ""));
+            if (TakesLoaded != null) { try { TakesLoaded(); } catch (Exception ex) { Log("the take list's host: " + ex.Message); } }
+            Status(_takes.Count + " takes " + (quiet ? "in the list" : "loaded") + (missing > 0 ? " (" + missing + " missing their demo)" : ""));
         }
 
         private BatchEngine.Options ReadOptions()
@@ -436,6 +533,20 @@ namespace BatchRecorder
             // "ext|ffmpeg codec args" on the selected codec item
             string codecTag = (CodecBox.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Tag as string ?? "";
             int bar = codecTag.IndexOf('|');
+            // hosted: the hidden boxes say nothing; a take's own, its preset's, its look's or its kind's settings say the rest,
+            // and what none of them says is this (2026-10-18, Mycelium: a POV whose fps was never touched records at 1000)
+            if (Hosted)
+            {
+                BatchEngine.Options h = ReadOptionsShown(codecTag, bar);
+                h.Fps = 1000; h.PreRollMs = 3000; h.PostRollMs = 3000; h.HideHud = false;
+                h.Depth = false; h.Plate = false; h.NoPlayers = false; h.PlayersOnly = false;
+                return h;
+            }
+            return ReadOptionsShown(codecTag, bar);
+        }
+
+        private BatchEngine.Options ReadOptionsShown(string codecTag, int bar)
+        {
             return new BatchEngine.Options
             {
                 OutputDirectory = OutBox.Text.Trim(),
@@ -455,7 +566,9 @@ namespace BatchRecorder
                 RequireCodcast = CodcastBox.IsChecked == true,
                 HideHud = NoHudBox.IsChecked == true,
                 UserCfg = CfgBox.Text,
-                Zero = _zero
+                Zero = _zero,
+                // every codec in the list by its name, for a take that names its own (2026-10-18)
+                Codecs = CodecBox.Items.OfType<ComboBoxItem>().Where(i => i.Tag is string).ToDictionary(i => (string)i.Content, i => (string)i.Tag, StringComparer.OrdinalIgnoreCase)
             };
         }
 
@@ -467,7 +580,7 @@ namespace BatchRecorder
 
         private void RunOne_Click(object sender, RoutedEventArgs e)
         {
-            int i = TakesBox.SelectedIndex;
+            int i = Hosted && PickedTake != null ? PickedTake() : TakesBox.SelectedIndex;
             if (i < 0 || i >= _takes.Count) { Status("Pick a take in the list first."); return; }
             Start(new List<Take> { _takes[i] });
         }
@@ -507,6 +620,7 @@ namespace BatchRecorder
             _takes = takes;
             TakesBox.Items.Clear();
             foreach (Take t in _takes) TakesBox.Items.Add(t.ToString());
+            if (TakesLoaded != null) { try { TakesLoaded(); } catch (Exception ex) { Log("the take list's host: " + ex.Message); } }
             Log("CAM QUEUE: " + takes.Count + " takes from " + csvPath + (dryRun ? " (dry run)" : "") + "; load each demo: on for this run");
             // the reason it did not start, in its own words (the status line only updates later: the code review's B-2)
             return Start(takes, o => { o.LoadEachDemo = true; o.DryRun = dryRun; }, finished);
@@ -743,14 +857,17 @@ namespace BatchRecorder
                 return;
             }
 
+            // two buttons, one for each mode, never a toggle (Mycelium, 2026-10-18: "set CODCAST, set regular theater. Two buttons")
+            bool want = !string.Equals((sender as FrameworkElement)?.Tag as string, "off", StringComparison.Ordinal);
             bool was = _clock.IsCodcast;
-            Log("demo mode flags " + _clock.DemoModeFlags + ", codcast " + (was ? "on" : "off") + " -> setting " + (was ? "off" : "on"));
+            if (was == want) { Status(want ? "Already in CODCAST." : "Already in the regular theater."); return; }
+            Log("demo mode flags " + _clock.DemoModeFlags + ", codcast " + (was ? "on" : "off") + " -> setting " + (want ? "on" : "off"));
 
-            if (!_clock.SetCodcast(!was)) { Log("  " + _clock.Error); Status("Write failed - see the log."); return; }
+            if (!_clock.SetCodcast(want)) { Log("  " + _clock.Error); Status("Write failed - see the log."); return; }
 
             System.Threading.Thread.Sleep(300);
             Log("  flags now " + _clock.DemoModeFlags + ", codcast " + (_clock.IsCodcast ? "on" : "off"));
-            Status("Flag written. Does the SCREEN match? That is the real test.");
+            Status(_clock.IsCodcast == want ? (want ? "CODCAST." : "The regular theater.") : "The switch did not take - see the log.");
         }
 
         /// <summary>A tick only counts once two reads agree; otherwise it was sampled mid-move.</summary>

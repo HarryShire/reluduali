@@ -1,6 +1,6 @@
 # The Reluduali Designer: the guide
 
-Every tool, what it does, and how to use it. Version 0.7.2. The short version is the [README](../README.md); inside
+Every tool, what it does, and how to use it. Version 0.7.8. The short version is the [README](../README.md); inside
 the Designer, **F1** opens a quick version of this guide.
 
 - [Before you start](#before-you-start)
@@ -130,6 +130,23 @@ Install a set of sky images into the game, or go back to the maps' own skies. Ea
 (`Stores\Skies` beside the Designer to start with; Setup > **Sky sets** changes it, **Open store** opens it). Restart
 the game after a change.
 Nothing is deleted: the files it replaces go into the sky store's `removed` folder, from where you can copy them back.
+
+### Camo Editor
+
+Paint a gun's camo or a sky and send it to the game (Dress > **Camo Editor**; Guns > **Paint a camo** and Sky >
+**Paint a sky...** open it too).
+
+- **Pick a gun:** its picture with the UV lines, and the gun in 3D beside it. Paint on either: brushes, spray, fill,
+  gradient, text, tape, layers, history. Your edit is kept as you go and offered back the next time.
+- **Save DDS + IWI** writes the game's two formats; **Send to the game** puts it on the gun in the running game, and
+  Guns > **Back to the game's** takes it off.
+- **Skies** open as six squares in a cross. Save, then Sky > **New set from my painted skies**, **Install set**, and
+  restart the game.
+- **The first time:** **Make the gun models** downloads OpenAssetTools from its authors' release (after asking; it is
+  checked before use) and makes the guns' 3D models from your own game's files, in about half a minute. It needs
+  Microsoft's Visual C++ runtime: when it is missing the Designer offers Microsoft's installer. The page runs on
+  Microsoft WebView2 (part of Windows 11); when that is missing the Designer offers Microsoft's installer and opens the
+  editor in your browser meanwhile.
 
 ### CFG
 

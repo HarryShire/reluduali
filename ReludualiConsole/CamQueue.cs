@@ -12,7 +12,38 @@ namespace ReludualiConsole
     public sealed class QueueRow
     {
         public string Folder = "", Pov = "", ClockIn = "", ClockOut = "", Note = "", CamPath = "", Kind = "", Name = "", Source = "",
-                      Cfg = "", Fps = "", TickIn = "", TickOut = "", Demo = "", Before = "", After = "", Hud = "", Codcast = "";
+                      Cfg = "", Fps = "", TickIn = "", TickOut = "", Demo = "", Before = "", After = "", Hud = "", Codcast = "", Look = "";
+        // how it records, its own (2026-10-18: the Batch's take list; empty = from its preset, its look or its kind)
+        public string Depth = "", DepthDist = "", Plate = "", NoPlayers = "", PlayersOnly = "", Codec = "", Preset = "";
+
+        /// <summary>The row's fields in TakeList.Header's order (after "take").</summary>
+        public string[] Fields()
+        {
+            return new[] { Folder, Pov, ClockIn, ClockOut, Note, CamPath, Kind, Name, Source, Cfg, Fps, TickIn, TickOut, Demo, Before, After, Hud, Codcast, Look,
+                           Depth, DepthDist, Plate, NoPlayers, PlayersOnly, Codec, Preset };
+        }
+
+        /// <summary>A recording setting of its own by its key (RecordingSettings.Keys, or "preset"); false for an unknown key.</summary>
+        public bool SetOwn(string key, string value)
+        {
+            value = (value ?? "").Trim();
+            switch ((key ?? "").ToLowerInvariant())
+            {
+                case "fps": Fps = value; return true;
+                case "before": Before = value; return true;
+                case "after": After = value; return true;
+                case "hud": Hud = value; return true;
+                case "codcast": Codcast = value; return true;
+                case "depth": Depth = value; return true;
+                case "depthdist": DepthDist = value; return true;
+                case "plate": Plate = value; return true;
+                case "noplayers": NoPlayers = value; return true;
+                case "playersonly": PlayersOnly = value; return true;
+                case "codec": Codec = value; return true;
+                case "preset": Preset = value; return true;
+                default: return false;
+            }
+        }
 
         public bool IsCine { get { return Kind == "cine" || (Kind.Length == 0 && CamPath.Length > 0); } }
         public int TickInValue { get { return ParseInt(TickIn); } }
@@ -115,7 +146,9 @@ namespace ReludualiConsole
                     Folder = get("folder"), Pov = get("pov"), ClockIn = get("clock_in"), ClockOut = get("clock_out"), Note = get("note"),
                     CamPath = get("campath"), Kind = get("kind").ToLowerInvariant(), Name = get("name"), Source = get("source"), Cfg = get("cfg"),
                     Fps = get("fps"), TickIn = get("tick_in"), TickOut = get("tick_out"), Demo = get("demo"), Before = get("before"),
-                    After = get("after"), Hud = get("hud"), Codcast = get("codcast")
+                    After = get("after"), Hud = get("hud"), Codcast = get("codcast"), Look = get("look"),
+                    Depth = get("depth"), DepthDist = get("depthdist"), Plate = get("plate"), NoPlayers = get("noplayers"), PlayersOnly = get("playersonly"),
+                    Codec = get("codec"), Preset = get("preset")
                 });
             }
             Defaults = TakeList.ReadDefaults(DefaultsPath);
@@ -128,8 +161,7 @@ namespace ReludualiConsole
             for (int i = 0; i < Rows.Count; i++)
             {
                 QueueRow r = Rows[i];
-                string[] v = { (i + 1).ToString(CultureInfo.InvariantCulture), r.Folder, r.Pov, r.ClockIn, r.ClockOut, r.Note, r.CamPath, r.Kind, r.Name,
-                               r.Source, r.Cfg, r.Fps, r.TickIn, r.TickOut, r.Demo, r.Before, r.After, r.Hud, r.Codcast };
+                var v = new[] { (i + 1).ToString(CultureInfo.InvariantCulture) }.Concat(r.Fields());
                 sb.Append(string.Join(",", v.Select(TakeList.Quote).ToArray())).Append('\n');
             }
             string tmp = Csv + ".tmp";
@@ -297,9 +329,10 @@ namespace ReludualiConsole
             if (r.CamPath.Length > 0 && Rows.Count(x => x.CamPath == r.CamPath) == 1)
                 foreach (string f in Directory.Exists(PathsDir) ? Directory.GetFiles(PathsDir, id + ".*") : new string[0])
                     File.Move(f, Path.Combine(RemovedDir, stamp + " " + Path.GetFileName(f)));
+            string keys = KeysOf(r);
+            if (keys != null && File.Exists(keys)) File.Move(keys, Path.Combine(RemovedDir, stamp + " " + Path.GetFileName(keys)));
             File.WriteAllText(Path.Combine(RemovedDir, stamp + " " + Clean(r.Name) + ".csv"),
-                TakeList.Header + "\n" + string.Join(",", new[] { "1", r.Folder, r.Pov, r.ClockIn, r.ClockOut, r.Note, r.CamPath, r.Kind, r.Name, r.Source,
-                    r.Cfg, r.Fps, r.TickIn, r.TickOut, r.Demo, r.Before, r.After, r.Hud, r.Codcast }.Select(TakeList.Quote).ToArray()) + "\n", new UTF8Encoding(false));
+                TakeList.Header + "\n" + string.Join(",", new[] { "1" }.Concat(r.Fields()).Select(TakeList.Quote).ToArray()) + "\n", new UTF8Encoding(false));
             Rows.RemoveAt(i);
             Save();
         }
@@ -310,15 +343,23 @@ namespace ReludualiConsole
             if (i < 0 || i >= Rows.Count) return null;
             QueueRow r = Rows[i].Copy();
             r.Name = UniqueName(Rows[i].Name);
+            string keys = KeysOf(Rows[i]), copy = KeysOf(r);
+            if (keys != null && copy != null && File.Exists(keys) && !File.Exists(copy)) File.Copy(keys, copy);      // its keyframes too
             Rows.Insert(i + 1, r);
             Save();
             return r;
         }
 
+        /// <summary>A row's keyframes file (keys\&lt;name&gt;.keys.json): the timeline's keys for it, which the batch reads.</summary>
+        public string KeysOf(QueueRow r) { return r == null ? null : TakeList.KeysFile(Dir, r.Name); }
+
         public void Rename(int i, string name)
         {
             if (i < 0 || i >= Rows.Count) return;
+            string was = KeysOf(Rows[i]);
             Rows[i].Name = UniqueName(name, Rows[i]);
+            string now = KeysOf(Rows[i]);
+            if (was != null && now != null && was != now && File.Exists(was) && !File.Exists(now)) File.Move(was, now);     // its keyframes follow the name
             Save();
         }
 
@@ -335,6 +376,48 @@ namespace ReludualiConsole
             r.Cfg = Rel(Dir, mine);
             Save();
             return mine;
+        }
+
+        // ---------------------------------------------------------------- looks (2026-10-18)
+        // Mycelium: "I dont know how to que a global CFG per POV, and per Cinematic. It should be drag and drop." A look (a global
+        // look from Presets\GLOBAL, or any CFG) dropped on a row or on a kind is COPIED into the queue's looks\ folder, so a
+        // night records what was queued even if the look is changed later; the take sends it after its CFG.
+
+        public string LooksDir { get { return Path.Combine(Dir, "looks"); } }
+
+        /// <summary>A copy of the look in looks\, the same file reused when it is already there unchanged; its path relative to
+        /// the queue.</summary>
+        private string CopyLook(string file)
+        {
+            Directory.CreateDirectory(LooksDir);
+            string name = Clean(Path.GetFileNameWithoutExtension(file));
+            string text = File.ReadAllText(file);
+            string dest = Path.Combine(LooksDir, name + ".cfg");
+            for (int n = 2; File.Exists(dest) && File.ReadAllText(dest) != text; n++) dest = Path.Combine(LooksDir, name + " " + n + ".cfg");
+            if (!File.Exists(dest)) File.WriteAllText(dest, text, new UTF8Encoding(false));
+            return Rel(Dir, dest);
+        }
+
+        /// <summary>The row's own look (null or empty: none of its own, so its kind's).</summary>
+        public void SetLook(int i, string file)
+        {
+            if (i < 0 || i >= Rows.Count) return;
+            Rows[i].Look = string.IsNullOrEmpty(file) ? "" : CopyLook(file);
+            Save();
+        }
+
+        /// <summary>Every row of a kind ("pov" or "cine") without a look of its own gets this one (null: none).</summary>
+        public void SetKindLook(string kind, string file)
+        {
+            SetDefault(kind + "_look", string.IsNullOrEmpty(file) ? "" : CopyLook(file));
+        }
+
+        /// <summary>The look a row is recorded with, and whether it is the row's own or its kind's: a name to show.</summary>
+        public string LookOf(QueueRow r, out bool own)
+        {
+            own = r.Look.Length > 0;
+            string p = own ? r.Look : Default((r.IsCine ? "cine" : "pov") + "_look");
+            return p.Length == 0 ? "" : Path.GetFileNameWithoutExtension(p);
         }
 
         // ---------------------------------------------------------------- checking
@@ -368,6 +451,7 @@ namespace ReludualiConsole
                 }
                 else if (!t.HasTicks && (t.ClockIn < 0 || t.ClockOut <= t.ClockIn)) problems.Add(who + ": no in and out");
                 if (!string.IsNullOrEmpty(t.CfgPath) && !File.Exists(t.CfgPath)) problems.Add(who + ": no CFG at " + t.CfgPath);
+                if (!string.IsNullOrEmpty(t.LookPath) && !File.Exists(t.LookPath)) problems.Add(who + ": no look at " + t.LookPath);
                 if (t.Name.Length > 0 && !names.Add(t.Folder + "\\" + t.Name)) problems.Add(who + ": the same name as another row on this demo (the clips would share a folder)");
             }
             return problems;

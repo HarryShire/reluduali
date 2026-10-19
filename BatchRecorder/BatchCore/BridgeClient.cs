@@ -49,7 +49,9 @@ namespace BatchRecorder
                         int b;
                         while ((b = pipe.ReadByte()) >= 0 && b != '\n') got.WriteByte((byte)b);
                         LastError = "";
-                        return Ansi.GetString(got.ToArray()).TrimEnd('\r');
+                        string reply = Ansi.GetString(got.ToArray()).TrimEnd('\r');
+                        TheaterFirst.Saw(line, reply);
+                        return reply;
                     }
                 }
                 catch (Exception ex)
@@ -59,6 +61,30 @@ namespace BatchRecorder
                 }
             }
             return null;
+        }
+
+        /// <summary>
+        /// "cam path FILE", asked again when the free camera was not ready. Mycelium's game, 2026-10-18 16:34:39: "FREE CAMERA on
+        /// (mode was 0; F3)", then at once "none of 0 candidates turned the free camera" - the take failed; the next cinematic
+        /// 40 s later found the angles on its first look ("2 candidates"). Right after F3 the free camera has not taken its
+        /// angles yet, so the search finds nothing to match. So: a second and a third look, 0.8 s and 1.6 s later.
+        /// </summary>
+        public static string CamPath(string file, Action<string> log = null)
+        {
+            string reply = null;
+            for (int attempt = 1; attempt <= 3; attempt++)
+            {
+                reply = Ask("cam path " + file, 3000, 1) ?? ("no answer: " + LastError);
+                if (reply.StartsWith("ok", StringComparison.Ordinal)) return reply;
+                bool notReady = reply.Contains("candidates turned the free camera") || reply.Contains("turn the free camera a little");
+                if (!notReady || attempt == 3) break;
+                if (log != null) log("    the free camera was not ready (" + reply + "); turning it a touch and asking again");
+                // the Preview at 16:26 failed the same way with the bar already on FREE CAMERA: its angles had gone stale. A turn
+                // with the game's own command makes the free camera take its angles again (as the bridge does for a yaw near 0)
+                Ask("cmd +right", 1000, 1); System.Threading.Thread.Sleep(120); Ask("cmd -right", 1000, 1);
+                System.Threading.Thread.Sleep(800 * attempt);
+            }
+            return reply;
         }
 
         /// <summary>A number after "key " in a status line, or -1.</summary>

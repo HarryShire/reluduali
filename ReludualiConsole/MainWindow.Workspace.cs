@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -51,8 +52,9 @@ namespace ReludualiConsole
         [DllImport("user32.dll")] private static extern bool RegisterHotKey(IntPtr h, int id, uint mods, uint vk);
         [DllImport("user32.dll")] private static extern bool UnregisterHotKey(IntPtr h, int id);
         [DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr h);
-        private const int HotkeyBack = 0x5244;
-        public const string BackKeys = "Ctrl+Alt+D";
+        private const int HotkeyBack = 0x5244, HotkeyBackChosen = 0x5245;
+        // the key shown in words ("press Alt+Q to come back"): the one chosen on Settings (2026-10-18, Mycelium: "Alt-Q is my go-to")
+        public static string BackKeys { get { return Shortcuts.Back; } }
 
         private void InitHotkey()
         {
@@ -61,12 +63,23 @@ namespace ReludualiConsole
             if (src == null) return;
             src.AddHook((IntPtr h, int msg, IntPtr wp, IntPtr lp, ref bool handled) =>
             {
-                if (msg == 0x0312 && wp.ToInt32() == HotkeyBack) { BackToDesigner(); handled = true; }      // WM_HOTKEY
+                if (msg == 0x0312 && (wp.ToInt32() == HotkeyBack || wp.ToInt32() == HotkeyBackChosen)) { BackToDesigner(); handled = true; }      // WM_HOTKEY
                 return IntPtr.Zero;
             });
             if (!RegisterHotKey(src.Handle, HotkeyBack, 0x0001 | 0x0002 | 0x4000, (uint)'D'))               // Alt, Ctrl, no repeat
-                App.Note(BackKeys + " is taken by another program: back to the Designer by Alt+Tab instead", null);
-            Closed += (s, e) => { try { UnregisterHotKey(src.Handle, HotkeyBack); } catch { } };
+                App.Note(Shortcuts.SecondBack + " is taken by another program", null);
+            Action chosen = () =>
+            {
+                try { UnregisterHotKey(src.Handle, HotkeyBackChosen); } catch { }
+                uint mods, vk;
+                string k = Shortcuts.Back;
+                if (k.Equals(Shortcuts.SecondBack, StringComparison.OrdinalIgnoreCase) || !Shortcuts.Parse(k, out mods, out vk)) return;
+                if (!RegisterHotKey(src.Handle, HotkeyBackChosen, mods | 0x4000, vk))
+                    Notice(k + " is taken by another program: choose another key on Settings (" + Shortcuts.SecondBack + " still brings the Designer back).");
+            };
+            chosen();
+            Shortcuts.Changed += () => Dispatcher.BeginInvoke(chosen);
+            Closed += (s, e) => { try { UnregisterHotKey(src.Handle, HotkeyBack); UnregisterHotKey(src.Handle, HotkeyBackChosen); } catch { } };
         }
 
         private void BackToDesigner()
@@ -470,6 +483,8 @@ namespace ReludualiConsole
         /// The pipe's "console ...": layout classic | workspace | overlay | right | below; layout (status); into; tool KEY;
         /// panel (show / hide). For tests in the sandbox and scripts.
         /// </summary>
+        private static volatile string _viewSaid, _camoSaid;
+
         private string ConsolePipe(string rest)
         {
             string[] w = (rest ?? "").Trim().Split(new[] { ' ' }, 2);
@@ -528,6 +543,95 @@ namespace ReludualiConsole
                         if (c[0] == "link" && c.Length > 1) return t.LinkWith(c[1].Trim());
                         if (c[0] == "status") return t.State + "\nnow: " + t.Now + "\nlast check-in: " + t.LastBeat + "\ntiming: " + t.Running;
                         return "usage: console contest link CODE | console contest status";
+                    }
+                case "loop":                                                               // the loop bracket (2026-10-18), for tests
+                    {
+                        string[] p = arg.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                        int a, b;
+                        if (p.Length == 2 && int.TryParse(p[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out a) && int.TryParse(p[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out b)) LoopBracket.Set(a, b);
+                        else if (arg == "on" || arg == "off") LoopBracket.Switch(arg == "on");
+                        else if (arg == "clear") LoopBracket.Clear();
+                        else if (arg.StartsWith("zoom ", StringComparison.Ordinal) && _timeline != null && p.Length == 3)
+                        {
+                            int za, zb;
+                            if (!int.TryParse(p[1], out za) || !int.TryParse(p[2], out zb)) return "usage: console loop zoom A B (0 0: the whole film)";
+                            return _timeline.TestZoom(za, zb);
+                        }
+                        else if (arg.StartsWith("drag ", StringComparison.Ordinal) && _timeline != null)
+                        {
+                            // console loop drag strip FROM TO | console loop drag lane N FROM TO: a drag through the mouse's own code
+                            int lane = 0, f, t;
+                            bool strip = p.Length == 4 && p[1] == "strip";
+                            if (!strip && !(p.Length == 5 && p[1] == "lane" && int.TryParse(p[2], out lane))) return "usage: console loop drag strip FROM TO | console loop drag lane N FROM TO";
+                            if (!int.TryParse(p[p.Length - 2], out f) || !int.TryParse(p[p.Length - 1], out t)) return "usage: console loop drag strip FROM TO";
+                            return _timeline.TestDrag(strip, lane, f, t);
+                        }
+                        else if (arg.Length > 0 && arg != "status") return "usage: console loop A B | on | off | clear | status | drag strip FROM TO | drag lane N FROM TO";
+                        return _timeline != null ? _timeline.LanesText() : "loop " + LoopBracket.In + "-" + LoopBracket.Out + (LoopBracket.On ? " on" : " off");
+                    }
+                case "keys":                                                               // a take's keyframes (2026-10-18), for tests
+                    {
+                        // console keys add ROW PAGE/LABEL TICK V [V V] | list ROW | play on|off
+                        string[] p = (w.Length > 1 ? w[1].Trim() : "").Split(new[] { ' ' }, 4, StringSplitOptions.RemoveEmptyEntries);
+                        int row, tick;
+                        if (p.Length >= 1 && p[0] == "play") { TakeKeys.Play(p.Length > 1 && p[1] == "on"); return "keys play " + (TakeKeys.Playing ? "on" : "off"); }
+                        if (p.Length >= 2 && p[0] == "list" && int.TryParse(p[1], out row))
+                            return string.Join("\n", TakeKeys.Of(row - 1).Select(x => x.Label + ": " + string.Join("  ", x.Keys.Select(k => k.Tick + "=" + string.Join(",", k.V.Select(v => v.ToString("0.###", CultureInfo.InvariantCulture)).ToArray())).ToArray())).ToArray());
+                        if (p.Length == 4 && p[0] == "add" && int.TryParse(p[1], out row))
+                        {
+                            string[] pk = p[2].Split('/');
+                            string[] rest2 = p[3].Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                            if (pk.Length != 2 || rest2.Length < 2 || !int.TryParse(rest2[0], out tick)) return "usage: console keys add ROW PAGE/LABEL TICK V [V V]";
+                            Knob k = KnobPanel.FindKnob(pk[0], pk[1].Replace('_', ' '));
+                            if (k == null) return "no slider " + pk[1] + " on " + pk[0];
+                            var v = rest2.Skip(1).Select(x => double.Parse(x, CultureInfo.InvariantCulture)).ToArray();
+                            KnobPanel.SetLive(pk[0], k.Label, v);
+                            return TakeKeys.Add(row - 1, pk[0].ToUpperInvariant(), k, tick);
+                        }
+                        return "usage: console keys add ROW PAGE/LABEL TICK V [V V] | list ROW | play on|off";
+                    }
+                case "camo":                                                               // the Camo Editor's server (2026-10-18), for tests
+                    {
+                        string a = w.Length > 1 ? w[1].Trim() : "";
+                        if (a.StartsWith("dumps", StringComparison.OrdinalIgnoreCase)) { Where.Save("camodumps", a.Length > 5 ? a.Substring(5).Trim() : ""); return "camo dumps " + CamoServer.DumpsFolder; }
+                        // 2026-10-18, for tests: what the Camo Editor page needs on this PC, and its one-click fetches
+                        if (a == "engine") return "webview2 " + (CamoEditorControl.EngineVersion() ?? "none") + ", c++ runtime " + OatTools.CppRuntimeVersion() + ", gun models " + OatTools.GunModels() + " in " + CamoServer.DumpsFolder + ", unlinker " + (OatTools.Unlinker() ?? "none");
+                        if (a == "said") return _camoSaid ?? "-";
+                        if (a == "install-webview2" || a == "install-cpp" || a == "make-models")
+                        {
+                            string game = Where.Game;
+                            _camoSaid = a + "...";
+                            System.Threading.ThreadPool.QueueUserWorkItem(_ =>
+                            {
+                                string r;
+                                try { r = a == "make-models" ? (game == null ? "no game folder" : OatTools.MakeGunModels(game, t => _camoSaid = t)) : a == "install-cpp" ? OatTools.RunCppInstaller() : OatTools.RunWebView2Installer(); }
+                                catch (Exception ex) { r = "error " + ex.GetBaseException().Message; }
+                                _camoSaid = "done: " + r;
+                            });
+                            return _camoSaid;
+                        }
+                        if (a.StartsWith("open", StringComparison.OrdinalIgnoreCase)) return CamoEditorControl.Open(a.Length > 5 ? a.Substring(5).Trim() : null);
+                        string why, url = CamoServer.Url(out why);
+                        return url ?? ("error " + why);
+                    }
+                case "view":                                                               // the game's camera view (2026-10-18): CameraView
+                    {
+                        CameraView.View v;
+                        switch (arg)
+                        {
+                            case "dolly": v = CameraView.View.Dolly; break;
+                            case "edit": v = CameraView.View.EditCamera; break;
+                            case "free": v = CameraView.View.FreeRoam; break;
+                            case "first": v = CameraView.View.FirstPerson; break;
+                            case "third": v = CameraView.View.ThirdPerson; break;
+                            case "said": return _viewSaid ?? "-";
+                            case "":
+                            case "status": { CameraView.View? now = CameraView.Now(); return now.HasValue ? CameraView.Name(now.Value) : "not known (no film?)"; }
+                            default: return "usage: console view dolly | edit | free | first | third | status | said";
+                        }
+                        _viewSaid = "switching to " + CameraView.Name(v) + "...";
+                        System.Threading.ThreadPool.QueueUserWorkItem(_ => { string r; try { r = CameraView.To(v); } catch (Exception ex) { r = "error " + ex.Message; } _viewSaid = r; });
+                        return _viewSaid + " (console view said: the outcome)";
                     }
                 case "film": BatchRecorder.BridgeClient.LastDemo = w.Length > 1 ? w[1].Trim() : ""; return "the timeline goes back by loading " + BatchRecorder.BridgeClient.LastDemo;     // tests: a film loaded by hand
                 default: return "console layout [classic|workspace|overlay|right|below] | console into | console tool KEY | console panel | console alpha A | console front";

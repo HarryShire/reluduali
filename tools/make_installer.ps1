@@ -49,6 +49,13 @@ New-Item -ItemType Directory -Force (Join-Path $stage 'console\Presets'), (Join-
 
 # the Designer, its README, its licence and the notices of what it carries
 foreach ($f in 'ReludualiConsole.exe', 'ReludualiConsole.exe.config', 'BatchCore.dll') { Copy-Item (Join-Path $bin $f) (Join-Path $stage 'console') }
+# Microsoft's WebView2 SDK (2026-10-18, the Camo Editor page; ReludualiConsole\lib\webview2\PIN.md): its three DLLs beside the
+# Designer, its notice in THIRD-PARTY-NOTICES.txt. The runtime is Windows' own: the Designer checks for it and offers it.
+foreach ($f in 'Microsoft.Web.WebView2.Core.dll', 'Microsoft.Web.WebView2.Wpf.dll', 'WebView2Loader.dll') {
+    if (-not (Test-Path -LiteralPath (Join-Path $bin $f))) { throw "no $f beside the built Designer ($bin)" }
+    Copy-Item (Join-Path $bin $f) (Join-Path $stage 'console')
+}
+Copy-Item (Join-Path $root 'ReludualiConsole\lib\webview2\1.0.4258.31\NOTICE.txt') (Join-Path $stage 'console\WebView2-NOTICE.txt')
 if ($TestBuild) { Set-Content (Join-Path $stage 'console\build.txt') 'test' -Encoding ASCII -NoNewline; "the Test Build: build.txt beside the Designer" }
 $shipped = Join-Path $tools 'presets'                     # presets that ship (fog looks for editors)
 if (Test-Path $shipped) { Copy-Item (Join-Path $shipped '*') (Join-Path $stage 'console\Presets') -Recurse }

@@ -35,7 +35,7 @@ namespace ReludualiConsole
     /// pointer (each jump about a quarter of a second, one at a time, only when it brings the film nearer the pointer);
     /// let go, and it goes to the exact point, as a click does.
     /// </summary>
-    public sealed class TheaterTimeline : UserControl
+    public sealed partial class TheaterTimeline : UserControl
     {
         readonly Func<IntPtr> _gameWindow;
         readonly Canvas _bar = new Canvas { Height = 20, ClipToBounds = true, Cursor = Cursors.Hand, Background = Ui.Brush("Inset") };
@@ -47,6 +47,11 @@ namespace ReludualiConsole
         readonly TextBlock _time = new TextBlock { Foreground = Ui.Brush("Dim"), FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 4, 0), MinWidth = 150 };
         readonly Button _play;
         readonly List<Button> _speeds = new List<Button>();
+        readonly TextBlock _speedOther = new TextBlock { Foreground = Ui.Brush("Accent"), FontSize = 11, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(2, 0, 6, 0), ToolTip = "The speed the game plays at now (set by something else)" };
+        readonly Button _codcast, _regular;
+        readonly GameClock _mode = new GameClock();
+        int _modeKnown = -1;           // 1 CODCAST, 0 regular, -1 not known
+        int _polls;
         readonly DispatcherTimer _poll = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
 
         int _tick = int.MinValue, _start = int.MaxValue, _end, _lastTick = int.MinValue, _still;
@@ -64,8 +69,12 @@ namespace ReludualiConsole
         volatile bool _dragging;
         volatile int _dragWant;
 
+        /// <summary>The timeline under the docked game (the Cam Queue's Apply to game seeks through it).</summary>
+        public static TheaterTimeline Current { get; private set; }
+
         public TheaterTimeline(Func<IntPtr> gameWindow)
         {
+            Current = this;
             _gameWindow = gameWindow;
             _play = Small("", "Play / pause the film", TogglePlay);
             var back = Small("", "10 s back", () => Seek(_tick - 10000));
@@ -73,16 +82,26 @@ namespace ReludualiConsole
             var row = new DockPanel { LastChildFill = true };
             var left = new StackPanel { Orientation = Orientation.Horizontal };
             left.Children.Add(back); left.Children.Add(_play); left.Children.Add(on);
+            left.Children.Add(LoopButton());
             left.Children.Add(_time);
             DockPanel.SetDock(left, Dock.Left);
             var right = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 0, 0, 0) };
-            foreach (double s in new[] { 0.1, 0.25, 0.5, 1, 2 })
+            // the film mode, two plain buttons (Mycelium 2026-10-18: "set CODCAST, set regular theater. Two buttons. Just for
+            // simplicity. And I want them to kind of be obvious"); the one the film is in is lit
+            _codcast = Small("CODCAST", "Put the film in FILM CODCAST mode (its HUD panel, the POV's look)", () => SetMode(true));
+            _regular = Small("Regular theater", "Put the film in the regular theater: FREE CAMERA, Edit Camera and the dolly", () => SetMode(false));
+            foreach (Button b in new[] { _codcast, _regular }) { b.FontFamily = new FontFamily("Segoe UI"); b.FontSize = 11; right.Children.Add(b); }
+            right.Children.Add(new Border { Width = 10 });
+            // the speeds (Mycelium 2026-10-18: "0.1, 0.25, 0.5, 1, 2, 4, and 6"), lit by what the game really plays at, whoever
+            // set it; a speed that is none of these shows beside them
+            foreach (double s in new[] { 0.1, 0.25, 0.5, 1, 2, 4, 6 })
             {
                 double v = s;
                 var b = Small(v.ToString("0.##", CultureInfo.InvariantCulture) + "x", "The film's speed: timescale " + v.ToString(CultureInfo.InvariantCulture), () => SetSpeed(v));
                 b.FontFamily = new FontFamily("Segoe UI"); b.FontSize = 11; b.MinWidth = 34;
                 _speeds.Add(b); right.Children.Add(b);
             }
+            right.Children.Add(_speedOther);
             right.Children.Add(Small("F4", "The game's own theater bar: hide it or show it (its F4)", PostF4));
             DockPanel.SetDock(right, Dock.Right);
             row.Children.Add(left); row.Children.Add(right);
@@ -97,8 +116,12 @@ namespace ReludualiConsole
             _bar.LostMouseCapture += (s, e) => DragEnd();
             _bar.SizeChanged += (s, e) => Draw();
             var both = new StackPanel();
+            // the loop bracket's strip over the bar, the lanes under it (2026-10-18: TheaterTimeline.Lanes.cs)
+            both.Children.Add(_strip);
             both.Children.Add(barBox);
+            both.Children.Add(_lanes);
             both.Children.Add(row);
+            InitLanes();
             Content = new Border { Child = both, Padding = new Thickness(8, 5, 8, 6) };
             PaintSpeeds();
             _poll.Tick += (s, e) => Poll();
@@ -121,6 +144,9 @@ namespace ReludualiConsole
 
         bool BatchHasIt { get { return BatchEngine.Recording || (BatchControl.Instance != null && BatchControl.Instance.IsBusy); } }
 
+        /// <summary>True while a seek or a scrub of the timeline has the film (the loop waits).</summary>
+        public bool Seeking { get { return _seeking != 0; } }
+
         void Poll()
         {
             if (!IsVisible || App.Tour) return;
@@ -131,10 +157,12 @@ namespace ReludualiConsole
             ThreadPool.QueueUserWorkItem(_ =>
             {
                 string s = null; int[] marks = null, kfs = null; bool noKf = false;
+                double speedNow = double.NaN; int mode = -1;
                 try
                 {
                     s = BridgeClient.Ask("stats", 300, 1);
                     if (s != null && wantMarks) marks = ReadMarks(s);
+                    if (s != null && wantMarks) { speedNow = ReadSpeed(); mode = ReadMode(s); }
                     if (s != null && wantMarks && !none) kfs = ReadKeyframes(out noKf);
                 }
                 catch { }
@@ -144,6 +172,8 @@ namespace ReludualiConsole
                     if (wantMarks) _marksAt = Environment.TickCount;
                     if (noKf) _kfNone = true;
                     if (kfs != null) _kfTicks = kfs;
+                    if (wantMarks && !double.IsNaN(speedNow) && _seeking == 0) { _speed = speedNow; PaintSpeeds(); }
+                    if (wantMarks) { _modeKnown = mode; PaintMode(); }
                     Take(s, marks);
                 }));
             });
@@ -236,7 +266,9 @@ namespace ReludualiConsole
             long th = Theater(s);
             if (th == 0) { _time.Text = "no film loaded"; _start = int.MaxValue; _tick = int.MinValue; Draw(); return; }
             int tick = (int)BridgeClient.Field(s, "tick"), end = (int)BridgeClient.Field(s, "endtick");
-            if (th != _theater) { _theater = th; _start = tick; _markTicks = new int[0]; _kfTicks = new int[0]; _kfAsked = int.MinValue; }     // a new film: it loads at its start
+            // a new film: it loads at its start. One met mid-way (the Designer started after it, 0731: everything before the
+            // first tick seen was off the left edge) starts where films do, about 2.3 s in (CamPaths.ClockLabel's base)
+            if (th != _theater) { _theater = th; _start = tick > 10000 ? 2300 : tick; _markTicks = new int[0]; _kfTicks = new int[0]; _kfAsked = int.MinValue; NewFilm(th); }
             if (tick < _start) _start = tick;
             _still = tick == _lastTick ? _still + 1 : 0;
             _lastTick = tick;
@@ -253,25 +285,26 @@ namespace ReludualiConsole
         void Draw()
         {
             double w = _bar.ActualWidth;
-            if (w <= 0 || _end <= _start || _tick == int.MinValue) { _fill.Width = 0; _head.Visibility = Visibility.Collapsed; return; }
-            double x = w * (_tick - _start) / (double)(_end - _start);
-            _fill.Width = Math.Max(0, x);
-            _head.Visibility = Visibility.Visible;
+            if (w <= 0 || _end <= _start || _tick == int.MinValue) { _fill.Width = 0; _head.Visibility = Visibility.Collapsed; DrawLanes(); return; }
+            double x = X(_tick, w);
+            _fill.Width = Math.Max(0, Math.Min(w, x));
+            _head.Visibility = x >= 0 && x <= w ? Visibility.Visible : Visibility.Collapsed;
             Canvas.SetLeft(_head, Math.Max(0, x - 1));
             while (_marks.Count < _markTicks.Length) { var r = new Rectangle { Width = 3, Height = 9, Fill = Ui.Brush("TlMark") }; _marks.Add(r); _bar.Children.Add(r); }
             for (int i = 0; i < _marks.Count; i++)
             {
                 bool on = i < _markTicks.Length && _markTicks[i] >= _start && _markTicks[i] <= _end;
                 _marks[i].Visibility = on ? Visibility.Visible : Visibility.Collapsed;
-                if (on) { Canvas.SetLeft(_marks[i], w * (_markTicks[i] - _start) / (double)(_end - _start) - 1); Canvas.SetTop(_marks[i], 11); }
+                if (on) { Canvas.SetLeft(_marks[i], X(_markTicks[i], w) - 1); Canvas.SetTop(_marks[i], 11); }
             }
             while (_kfMarks.Count < _kfTicks.Length) { var r = new Rectangle { Width = 1, Height = 4, Fill = Ui.Brush("TlKey") }; _kfMarks.Add(r); _bar.Children.Add(r); }
             for (int i = 0; i < _kfMarks.Count; i++)
             {
                 bool on = i < _kfTicks.Length && _kfTicks[i] >= _start && _kfTicks[i] <= _end;
                 _kfMarks[i].Visibility = on ? Visibility.Visible : Visibility.Collapsed;
-                if (on) { Canvas.SetLeft(_kfMarks[i], w * (_kfTicks[i] - _start) / (double)(_end - _start)); Canvas.SetTop(_kfMarks[i], 0); }
+                if (on) { Canvas.SetLeft(_kfMarks[i], X(_kfTicks[i], w)); Canvas.SetTop(_kfMarks[i], 0); }
             }
+            DrawLanes();
         }
 
         void TogglePlay()
@@ -291,11 +324,59 @@ namespace ReludualiConsole
 
         void PaintSpeeds()
         {
+            string now = _speed.ToString("0.##", CultureInfo.InvariantCulture) + "x";
+            bool any = false;
             foreach (Button b in _speeds)
             {
-                bool on = (string)b.Content == _speed.ToString("0.##", CultureInfo.InvariantCulture) + "x";
+                bool on = (string)b.Content == now;
+                any |= on;
                 b.Background = on ? Ui.Brush("Accent") : null;
             }
+            _speedOther.Text = any ? "" : "now " + now;
+        }
+
+        /// <summary>The game's timescale (RipperBridge "dvar timescale": "timescale float 0.2"), NaN when unread.</summary>
+        static double ReadSpeed()
+        {
+            string r = BridgeClient.Ask("dvar timescale", 300, 1);
+            if (r == null || r.StartsWith("error", StringComparison.Ordinal)) return double.NaN;
+            string v = r.Trim(); int sp = v.LastIndexOf(' ');
+            double d;
+            return sp >= 0 && double.TryParse(v.Substring(sp + 1).Trim('"'), NumberStyles.Float, CultureInfo.InvariantCulture, out d) && d > 0 ? Math.Round(d, 3) : double.NaN;
+        }
+
+        /// <summary>1 CODCAST, 0 the regular theater, -1 no film or not readable (the demo-mode byte, as the batch reads it).</summary>
+        int ReadMode(string stats)
+        {
+            if (Theater(stats) == 0) return -1;
+            try { if (!_mode.Attached || !_mode.Alive) { _mode.Dispose(); if (!_mode.Attach()) return -1; } return _mode.IsCodcast ? 1 : 0; }
+            catch { return -1; }
+        }
+
+        void PaintMode()
+        {
+            _codcast.Background = _modeKnown == 1 ? Ui.Brush("Accent") : null;
+            _regular.Background = _modeKnown == 0 ? Ui.Brush("Accent") : null;
+            _codcast.IsEnabled = _regular.IsEnabled = _modeKnown >= 0;
+        }
+
+        void SetMode(bool codcast)
+        {
+            if (BatchHasIt) { _time.Text = "the batch has the film"; return; }
+            ThreadPool.QueueUserWorkItem(_ =>
+            {
+                string said;
+                try
+                {
+                    if (!_mode.Attached || !_mode.Alive) { _mode.Dispose(); _mode.Attach(); }
+                    if (!_mode.InTheater) said = "no film is up";
+                    else if (_mode.IsCodcast == codcast) said = codcast ? "already in CODCAST" : "already in the regular theater";
+                    else if (!_mode.SetCodcast(codcast)) said = "could not switch: " + _mode.Error;
+                    else { Thread.Sleep(300); said = _mode.IsCodcast == codcast ? (codcast ? "CODCAST" : "the regular theater") : "the switch did not take"; }
+                }
+                catch (Exception ex) { said = "could not switch: " + ex.Message; }
+                Dispatcher.BeginInvoke(new Action(() => { _time.Text = said; _marksAt = 0; }));
+            });
         }
 
         // not below the first tick seen only if that was the film's start (a Console started mid-film sees it later)
@@ -304,7 +385,7 @@ namespace ReludualiConsole
         void ShowTarget(int target)
         {
             double w = _bar.ActualWidth;
-            if (w > 0 && _end > _start) { Canvas.SetLeft(_target, w * (target - _start) / (double)(_end - _start) - 1); _target.Visibility = Visibility.Visible; }
+            if (w > 0 && _end > _start) { Canvas.SetLeft(_target, X(target, w) - 1); _target.Visibility = Visibility.Visible; }
         }
 
         void EndSeek() { Interlocked.Exchange(ref _seeking, 0); _target.Visibility = Visibility.Collapsed; }
@@ -324,6 +405,17 @@ namespace ReludualiConsole
                 catch (Exception ex) { App.Note("the timeline's seek", ex); }
                 Dispatcher.BeginInvoke(new Action(EndSeek));
             });
+        }
+
+        /// <summary>A seek on the caller's own thread (not the window's): to a film tick, paused, as a click on the bar goes
+        /// there. False when a seek or the batch already has the film.</summary>
+        public bool SeekNow(int target)
+        {
+            if (BatchHasIt) return false;
+            if (Interlocked.CompareExchange(ref _seeking, 1, 0) != 0) return false;
+            try { SeekWork(target, _speed, _kfNone ? new int[0] : _kfTicks); }
+            finally { Dispatcher.BeginInvoke(new Action(EndSeek)); }
+            return true;
         }
 
         // ---- drag to scrub (a click is a drag that never moved)
@@ -349,7 +441,7 @@ namespace ReludualiConsole
         {
             double w = _bar.ActualWidth;
             if (w <= 0 || _end <= _start) return;
-            int t = Clamp(_start + (int)((_end - _start) * Math.Max(0, Math.Min(w, x)) / w));
+            int t = Clamp(T(Math.Max(0, Math.Min(w, x)), w));
             _dragWant = t;
             ShowTarget(t);
             _time.Text = "to " + Clock(t - _start) + " / " + Clock(_end - _start);
@@ -367,7 +459,7 @@ namespace ReludualiConsole
         public string TestScrub(int[] ticks, int stepMs)
         {
             if (ticks.Length == 0 || _end <= _start || _bar.ActualWidth <= 0) return "no film on the bar";
-            Func<int, double> x = t => _bar.ActualWidth * (t - _start) / (double)(_end - _start);
+            Func<int, double> x = t => X(t, _bar.ActualWidth);
             DragStart(x(ticks[0]));
             if (!_dragging) return "the bar is busy (a seek on its way, or the batch has the film)";
             var steps = new Queue<int>();
@@ -438,6 +530,7 @@ namespace ReludualiConsole
                 string demo = BridgeClient.LastDemo;
                 known = !string.IsNullOrEmpty(demo) && System.IO.File.Exists(demo);
                 if (!known) Dispatcher.BeginInvoke(new Action(() => _time.Text = "going back needs the film loaded from the Designer (Demos)"));
+                else if (!TheaterFirst.Ok()) { known = false; Dispatcher.BeginInvoke(new Action(() => _time.Text = "not going back: " + TheaterFirst.Why)); }
             }
             if (known && t != int.MinValue && t > target + 150)
             {
